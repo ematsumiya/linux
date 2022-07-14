@@ -74,7 +74,7 @@ configure specific aspects of kernel behavior to your liking.
    btmrvl
    cgroup-v1/index
    cgroup-v2
-   cifs/index
+   smbfs/index
    clearing-warn-once
    cpu-load
    cputopology

@@ -85,7 +85,7 @@ Todolist:
 *   btmrvl
 *   cgroup-v1/index
 *   cgroup-v2
-*   cifs/index
+*   smbfs/index
 *   dell_rbu
 *   device-mapper/index
 *   edid

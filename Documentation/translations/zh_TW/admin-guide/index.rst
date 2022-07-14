@@ -82,7 +82,7 @@ Todolist:
    btmrvl
    cgroup-v1/index
    cgroup-v2
-   cifs/index
+   smbfs/index
    cputopology
    dell_rbu
    device-mapper/index

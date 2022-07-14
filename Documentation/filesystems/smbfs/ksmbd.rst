@@ -137,7 +137,7 @@ How to run
 5. Start ksmbd user space daemon
 	# ksmbd.mountd
 
-6. Access share from Windows or Linux using CIFS
+6. Access share from Windows or Linux using SMBFS
 
 Shutdown KSMBD
 ==============
