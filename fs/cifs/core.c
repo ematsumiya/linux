@@ -1758,9 +1758,7 @@ exit_smbfs(void)
 
 MODULE_AUTHOR("Steve French");
 MODULE_LICENSE("GPL");	/* combination of LGPL + GPL source behaves as GPL */
-MODULE_DESCRIPTION
-	("VFS to access SMB3 servers e.g. Samba, Macs, Azure and Windows (and "
-	"also older servers complying with the SNIA CIFS Specification)");
+MODULE_DESCRIPTION("Client to access SMB servers. Supports SMBv1, SMBv2, and SMBv3.");
 MODULE_VERSION(SMBFS_VERSION);
 MODULE_SOFTDEP("ecb");
 MODULE_SOFTDEP("hmac");
