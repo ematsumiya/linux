@@ -363,7 +363,7 @@ smb2_find_mid(struct TCP_Server_Info *server, char *buf)
 static void
 smb2_dump_detail(void *buf, struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	struct smb2_hdr *shdr = (struct smb2_hdr *)buf;
 
 	cifs_server_dbg(VFS, "Cmd: %d Err: 0x%x Flags: 0x%x Mid: %llu Pid: %d\n",
@@ -914,9 +914,9 @@ int open_cached_dir(unsigned int xid, struct cifs_tcon *tcon,
 	o_rsp = (struct smb2_create_rsp *)rsp_iov[0].iov_base;
 	oparms.fid->persistent_fid = o_rsp->PersistentFileId;
 	oparms.fid->volatile_fid = o_rsp->VolatileFileId;
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	oparms.fid->mid = le64_to_cpu(o_rsp->hdr.MessageId);
-#endif /* CIFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 
 	tcon->crfid.tcon = tcon;
 	tcon->crfid.is_valid = true;
@@ -1527,9 +1527,9 @@ smb2_set_fid(struct cifsFileInfo *cfile, struct cifs_fid *fid, __u32 oplock)
 	cfile->fid.persistent_fid = fid->persistent_fid;
 	cfile->fid.volatile_fid = fid->volatile_fid;
 	cfile->fid.access = fid->access;
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	cfile->fid.mid = fid->mid;
-#endif /* CIFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 	server->ops->set_oplock_level(cinode, oplock, fid->epoch,
 				      &fid->purge_cache);
 	cinode->can_cache_brlcks = CIFS_CACHE_WRITE(cinode);
@@ -5041,7 +5041,7 @@ static void smb2_decrypt_offload(struct work_struct *work)
 			      dw->server->vals->read_rsp_size, dw->ppages,
 			      dw->npages, dw->len, true);
 	if (rc >= 0) {
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 		mid->when_received = jiffies;
 #endif
 		if (dw->server->ops->is_network_name_deleted)

@@ -3026,9 +3026,9 @@ SMB2_open(const unsigned int xid, struct cifs_open_parms *oparms, __le16 *path,
 	oparms->fid->persistent_fid = rsp->PersistentFileId;
 	oparms->fid->volatile_fid = rsp->VolatileFileId;
 	oparms->fid->access = oparms->desired_access;
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	oparms->fid->mid = le64_to_cpu(rsp->hdr.MessageId);
-#endif /* CIFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 
 	if (buf) {
 		buf->CreationTime = rsp->CreationTime;

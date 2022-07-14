@@ -29,7 +29,7 @@
  */
 #define UNICODE_NAME_MAX ((4 * NAME_MAX) + 2)
 
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 static void dump_cifs_file_struct(struct file *file, char *label)
 {
 	struct cifsFileInfo *cf;
@@ -52,7 +52,7 @@ static void dump_cifs_file_struct(struct file *file, char *label)
 static inline void dump_cifs_file_struct(struct file *file, char *label)
 {
 }
-#endif /* DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 
 /*
  * Attempt to preload the dcache with the results from the FIND_FIRST/NEXT

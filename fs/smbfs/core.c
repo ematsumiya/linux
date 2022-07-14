@@ -87,7 +87,7 @@ module_param(cifs_max_pending, uint, 0444);
 MODULE_PARM_DESC(cifs_max_pending, "Simultaneous requests to server for "
 				   "CIFS/SMB1 dialect (N/A for SMB3) "
 				   "Default: 32767 Range: 2 to 32767.");
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 unsigned int slow_rsp_threshold = 1;
 module_param(slow_rsp_threshold, uint, 0644);
 MODULE_PARM_DESC(slow_rsp_threshold, "Amount of time (in seconds) to wait "
@@ -728,7 +728,7 @@ static void cifs_umount_begin(struct super_block *sb)
 	return;
 }
 
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 static int cifs_show_stats(struct seq_file *s, struct dentry *root)
 {
 	/* BB FIXME */
@@ -766,7 +766,7 @@ static const struct super_operations cifs_super_ops = {
 	as opens */
 	.show_options = cifs_show_options,
 	.umount_begin   = cifs_umount_begin,
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	.show_stats = cifs_show_stats,
 #endif
 };
@@ -1580,7 +1580,7 @@ init_smbfs(void)
 
 	atomic_set(&bufAllocCount, 0);
 	atomic_set(&smBufAllocCount, 0);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	atomic_set(&totBufAllocCount, 0);
 	atomic_set(&totSmBufAllocCount, 0);
 	if (slow_rsp_threshold < 1)
@@ -1588,7 +1588,7 @@ init_smbfs(void)
 	else if (slow_rsp_threshold > 32767)
 		cifs_dbg(VFS,
 		       "slow response threshold set higher than recommended (0 to 32767)\n");
-#endif /* CONFIG_SMBFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS_EXTRA */
 
 	atomic_set(&midCount, 0);
 	GlobalCurrentXid = 0;

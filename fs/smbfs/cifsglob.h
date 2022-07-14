@@ -688,13 +688,13 @@ struct TCP_Server_Info {
 	unsigned int total_read; /* total amount of data read in this pass */
 	atomic_t in_send; /* requests trying to send */
 	atomic_t num_waiters;   /* blocked waiting to get in sendrecv */
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	atomic_t num_cmds[NUMBER_OF_SMB2_COMMANDS]; /* total requests by cmd */
 	atomic_t smb2slowcmd[NUMBER_OF_SMB2_COMMANDS]; /* count resps > 1 sec */
 	__u64 time_per_cmd[NUMBER_OF_SMB2_COMMANDS]; /* total time per cmd */
 	__u32 slowest_cmd[NUMBER_OF_SMB2_COMMANDS];
 	__u32 fastest_cmd[NUMBER_OF_SMB2_COMMANDS];
-#endif /* STATS2 */
+#endif /* SMBFS_STATS_EXTRA */
 	unsigned int	max_read;
 	unsigned int	max_write;
 	unsigned int	min_offload;
@@ -1379,7 +1379,7 @@ struct cifs_fid {
 	__u32 access;
 	struct cifs_pending_open *pending_open;
 	unsigned int epoch;
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	__u64 mid;
 #endif /* CIFS_DEBUG2 */
 	bool purge_cache;
@@ -1684,7 +1684,7 @@ struct mid_q_entry {
 	__u32 pid;		/* process id */
 	__u32 sequence_number;  /* for CIFS signing */
 	unsigned long when_alloc;  /* when mid was created */
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	unsigned long when_sent; /* time when smb send finished */
 	unsigned long when_received; /* when demux complete (taken off wire) */
 #endif
@@ -1735,7 +1735,7 @@ static inline void cifs_num_waiters_dec(struct TCP_Server_Info *server)
 	atomic_dec(&server->num_waiters);
 }
 
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 static inline void cifs_save_when_sent(struct mid_q_entry *mid)
 {
 	mid->when_sent = jiffies;
@@ -1974,7 +1974,7 @@ GLOBAL_EXTERN atomic_t tconInfoReconnectCount;
 
 /* Various Debug counters */
 GLOBAL_EXTERN atomic_t bufAllocCount;    /* current number allocated  */
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 GLOBAL_EXTERN atomic_t totBufAllocCount; /* total allocated over all time */
 GLOBAL_EXTERN atomic_t totSmBufAllocCount;
 extern unsigned int slow_rsp_threshold; /* number of secs before logging */

@@ -1833,7 +1833,7 @@ cifs_posix_mkdir(struct inode *inode, struct dentry *dentry, umode_t mode,
 
 	d_instantiate(dentry, newinode);
 
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	cifs_dbg(FYI, "instantiated dentry %p %pd to inode %p\n",
 		 dentry, dentry, newinode);
 

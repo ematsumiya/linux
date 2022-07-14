@@ -77,7 +77,7 @@ static void _cifs_mid_q_entry_release(struct kref *refcount)
 {
 	struct mid_q_entry *midEntry =
 			container_of(refcount, struct mid_q_entry, refcount);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	__le16 command = midEntry->server->vals->lock_cmd;
 	__u16 smb_cmd = le16_to_cpu(midEntry->command);
 	unsigned long now;
@@ -96,7 +96,7 @@ static void _cifs_mid_q_entry_release(struct kref *refcount)
 		cifs_buf_release(midEntry->resp_buf);
 	else
 		cifs_small_buf_release(midEntry->resp_buf);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	now = jiffies;
 	if (now < midEntry->when_alloc)
 		cifs_server_dbg(VFS, "Invalid mid allocation time\n");

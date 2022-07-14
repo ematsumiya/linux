@@ -846,7 +846,7 @@ is_smb_response(struct TCP_Server_Info *server, unsigned char type)
 void
 dequeue_mid(struct mid_q_entry *mid)
 {
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	mid->when_received = jiffies;
 #endif
 	if (mid->mid_flags & MID_DELETED) {
@@ -1243,12 +1243,12 @@ next_pdu:
 				cifs_dump_mem("Received Data is: ", bufs[i],
 					      HEADER_SIZE(server));
 				smb2_add_credits_from_hdr(bufs[i], server);
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 				if (server->ops->dump_detail)
 					server->ops->dump_detail(bufs[i],
 								 server);
 				cifs_dump_mids(server);
-#endif /* CIFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 			}
 		}
 
@@ -3029,7 +3029,7 @@ void reset_cifs_unix_caps(unsigned int xid, struct cifs_tcon *tcon,
 		}
 
 		cifs_dbg(FYI, "Negotiate caps 0x%x\n", (int)cap);
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 		if (cap & CIFS_UNIX_FCNTL_CAP)
 			cifs_dbg(FYI, "FCNTL cap\n");
 		if (cap & CIFS_UNIX_EXTATTR_CAP)
@@ -3048,7 +3048,7 @@ void reset_cifs_unix_caps(unsigned int xid, struct cifs_tcon *tcon,
 			cifs_dbg(FYI, "transport encryption cap\n");
 		if (cap & CIFS_UNIX_TRANSPORT_ENCRYPTION_MANDATORY_CAP)
 			cifs_dbg(FYI, "mandatory transport encryption cap\n");
-#endif /* CIFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 		if (CIFSSMBSetFSUnixInfo(xid, tcon, cap)) {
 			if (ctx == NULL)
 				cifs_dbg(FYI, "resetting capabilities failed\n");

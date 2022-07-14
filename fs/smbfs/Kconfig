@@ -54,8 +54,8 @@ config SMBFS
 	  If you need to mount Samba, Azure, Macs, or Windows shares
 	  from this machine, say Y.
 
-config SMBFS_STATS2
-	bool "Extended statistics"
+config SMBFS_STATS_EXTRA
+	bool "Collect extra statistics"
 	depends on SMBFS
 	default y
 	help
@@ -133,8 +133,8 @@ config SMBFS_DEBUG
 
 	  If unsure, say Y.
 
-config SMBFS_DEBUG2
-	bool "Enable additional SMBFS debugging routines"
+config SMBFS_DEBUG_EXTRA
+	bool "Enable extra SMBFS debugging routines"
 	depends on SMBFS_DEBUG
 	help
 	  Enabling this option adds a few more debugging routines

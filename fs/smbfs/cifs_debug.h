@@ -26,7 +26,7 @@ void dump_smb(void *, int);
 #define VFS 1
 #define FYI 2
 extern int cifsFYI;
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 #define NOISY 4
 #else
 #define NOISY 0

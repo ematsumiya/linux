@@ -35,7 +35,7 @@ cifs_dump_mem(char *label, void *data, int length)
 
 void cifs_dump_detail(void *buf, struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	struct smb_hdr *smb = (struct smb_hdr *)buf;
 
 	cifs_dbg(VFS, "Cmd: %d Err: 0x%x Flags: 0x%x Flgs2: 0x%x Mid: %d Pid: %d\n",
@@ -43,12 +43,12 @@ void cifs_dump_detail(void *buf, struct TCP_Server_Info *server)
 		 smb->Flags, smb->Flags2, smb->Mid, smb->Pid);
 	cifs_dbg(VFS, "smb buf %p len %u\n", smb,
 		 server->ops->calc_smb_size(smb, server));
-#endif /* CONFIG_SMBFS_DEBUG2 */
+#endif /* CONFIG_SMBFS_DEBUG_EXTRA */
 }
 
 void cifs_dump_mids(struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	struct mid_q_entry *mid_entry;
 
 	if (server == NULL)
@@ -63,13 +63,13 @@ void cifs_dump_mids(struct TCP_Server_Info *server)
 			 mid_entry->pid,
 			 mid_entry->callback_data,
 			 mid_entry->mid);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 		cifs_dbg(VFS, "IsLarge: %d buf: %p time rcv: %ld now: %ld\n",
 			 mid_entry->large_buf,
 			 mid_entry->resp_buf,
 			 mid_entry->when_received,
 			 jiffies);
-#endif /* STATS2 */
+#endif /* SMBFS_STATS_EXTRA */
 		cifs_dbg(VFS, "IsMult: %d IsEnd: %d\n",
 			 mid_entry->multiRsp, mid_entry->multiEnd);
 		if (mid_entry->resp_buf) {
@@ -79,7 +79,7 @@ void cifs_dump_mids(struct TCP_Server_Info *server)
 		}
 	}
 	spin_unlock(&GlobalMid_Lock);
-#endif /* CONFIG_SMBFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 }
 
 #ifdef CONFIG_PROC_FS
@@ -177,11 +177,11 @@ static int cifs_debug_files_proc_show(struct seq_file *m, void *v)
 	seq_puts(m, "# Version:1\n");
 	seq_puts(m, "# Format:\n");
 	seq_puts(m, "# <tree id> <persistent fid> <flags> <count> <pid> <uid>");
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 	seq_printf(m, " <filename> <mid>\n");
 #else
 	seq_printf(m, " <filename>\n");
-#endif /* SMBFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 	spin_lock(&cifs_tcp_ses_lock);
 	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
 		list_for_each(tmp, &server->smb_ses_list) {
@@ -201,11 +201,11 @@ static int cifs_debug_files_proc_show(struct seq_file *m, void *v)
 						cfile->pid,
 						from_kuid(&init_user_ns, cfile->uid),
 						cfile->dentry);
-#ifdef CONFIG_SMBFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
 					seq_printf(m, " %llu\n", cfile->fid.mid);
 #else
 					seq_printf(m, "\n");
-#endif /* SMBFS_DEBUG2 */
+#endif /* SMBFS_DEBUG_EXTRA */
 				}
 				spin_unlock(&tcon->open_file_lock);
 			}
@@ -239,13 +239,13 @@ static int cifs_debug_data_proc_show(struct seq_file *m, void *v)
 #ifdef CONFIG_SMBFS_SMB_DIRECT
 	seq_printf(m, ",SMB_DIRECT");
 #endif
-#ifdef CONFIG_SMBFS_STATS2
-	seq_printf(m, ",STATS2");
+#ifdef CONFIG_SMBFS_STATS_EXTRA
+	seq_printf(m, ",STATS_EXTRA");
 #else
 	seq_printf(m, ",STATS");
 #endif
-#ifdef CONFIG_SMBFS_DEBUG2
-	seq_printf(m, ",DEBUG2");
+#ifdef CONFIG_SMBFS_DEBUG_EXTRA
+	seq_printf(m, ",DEBUG_EXTRA");
 #elif defined(CONFIG_SMBFS_DEBUG)
 	seq_printf(m, ",DEBUG");
 #endif
@@ -510,12 +510,12 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 
 	rc = kstrtobool_from_user(buffer, count, &bv);
 	if (rc == 0) {
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 		int i;
 
 		atomic_set(&totBufAllocCount, 0);
 		atomic_set(&totSmBufAllocCount, 0);
-#endif /* CONFIG_SMBFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS_EXTRA */
 		atomic_set(&tcpSesReconnectCount, 0);
 		atomic_set(&tconInfoReconnectCount, 0);
 
@@ -528,7 +528,7 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 			server = list_entry(tmp1, struct TCP_Server_Info,
 					    tcp_ses_list);
 			server->max_in_flight = 0;
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 			for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++) {
 				atomic_set(&server->num_cmds[i], 0);
 				atomic_set(&server->smb2slowcmd[i], 0);
@@ -536,7 +536,7 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 				server->slowest_cmd[i] = 0;
 				server->fastest_cmd[0] = 0;
 			}
-#endif /* CONFIG_SMBFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS_EXTRA */
 			list_for_each(tmp2, &server->smb_ses_list) {
 				ses = list_entry(tmp2, struct cifs_ses,
 						 smb_ses_list);
@@ -565,9 +565,9 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 static int cifs_stats_proc_show(struct seq_file *m, void *v)
 {
 	int i;
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	int j;
-#endif /* STATS2 */
+#endif /* SMBFS_STATS_EXTRA */
 	struct list_head *tmp2, *tmp3;
 	struct TCP_Server_Info *server;
 	struct cifs_ses *ses;
@@ -582,11 +582,11 @@ static int cifs_stats_proc_show(struct seq_file *m, void *v)
 			cifs_min_rcv + tcpSesAllocCount.counter);
 	seq_printf(m, "SMB Small Req/Resp Buffer: %d Pool size: %d\n",
 			smBufAllocCount.counter, cifs_min_small);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 	seq_printf(m, "Total Large %d Small %d Allocations\n",
 				atomic_read(&totBufAllocCount),
 				atomic_read(&totSmBufAllocCount));
-#endif /* CONFIG_SMBFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS_EXTRA */
 
 	seq_printf(m, "Operations (MIDs): %d\n", atomic_read(&midCount));
 	seq_printf(m,
@@ -601,7 +601,7 @@ static int cifs_stats_proc_show(struct seq_file *m, void *v)
 	spin_lock(&cifs_tcp_ses_lock);
 	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
 		seq_printf(m, "\nMax requests in flight: %d", server->max_in_flight);
-#ifdef CONFIG_SMBFS_STATS2
+#ifdef CONFIG_SMBFS_STATS_EXTRA
 		seq_puts(m, "\nTotal time spent processing by command. Time ");
 		seq_printf(m, "units are jiffies (%d per second)\n", HZ);
 		seq_puts(m, "  SMB3 CMD\tNumber\tTotal Time\tFastest\tSlowest\n");
@@ -617,7 +617,7 @@ static int cifs_stats_proc_show(struct seq_file *m, void *v)
 				seq_printf(m, "  %d slow responses from %s for command %d\n",
 					atomic_read(&server->smb2slowcmd[j]),
 					server->hostname, j);
-#endif /* STATS2 */
+#endif /* SMBFS_STATS_EXTRA */
 		list_for_each(tmp2, &server->smb_ses_list) {
 			ses = list_entry(tmp2, struct cifs_ses,
 					 smb_ses_list);
