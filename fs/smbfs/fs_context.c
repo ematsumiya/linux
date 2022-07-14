@@ -1396,7 +1396,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		ctx->seal = 1;
 		break;
 	case Opt_noac:
-		pr_warn("Mount option noac not supported. Instead set /proc/fs/cifs/LookupCacheEnabled to 0\n");
+		pr_warn("Mount option noac not supported. Instead set /proc/fs/smbfs/LookupCacheEnabled to 0\n");
 		break;
 	case Opt_fsc:
 #ifndef CONFIG_SMBFS_FSCACHE

@@ -705,7 +705,7 @@ static const struct proc_ops cifs_mount_params_proc_ops;
 void
 cifs_proc_init(void)
 {
-	proc_fs_cifs = proc_mkdir("fs/cifs", NULL);
+	proc_fs_cifs = proc_mkdir("fs/smbfs", NULL);
 	if (proc_fs_cifs == NULL)
 		return;
 
@@ -780,7 +780,7 @@ cifs_proc_clean(void)
 	remove_proc_entry("smbd_send_credit_target", proc_fs_cifs);
 	remove_proc_entry("smbd_receive_credit_max", proc_fs_cifs);
 #endif
-	remove_proc_entry("fs/cifs", NULL);
+	remove_proc_entry("fs/smbfs", NULL);
 }
 
 static int cifsFYI_proc_show(struct seq_file *m, void *v)

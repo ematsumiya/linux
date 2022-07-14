@@ -502,7 +502,7 @@ static int reconnect_dfs_server(struct TCP_Server_Info *server)
 	 *
 	 * smb2_reconnect() needs to know how long it should wait based upon the number of dfs
 	 * targets (server->nr_targets).  It's also possible that the cached referral was cleared
-	 * through /proc/fs/cifs/dfscache or the target list is empty due to server settings after
+	 * through /proc/fs/smbfs/dfscache or the target list is empty due to server settings after
 	 * refreshing the referral, so, in this case, default it to 1.
 	 */
 	if (!dfs_cache_noreq_find(refpath, NULL, &tl))

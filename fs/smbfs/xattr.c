@@ -119,7 +119,7 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 	/* return dos attributes as pseudo xattr */
 	/* return alt name if available as pseudo attr */
 
-	/* if proc/fs/cifs/streamstoxattr is set then
+	/* if /proc/fs/smbfs/streamstoxattr is set then
 		search server for EAs or streams to
 		returns as xattrs */
 	if (size > MAX_EA_VALUE_SIZE) {
@@ -387,7 +387,7 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 	}
 
 	/* We could add an additional check for streams ie
-	    if proc/fs/cifs/streamstoxattr is set then
+	    if proc/fs/smbfs/streamstoxattr is set then
 		search server for EAs or streams to
 		returns as xattrs */
 
@@ -433,7 +433,7 @@ ssize_t cifs_listxattr(struct dentry *direntry, char *data, size_t buf_size)
 	/* return dos attributes as pseudo xattr */
 	/* return alt name if available as pseudo attr */
 
-	/* if proc/fs/cifs/streamstoxattr is set then
+	/* if proc/fs/smbfs/streamstoxattr is set then
 		search server for EAs or streams to
 		returns as xattrs */
 
