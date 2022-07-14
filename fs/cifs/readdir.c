@@ -18,7 +18,7 @@
 #include "cifs_unicode.h"
 #include "cifs_debug.h"
 #include "cifs_fs_sb.h"
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "smb2proto.h"
 #include "fs_context.h"
 
@@ -29,7 +29,7 @@
  */
 #define UNICODE_NAME_MAX ((4 * NAME_MAX) + 2)
 
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 static void dump_cifs_file_struct(struct file *file, char *label)
 {
 	struct cifsFileInfo *cf;

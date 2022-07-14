@@ -17,7 +17,7 @@
 #include "cifsglob.h"
 #include "cifsproto.h"
 #include "cifs_debug.h"
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifs_ioctl.h"
 #include "smb2proto.h"
 #include "smb2glob.h"
@@ -332,7 +332,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 				break;
 			tcon = tlink_tcon(pSMBFile->tlink);
 			caps = le64_to_cpu(tcon->fsUnixInfo.Capability);
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 			if (CIFS_UNIX_EXTATTR_CAP & caps) {
 				__u64	ExtAttrMask = 0;
 				rc = CIFSGetExtAttr(xid, tcon,
@@ -345,7 +345,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 				if (rc != EOPNOTSUPP)
 					break;
 			}
-#endif /* CONFIG_CIFS_POSIX */
+#endif /* CONFIG_SMBFS_POSIX */
 			rc = 0;
 			if (CIFS_I(inode)->cifsAttrs & ATTR_COMPRESSED) {
 				/* add in the compressed bit */

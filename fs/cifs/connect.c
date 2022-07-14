@@ -45,7 +45,7 @@
 #include "smb2proto.h"
 #include "smbdirect.h"
 #include "dns_resolve.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
 #include "fs_context.h"
@@ -68,7 +68,7 @@ struct mount_ctx {
 	struct TCP_Server_Info *server;
 	struct cifs_ses *ses;
 	struct cifs_tcon *tcon;
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	struct cifs_ses *root_ses;
 	uuid_t mount_id;
 	char *origin_fullpath, *leaf_fullpath;
@@ -433,7 +433,7 @@ static int __cifs_reconnect(struct TCP_Server_Info *server,
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 static int __reconnect_target_unlocked(struct TCP_Server_Info *server, const char *target)
 {
 	int rc;
@@ -846,7 +846,7 @@ is_smb_response(struct TCP_Server_Info *server, unsigned char type)
 void
 dequeue_mid(struct mid_q_entry *mid)
 {
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	mid->when_received = jiffies;
 #endif
 	if (mid->mid_flags & MID_DELETED) {
@@ -982,7 +982,7 @@ static void clean_demultiplex_info(struct TCP_Server_Info *server)
 		 */
 	}
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	kfree(server->origin_fullpath);
 	kfree(server->leaf_fullpath);
 #endif
@@ -1243,7 +1243,7 @@ next_pdu:
 				cifs_dump_mem("Received Data is: ", bufs[i],
 					      HEADER_SIZE(server));
 				smb2_add_credits_from_hdr(bufs[i], server);
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 				if (server->ops->dump_detail)
 					server->ops->dump_detail(bufs[i],
 								 server);
@@ -1470,7 +1470,7 @@ cifs_find_tcp_session(struct smb3_fs_context *ctx)
 
 	spin_lock(&cifs_tcp_ses_lock);
 	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 		/*
 		 * DFS failover implementation in cifs_reconnect() requires unique tcp sessions for
 		 * DFS connections to do failover properly, so avoid sharing them with regular
@@ -1617,7 +1617,7 @@ cifs_get_tcp_session(struct smb3_fs_context *ctx,
 	INIT_DELAYED_WORK(&tcp_ses->resolve, cifs_resolve_server);
 	INIT_DELAYED_WORK(&tcp_ses->reconnect, smb2_reconnect_server);
 	mutex_init(&tcp_ses->reconnect_mutex);
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	mutex_init(&tcp_ses->refpath_lock);
 #endif
 	memcpy(&tcp_ses->srcaddr, &ctx->srcaddr,
@@ -1643,8 +1643,8 @@ cifs_get_tcp_session(struct smb3_fs_context *ctx,
 	else
 		tcp_ses->echo_interval = SMB_ECHO_INTERVAL_DEFAULT * HZ;
 	if (tcp_ses->rdma) {
-#ifndef CONFIG_CIFS_SMB_DIRECT
-		cifs_dbg(VFS, "CONFIG_CIFS_SMB_DIRECT is not enabled\n");
+#ifndef CONFIG_SMBFS_SMB_DIRECT
+		cifs_dbg(VFS, "CONFIG_SMBFS_SMB_DIRECT is not enabled\n");
 		rc = -ENOENT;
 		goto out_err_crypto_release;
 #endif
@@ -2480,7 +2480,7 @@ cifs_get_tcon(struct cifs_ses *ses, struct smb3_fs_context *ctx)
 	}
 
 	tcon->use_witness = false;
-	if (IS_ENABLED(CONFIG_CIFS_SWN_UPCALL) && ctx->witness) {
+	if (IS_ENABLED(CONFIG_SMBFS_SWN_UPCALL) && ctx->witness) {
 		if (ses->server->vals->protocol_id >= SMB30_PROT_ID) {
 			if (tcon->capabilities & SMB2_SHARE_CAP_CLUSTER) {
 				/*
@@ -3029,7 +3029,7 @@ void reset_cifs_unix_caps(unsigned int xid, struct cifs_tcon *tcon,
 		}
 
 		cifs_dbg(FYI, "Negotiate caps 0x%x\n", (int)cap);
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 		if (cap & CIFS_UNIX_FCNTL_CAP)
 			cifs_dbg(FYI, "FCNTL cap\n");
 		if (cap & CIFS_UNIX_EXTATTR_CAP)
@@ -3262,7 +3262,7 @@ static int mount_setup_tlink(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	return 0;
 }
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 /* Get unique dfs connections */
 static int mount_get_dfs_conns(struct mount_ctx *mnt_ctx)
 {
@@ -3463,7 +3463,7 @@ static int is_path_remote(struct mount_ctx *mnt_ctx)
 	struct cifs_tcon *tcon = mnt_ctx->tcon;
 	struct smb3_fs_context *ctx = mnt_ctx->fs_ctx;
 	char *full_path;
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	bool nodfs = cifs_sb->mnt_cifs_flags & CIFS_MOUNT_NO_DFS;
 #endif
 
@@ -3482,7 +3482,7 @@ static int is_path_remote(struct mount_ctx *mnt_ctx)
 
 	rc = server->ops->is_path_accessible(xid, tcon, cifs_sb,
 					     full_path);
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	if (nodfs) {
 		if (rc == -EREMOTE)
 			rc = -EOPNOTSUPP;
@@ -3513,7 +3513,7 @@ out:
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 static void set_root_ses(struct mount_ctx *mnt_ctx)
 {
 	if (mnt_ctx->ses) {
@@ -3973,7 +3973,7 @@ cifs_umount(struct cifs_sb_info *cifs_sb)
 	spin_unlock(&cifs_sb->tlink_tree_lock);
 
 	kfree(cifs_sb->prepath);
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	dfs_cache_put_refsrv_sessions(&cifs_sb->dfs_mount_id);
 #endif
 	call_rcu(&cifs_sb->rcu, delayed_free);
@@ -4360,7 +4360,7 @@ cifs_prune_tlinks(struct work_struct *work)
 				TLINK_IDLE_EXPIRE);
 }
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 /* Update dfs referral path of superblock */
 static int update_server_fullpath(struct TCP_Server_Info *server, struct cifs_sb_info *cifs_sb,
 				  const char *target)

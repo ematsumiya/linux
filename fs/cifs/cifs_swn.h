@@ -13,7 +13,7 @@ struct cifs_tcon;
 struct sk_buff;
 struct genl_info;
 
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 extern int cifs_swn_register(struct cifs_tcon *tcon);
 
 extern int cifs_swn_unregister(struct cifs_tcon *tcon);
@@ -48,5 +48,5 @@ static inline void cifs_swn_check(void) {}
 static inline bool cifs_swn_set_server_dstaddr(struct TCP_Server_Info *server) { return false; }
 static inline void cifs_swn_reset_server_dstaddr(struct TCP_Server_Info *server) {}
 
-#endif /* CONFIG_CIFS_SWN_UPCALL */
+#endif /* CONFIG_SMBFS_SWN_UPCALL */
 #endif /* _CIFS_SWN_H */

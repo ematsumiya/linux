@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: LGPL-2.1 */
 /*
- *
  *   Copyright (c) International Business Machines  Corp., 2002, 2007
+ *   Copyright (c) SUSE LLC, 2022
  *   Author(s): Steve French (sfrench@us.ibm.com)
- *
+ *		Enzo Matsumiya <ematsumiya@suse.de>
  */
-
-#ifndef _CIFSFS_H
-#define _CIFSFS_H
+#ifndef _SMBFS_H
+#define _SMBFS_H
 
 #include <linux/hash.h>
 
@@ -115,7 +114,7 @@ extern int cifs_readdir(struct file *file, struct dir_context *ctx);
 extern const struct dentry_operations cifs_dentry_ops;
 extern const struct dentry_operations cifs_ci_dentry_ops;
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 extern struct vfsmount *cifs_dfs_d_automount(struct path *path);
 #else
 #define cifs_dfs_d_automount NULL
@@ -127,7 +126,7 @@ extern const char *cifs_get_link(struct dentry *, struct inode *,
 extern int cifs_symlink(struct user_namespace *mnt_userns, struct inode *inode,
 			struct dentry *direntry, const char *symname);
 
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 extern const struct xattr_handler *cifs_xattr_handlers[];
 extern ssize_t	cifs_listxattr(struct dentry *, char *, size_t);
 #else
@@ -148,11 +147,11 @@ struct smb3_fs_context;
 extern struct dentry *cifs_smb3_do_mount(struct file_system_type *fs_type,
 					 int flags, struct smb3_fs_context *ctx);
 
-#ifdef CONFIG_CIFS_NFSD_EXPORT
+#ifdef CONFIG_SMBFS_NFSD_EXPORT
 extern const struct export_operations cifs_export_ops;
-#endif /* CONFIG_CIFS_NFSD_EXPORT */
+#endif /* CONFIG_SMBFS_NFSD_EXPORT */
 
 /* when changing internal version - update following two lines at same time */
-#define SMB3_PRODUCT_BUILD 37
-#define CIFS_VERSION   "2.37"
-#endif				/* _CIFSFS_H */
+#define SMBFS_PRODUCT_BUILD 37
+#define SMBFS_VERSION   "2.37"
+#endif /* _SMBFS_H */

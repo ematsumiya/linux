@@ -13,7 +13,7 @@
 #include <linux/magic.h>
 #include <linux/security.h>
 #include <net/net_namespace.h>
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
 */
@@ -25,7 +25,7 @@
 #include <linux/mount.h>
 #include <linux/parser.h>
 #include <linux/utsname.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
@@ -339,7 +339,7 @@ cifs_parse_smb_version(struct fs_context *fc, char *value, struct smb3_fs_contex
 	substring_t args[MAX_OPT_ARGS];
 
 	switch (match_token(value, cifs_smb_version_tokens, args)) {
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 	case Smb_1:
 		if (disable_legacy_dialects) {
 			cifs_errorf(fc, "mount with legacy dialect disabled\n");
@@ -825,7 +825,7 @@ static int smb3_reconfigure(struct fs_context *fc)
 	smb3_cleanup_fs_context_contents(cifs_sb->ctx);
 	rc = smb3_fs_context_dup(cifs_sb->ctx, ctx);
 	smb3_update_mnt_flags(cifs_sb);
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	if (!rc)
 		rc = dfs_cache_remount_fs(cifs_sb);
 #endif
@@ -1291,16 +1291,16 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 			goto cifs_parse_mount_err;
 		break;
 	case Opt_witness:
-#ifndef CONFIG_CIFS_SWN_UPCALL
-		cifs_errorf(fc, "Witness support needs CONFIG_CIFS_SWN_UPCALL config option\n");
+#ifndef CONFIG_SMBFS_SWN_UPCALL
+		cifs_errorf(fc, "Witness support needs CONFIG_SMBFS_SWN_UPCALL config option\n");
 			goto cifs_parse_mount_err;
 #endif
 		ctx->witness = true;
 		pr_warn_once("Witness protocol support is experimental\n");
 		break;
 	case Opt_rootfs:
-#ifndef CONFIG_CIFS_ROOT
-		cifs_dbg(VFS, "rootfs support requires CONFIG_CIFS_ROOT config option\n");
+#ifndef CONFIG_SMBFS_ROOT
+		cifs_dbg(VFS, "rootfs support requires CONFIG_SMBFS_ROOT config option\n");
 		goto cifs_parse_mount_err;
 #endif
 		ctx->rootfs = true;
@@ -1399,8 +1399,8 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		pr_warn("Mount option noac not supported. Instead set /proc/fs/cifs/LookupCacheEnabled to 0\n");
 		break;
 	case Opt_fsc:
-#ifndef CONFIG_CIFS_FSCACHE
-		cifs_errorf(fc, "FS-Cache support needs CONFIG_CIFS_FSCACHE kernel config option set\n");
+#ifndef CONFIG_SMBFS_FSCACHE
+		cifs_errorf(fc, "FS-Cache support needs CONFIG_SMBFS_FSCACHE kernel config option set\n");
 		goto cifs_parse_mount_err;
 #endif
 		ctx->fsc = true;

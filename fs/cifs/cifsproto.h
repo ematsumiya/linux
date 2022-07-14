@@ -9,7 +9,7 @@
 #define _CIFSPROTO_H
 #include <linux/nls.h>
 #include "trace.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
 
@@ -284,11 +284,11 @@ extern void cifs_put_tcp_session(struct TCP_Server_Info *server,
 				 int from_reconnect);
 extern void cifs_put_tcon(struct cifs_tcon *tcon);
 
-#if IS_ENABLED(CONFIG_CIFS_DFS_UPCALL)
+#if IS_ENABLED(CONFIG_SMBFS_DFS_UPCALL)
 extern void cifs_dfs_release_automount_timer(void);
-#else /* ! IS_ENABLED(CONFIG_CIFS_DFS_UPCALL) */
+#else /* ! IS_ENABLED(CONFIG_SMBFS_DFS_UPCALL) */
 #define cifs_dfs_release_automount_timer()	do { } while (0)
-#endif /* ! IS_ENABLED(CONFIG_CIFS_DFS_UPCALL) */
+#endif /* ! IS_ENABLED(CONFIG_SMBFS_DFS_UPCALL) */
 
 void cifs_proc_init(void);
 void cifs_proc_clean(void);
@@ -656,7 +656,7 @@ int cifs_update_super_prepath(struct cifs_sb_info *cifs_sb, char *prefix);
 char *extract_hostname(const char *unc);
 char *extract_sharename(const char *unc);
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 static inline int get_dfs_path(const unsigned int xid, struct cifs_ses *ses,
 			       const char *old_path,
 			       const struct nls_table *nls_codepage,

@@ -14,7 +14,7 @@
 #include <crypto/aead.h>
 #include <linux/fiemap.h>
 #include <uapi/linux/magic.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifsglob.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
@@ -363,7 +363,7 @@ smb2_find_mid(struct TCP_Server_Info *server, char *buf)
 static void
 smb2_dump_detail(void *buf, struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	struct smb2_hdr *shdr = (struct smb2_hdr *)buf;
 
 	cifs_server_dbg(VFS, "Cmd: %d Err: 0x%x Flags: 0x%x Mid: %llu Pid: %d\n",
@@ -421,7 +421,7 @@ smb3_negotiate_wsize(struct cifs_tcon *tcon, struct smb3_fs_context *ctx)
 	/* start with specified wsize, or default */
 	wsize = ctx->wsize ? ctx->wsize : SMB3_DEFAULT_IOSIZE;
 	wsize = min_t(unsigned int, wsize, server->max_write);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (server->rdma) {
 		if (server->sign)
 			/*
@@ -469,7 +469,7 @@ smb3_negotiate_rsize(struct cifs_tcon *tcon, struct smb3_fs_context *ctx)
 	/* start with specified rsize, or default */
 	rsize = ctx->rsize ? ctx->rsize : SMB3_DEFAULT_IOSIZE;
 	rsize = min_t(unsigned int, rsize, server->max_read);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (server->rdma) {
 		if (server->sign)
 			/*
@@ -914,7 +914,7 @@ int open_cached_dir(unsigned int xid, struct cifs_tcon *tcon,
 	o_rsp = (struct smb2_create_rsp *)rsp_iov[0].iov_base;
 	oparms.fid->persistent_fid = o_rsp->PersistentFileId;
 	oparms.fid->volatile_fid = o_rsp->VolatileFileId;
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	oparms.fid->mid = le64_to_cpu(o_rsp->hdr.MessageId);
 #endif /* CIFS_DEBUG2 */
 
@@ -1116,7 +1116,7 @@ smb2_query_file_info(const unsigned int xid, struct cifs_tcon *tcon,
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 static ssize_t
 move_smb2_ea_to_cifs(char *dst, size_t dst_size,
 		     struct smb2_file_full_ea_info *src, size_t src_size,
@@ -1527,7 +1527,7 @@ smb2_set_fid(struct cifsFileInfo *cfile, struct cifs_fid *fid, __u32 oplock)
 	cfile->fid.persistent_fid = fid->persistent_fid;
 	cfile->fid.volatile_fid = fid->volatile_fid;
 	cfile->fid.access = fid->access;
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	cfile->fid.mid = fid->mid;
 #endif /* CIFS_DEBUG2 */
 	server->ops->set_oplock_level(cinode, oplock, fid->epoch,
@@ -4336,7 +4336,7 @@ smb3_set_oplock_level(struct cifsInodeInfo *cinode, __u32 oplock,
 	}
 }
 
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 static bool
 smb2_is_read_op(__u32 oplock)
 {
@@ -4921,7 +4921,7 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 	}
 
 	data_offset = server->ops->read_data_offset(buf);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	use_rdma_mr = rdata->mr;
 #endif
 	data_len = server->ops->read_data_length(buf, use_rdma_mr);
@@ -5041,7 +5041,7 @@ static void smb2_decrypt_offload(struct work_struct *work)
 			      dw->server->vals->read_rsp_size, dw->ppages,
 			      dw->npages, dw->len, true);
 	if (rc >= 0) {
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 		mid->when_received = jiffies;
 #endif
 		if (dw->server->ops->is_network_name_deleted)
@@ -5419,7 +5419,7 @@ out:
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 struct smb_version_operations smb20_operations = {
 	.compare_fids = smb2_compare_fids,
 	.setup_request = smb2_setup_request,
@@ -5503,7 +5503,7 @@ struct smb_version_operations smb20_operations = {
 	.dir_needs_close = smb2_dir_needs_close,
 	.get_dfs_refer = smb2_get_dfs_refer,
 	.select_sectype = smb2_select_sectype,
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	.query_all_EAs = smb2_query_eas,
 	.set_EA = smb2_set_ea,
 #endif /* CIFS_XATTR */
@@ -5606,7 +5606,7 @@ struct smb_version_operations smb21_operations = {
 	.notify = smb3_notify,
 	.get_dfs_refer = smb2_get_dfs_refer,
 	.select_sectype = smb2_select_sectype,
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	.query_all_EAs = smb2_query_eas,
 	.set_EA = smb2_set_ea,
 #endif /* CIFS_XATTR */
@@ -5720,7 +5720,7 @@ struct smb_version_operations smb30_operations = {
 	.receive_transform = smb3_receive_transform,
 	.get_dfs_refer = smb2_get_dfs_refer,
 	.select_sectype = smb2_select_sectype,
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	.query_all_EAs = smb2_query_eas,
 	.set_EA = smb2_set_ea,
 #endif /* CIFS_XATTR */
@@ -5834,7 +5834,7 @@ struct smb_version_operations smb311_operations = {
 	.receive_transform = smb3_receive_transform,
 	.get_dfs_refer = smb2_get_dfs_refer,
 	.select_sectype = smb2_select_sectype,
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	.query_all_EAs = smb2_query_eas,
 	.set_EA = smb2_set_ea,
 #endif /* CIFS_XATTR */
@@ -5850,7 +5850,7 @@ struct smb_version_operations smb311_operations = {
 	.is_network_name_deleted = smb2_is_network_name_deleted,
 };
 
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 struct smb_version_values smb20_values = {
 	.version_string = SMB20_VERSION_STRING,
 	.protocol_id = SMB20_PROT_ID,

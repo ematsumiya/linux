@@ -377,8 +377,8 @@ source "fs/ksmbd/Kconfig"
 
 config SMBFS_COMMON
 	tristate
-	default y if CIFS=y || SMB_SERVER=y
-	default m if CIFS=m || SMB_SERVER=m
+	default y if SMBFS=y || SMB_SERVER=y
+	default m if SMBFS=m || SMB_SERVER=m
 
 source "fs/coda/Kconfig"
 source "fs/afs/Kconfig"

@@ -688,7 +688,7 @@ struct TCP_Server_Info {
 	unsigned int total_read; /* total amount of data read in this pass */
 	atomic_t in_send; /* requests trying to send */
 	atomic_t num_waiters;   /* blocked waiting to get in sendrecv */
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	atomic_t num_cmds[NUMBER_OF_SMB2_COMMANDS]; /* total requests by cmd */
 	atomic_t smb2slowcmd[NUMBER_OF_SMB2_COMMANDS]; /* count resps > 1 sec */
 	__u64 time_per_cmd[NUMBER_OF_SMB2_COMMANDS]; /* total time per cmd */
@@ -725,11 +725,11 @@ struct TCP_Server_Info {
 #define CIFS_SERVER_IS_CHAN(server)	(!!(server)->primary_server)
 	struct TCP_Server_Info *primary_server;
 
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 	bool use_swn_dstaddr;
 	struct sockaddr_storage swn_dstaddr;
 #endif
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	bool is_dfs_conn; /* if a dfs connection */
 	struct mutex refpath_lock; /* protects leaf_fullpath */
 	/*
@@ -1247,14 +1247,14 @@ struct cifs_tcon {
 	__u32 max_chunks;
 	__u32 max_bytes_chunk;
 	__u32 max_bytes_copy;
-#ifdef CONFIG_CIFS_FSCACHE
+#ifdef CONFIG_SMBFS_FSCACHE
 	u64 resource_id;		/* server resource id */
 	struct fscache_volume *fscache;	/* cookie for share */
 #endif
 	struct list_head pending_opens;	/* list of incomplete opens */
 	struct cached_fid crfid; /* Cached root fid */
 	/* BB add field for back pointer to sb struct(s)? */
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	struct list_head ulist; /* cache update list */
 #endif
 	struct delayed_work	query_interfaces; /* query interfaces workqueue job */
@@ -1379,7 +1379,7 @@ struct cifs_fid {
 	__u32 access;
 	struct cifs_pending_open *pending_open;
 	unsigned int epoch;
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	__u64 mid;
 #endif /* CIFS_DEBUG2 */
 	bool purge_cache;
@@ -1476,7 +1476,7 @@ struct cifs_readdata {
 				struct iov_iter *iter);
 	struct kvec			iov[2];
 	struct TCP_Server_Info		*server;
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	struct smbd_mr			*mr;
 #endif
 	unsigned int			pagesz;
@@ -1501,7 +1501,7 @@ struct cifs_writedata {
 	unsigned int			bytes;
 	int				result;
 	struct TCP_Server_Info		*server;
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	struct smbd_mr			*mr;
 #endif
 	unsigned int			pagesz;
@@ -1684,7 +1684,7 @@ struct mid_q_entry {
 	__u32 pid;		/* process id */
 	__u32 sequence_number;  /* for CIFS signing */
 	unsigned long when_alloc;  /* when mid was created */
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	unsigned long when_sent; /* time when smb send finished */
 	unsigned long when_received; /* when demux complete (taken off wire) */
 #endif
@@ -1735,7 +1735,7 @@ static inline void cifs_num_waiters_dec(struct TCP_Server_Info *server)
 	atomic_dec(&server->num_waiters);
 }
 
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 static inline void cifs_save_when_sent(struct mid_q_entry *mid)
 {
 	mid->when_sent = jiffies;
@@ -1873,7 +1873,7 @@ result of setting MUST flags more than once will be to
 require use of the stronger protocol */
 #define   CIFSSEC_MUST_NTLMV2	0x04004
 #define   CIFSSEC_MUST_KRB5	0x08008
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 #define   CIFSSEC_MASK          0x8F08F /* flags supported if no weak allowed */
 #else
 #define	  CIFSSEC_MASK          0x87087 /* flags supported if no weak allowed */
@@ -1974,7 +1974,7 @@ GLOBAL_EXTERN atomic_t tconInfoReconnectCount;
 
 /* Various Debug counters */
 GLOBAL_EXTERN atomic_t bufAllocCount;    /* current number allocated  */
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 GLOBAL_EXTERN atomic_t totBufAllocCount; /* total allocated over all time */
 GLOBAL_EXTERN atomic_t totSmBufAllocCount;
 extern unsigned int slow_rsp_threshold; /* number of secs before logging */
@@ -2015,7 +2015,7 @@ extern mempool_t *cifs_mid_poolp;
 /* Operations for different SMB versions */
 #define SMB1_VERSION_STRING	"1.0"
 #define SMB20_VERSION_STRING    "2.0"
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 extern struct smb_version_operations smb1_operations;
 extern struct smb_version_values smb1_values;
 extern struct smb_version_operations smb20_operations;

@@ -30,9 +30,9 @@
 #include <linux/exportfs.h>
 #include "cifsglob.h"
 #include "cifs_debug.h"
-#include "cifsfs.h"
+#include "smbfs.h"
 
-#ifdef CONFIG_CIFS_NFSD_EXPORT
+#ifdef CONFIG_SMBFS_NFSD_EXPORT
 static struct dentry *cifs_get_parent(struct dentry *dentry)
 {
 	/* BB need to add code here eventually to enable export via NFSD */
@@ -50,5 +50,5 @@ const struct export_operations cifs_export_ops = {
 	.encode_fs =  */
 };
 
-#endif /* CONFIG_CIFS_NFSD_EXPORT */
+#endif /* CONFIG_SMBFS_NFSD_EXPORT */
 

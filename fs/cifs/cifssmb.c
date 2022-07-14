@@ -32,11 +32,11 @@
 #include "smb2proto.h"
 #include "fscache.h"
 #include "smbdirect.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
 
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 static struct {
 	int index;
 	char *name;
@@ -56,7 +56,7 @@ static struct {
 #endif
 
 /* define the number of elements in the cifs dialect array */
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 #define CIFS_NUM_PROT 2
 #else /* not posix */
 #define CIFS_NUM_PROT 1
@@ -1518,7 +1518,7 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	}
 
 	/* how much data is in the response? */
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	use_rdma_mr = rdata->mr;
 #endif
 	data_len = server->ops->read_data_length(buf, use_rdma_mr);
@@ -1909,7 +1909,7 @@ cifs_writedata_release(struct kref *refcount)
 {
 	struct cifs_writedata *wdata = container_of(refcount,
 					struct cifs_writedata, refcount);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (wdata->mr) {
 		smbd_deregister_mr(wdata->mr);
 		wdata->mr = NULL;
@@ -3355,7 +3355,7 @@ CIFSSMB_set_compression(const unsigned int xid, struct cifs_tcon *tcon,
 }
 
 
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 
 /*Convert an Access Control Entry from wire format to local POSIX xattr format*/
 static void cifs_convert_ace(struct posix_acl_xattr_entry *ace,
@@ -6049,7 +6049,7 @@ setPermsRetry:
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 /*
  * Do a path-based QUERY_ALL_EAS call and parse the result. This is a common
  * function used by listxattr and getxattr type calls. When ea_name is set,

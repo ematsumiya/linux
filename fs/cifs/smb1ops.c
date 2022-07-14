@@ -926,7 +926,7 @@ cifs_unix_dfs_readlink(const unsigned int xid, struct cifs_tcon *tcon,
 		       const unsigned char *searchName, char **symlinkinfo,
 		       const struct nls_table *nls_codepage)
 {
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	int rc;
 	struct dfs_info3_param referral = {0};
 
@@ -1226,7 +1226,7 @@ struct smb_version_operations smb1_operations = {
 	.wp_retry_size = cifs_wp_retry_size,
 	.dir_needs_close = cifs_dir_needs_close,
 	.select_sectype = cifs_select_sectype,
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	.query_all_EAs = CIFSSMBQAllEAs,
 	.set_EA = CIFSSMBSetEA,
 #endif /* CIFS_XATTR */

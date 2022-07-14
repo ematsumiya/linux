@@ -18,7 +18,7 @@
 #include <linux/utsname.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifs_spnego.h"
 #include "smb2proto.h"
 #include "fs_context.h"
@@ -988,7 +988,7 @@ int build_ntlmssp_smb3_negotiate_blob(unsigned char **pbuffer,
 
 	sec_blob->Version.ProductMajorVersion = LINUX_VERSION_MAJOR;
 	sec_blob->Version.ProductMinorVersion = LINUX_VERSION_PATCHLEVEL;
-	sec_blob->Version.ProductBuild = cpu_to_le16(SMB3_PRODUCT_BUILD);
+	sec_blob->Version.ProductBuild = cpu_to_le16(SMBFS_PRODUCT_BUILD);
 	sec_blob->Version.NTLMRevisionCurrent = NTLMSSP_REVISION_W2K3;
 
 	tmp = *pbuffer + sizeof(struct negotiate_message);
@@ -1376,7 +1376,7 @@ out:
 	ses->auth_key.response = NULL;
 }
 
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 static void
 sess_auth_kerberos(struct sess_data *sess_data)
 {
@@ -1515,7 +1515,7 @@ out:
 	ses->auth_key.response = NULL;
 }
 
-#endif /* ! CONFIG_CIFS_UPCALL */
+#endif /* ! CONFIG_SMBFS_UPCALL */
 
 /*
  * The required kvec buffers have to be allocated before calling this
@@ -1792,13 +1792,13 @@ static int select_sec(struct sess_data *sess_data)
 		sess_data->func = sess_auth_ntlmv2;
 		break;
 	case Kerberos:
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 		sess_data->func = sess_auth_kerberos;
 		break;
 #else
 		cifs_dbg(VFS, "Kerberos negotiated but upcall support disabled!\n");
 		return -ENOSYS;
-#endif /* CONFIG_CIFS_UPCALL */
+#endif /* CONFIG_SMBFS_UPCALL */
 	case RawNTLMSSP:
 		sess_data->func = sess_auth_rawntlmssp_negotiate;
 		break;

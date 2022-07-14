@@ -36,7 +36,7 @@
 #include "cifs_spnego.h"
 #include "smbdirect.h"
 #include "trace.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
 
@@ -1319,7 +1319,7 @@ SMB2_sess_alloc_buffer(struct SMB2_sess_data *sess_data)
 	else
 		req->SecurityMode = 0;
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	req->Capabilities = cpu_to_le32(SMB2_GLOBAL_CAP_DFS);
 #else
 	req->Capabilities = 0;
@@ -1402,7 +1402,7 @@ SMB2_sess_establish_session(struct SMB2_sess_data *sess_data)
 	return rc;
 }
 
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 static void
 SMB2_auth_kerberos(struct SMB2_sess_data *sess_data)
 {
@@ -1638,7 +1638,7 @@ SMB2_sess_auth_rawntlmssp_authenticate(struct SMB2_sess_data *sess_data)
 	}
 
 	rc = SMB2_sess_establish_session(sess_data);
-#ifdef CONFIG_CIFS_DEBUG_DUMP_KEYS
+#ifdef CONFIG_SMBFS_DEBUG_DUMP_KEYS
 	if (ses->server->dialect < SMB30_PROT_ID) {
 		cifs_dbg(VFS, "%s: dumping generated SMB2 session keys\n", __func__);
 		/*
@@ -3026,7 +3026,7 @@ SMB2_open(const unsigned int xid, struct cifs_open_parms *oparms, __le16 *path,
 	oparms->fid->persistent_fid = rsp->PersistentFileId;
 	oparms->fid->volatile_fid = rsp->VolatileFileId;
 	oparms->fid->access = oparms->desired_access;
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	oparms->fid->mid = le64_to_cpu(rsp->hdr.MessageId);
 #endif /* CIFS_DEBUG2 */
 
@@ -4057,7 +4057,7 @@ smb2_new_read_req(void **buf, unsigned int *total_len,
 			io_parms->persistent_fid,
 			io_parms->tcon->tid, io_parms->tcon->ses->Suid,
 			io_parms->offset, io_parms->length);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	/*
 	 * If we want to do a RDMA write, fill in and append
 	 * smbd_buffer_descriptor_v1 to the end of read request
@@ -4177,7 +4177,7 @@ smb2_readv_callback(struct mid_q_entry *mid)
 	default:
 		rdata->result = -EIO;
 	}
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	/*
 	 * If this rdata has a memmory registered, the MR can be freed
 	 * MR needs to be freed as soon as I/O finishes to prevent deadlock
@@ -4411,7 +4411,7 @@ smb2_writev_callback(struct mid_q_entry *mid)
 		wdata->result = -EIO;
 		break;
 	}
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	/*
 	 * If this wdata has a memory registered, the MR can be freed
 	 * The number of MRs available is limited, it's important to recover
@@ -4484,7 +4484,7 @@ smb2_async_writev(struct cifs_writedata *wdata,
 
 	trace_smb3_write_enter(0 /* xid */, wdata->cfile->fid.persistent_fid,
 		tcon->tid, tcon->ses->Suid, wdata->offset, wdata->bytes);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	/*
 	 * If we want to do a server RDMA read, fill in and append
 	 * smbd_buffer_descriptor_v1 to the end of write request
@@ -4536,7 +4536,7 @@ smb2_async_writev(struct cifs_writedata *wdata,
 	rqst.rq_npages = wdata->nr_pages;
 	rqst.rq_pagesz = wdata->pagesz;
 	rqst.rq_tailsz = wdata->tailsz;
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (wdata->mr) {
 		iov[0].iov_len += sizeof(struct smbd_buffer_descriptor_v1);
 		rqst.rq_npages = 0;
@@ -4545,7 +4545,7 @@ smb2_async_writev(struct cifs_writedata *wdata,
 	cifs_dbg(FYI, "async write at %llu %u bytes\n",
 		 wdata->offset, wdata->bytes);
 
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	/* For RDMA read, I/O size is in RemainingBytes not in Length */
 	if (!wdata->mr)
 		req->Length = cpu_to_le32(wdata->bytes);

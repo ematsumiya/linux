@@ -22,7 +22,7 @@
 #include <linux/swap.h>
 #include <linux/mm.h>
 #include <asm/div64.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
@@ -2946,7 +2946,7 @@ cifs_resend_wdata(struct cifs_writedata *wdata, struct list_head *wdata_list,
 			if (wdata->cfile->invalidHandle)
 				rc = -EAGAIN;
 			else {
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 				if (wdata->mr) {
 					wdata->mr->need_invalidate = true;
 					smbd_deregister_mr(wdata->mr);
@@ -3459,7 +3459,7 @@ cifs_readdata_release(struct kref *refcount)
 {
 	struct cifs_readdata *rdata = container_of(refcount,
 					struct cifs_readdata, refcount);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (rdata->mr) {
 		smbd_deregister_mr(rdata->mr);
 		rdata->mr = NULL;
@@ -3603,7 +3603,7 @@ uncached_fill_pages(struct TCP_Server_Info *server,
 		if (iter)
 			result = copy_page_from_iter(
 					page, page_offset, n, iter);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 		else if (rdata->mr)
 			result = n;
 #endif
@@ -3680,7 +3680,7 @@ static int cifs_resend_rdata(struct cifs_readdata *rdata,
 			if (rdata->cfile->invalidHandle)
 				rc = -EAGAIN;
 			else {
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 				if (rdata->mr) {
 					rdata->mr->need_invalidate = true;
 					smbd_deregister_mr(rdata->mr);
@@ -4216,7 +4216,7 @@ cifs_page_mkwrite(struct vm_fault *vmf)
 	/* Wait for the page to be written to the cache before we allow it to
 	 * be modified.  We then assume the entire page will need writing back.
 	 */
-#ifdef CONFIG_CIFS_FSCACHE
+#ifdef CONFIG_SMBFS_FSCACHE
 	if (PageFsCache(page) &&
 	    wait_on_page_fscache_killable(page) < 0)
 		return VM_FAULT_RETRY;
@@ -4371,7 +4371,7 @@ readpages_fill_pages(struct TCP_Server_Info *server,
 		if (iter)
 			result = copy_page_from_iter(
 					page, page_offset, n, iter);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 		else if (rdata->mr)
 			result = n;
 #endif
@@ -4963,7 +4963,7 @@ static void cifs_swap_deactivate(struct file *file)
  * Mark a page as having been made dirty and thus needing writeback.  We also
  * need to pin the cache object to write back to.
  */
-#ifdef CONFIG_CIFS_FSCACHE
+#ifdef CONFIG_SMBFS_FSCACHE
 static bool cifs_dirty_folio(struct address_space *mapping, struct folio *folio)
 {
 	return fscache_dirty_folio(mapping, folio,
