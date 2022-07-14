@@ -384,21 +384,21 @@ cifs_downgrade_oplock(struct TCP_Server_Info *server,
 
 static bool
 cifs_check_trans2(struct mid_q_entry *mid, struct TCP_Server_Info *server,
-		  char *buf, int malformed)
+		  char *buf)
 {
-	if (malformed)
-		return false;
 	if (check2ndT2(buf) <= 0)
 		return false;
 	mid->multiRsp = true;
 	if (mid->resp_buf) {
+		int rc;
 		/* merge response - fix up 1st*/
-		malformed = coalesce_t2(buf, mid->resp_buf);
-		if (malformed > 0)
+		rc = coalesce_t2(buf, mid->resp_buf);
+		if (rc > 0)
 			return true;
 		/* All parts received or packet is malformed. */
 		mid->multiEnd = true;
-		dequeue_mid(mid, malformed);
+		mid->mid_state = MID_RESPONSE_RECEIVED;
+		dequeue_mid(mid);
 		return true;
 	}
 	if (!server->large_buf) {

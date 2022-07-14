@@ -844,28 +844,20 @@ is_smb_response(struct TCP_Server_Info *server, unsigned char type)
 }
 
 void
-dequeue_mid(struct mid_q_entry *mid, bool malformed)
+dequeue_mid(struct mid_q_entry *mid)
 {
 #ifdef CONFIG_CIFS_STATS2
 	mid->when_received = jiffies;
 #endif
-	spin_lock(&GlobalMid_Lock);
-	if (!malformed)
-		mid->mid_state = MID_RESPONSE_RECEIVED;
-	else
-		mid->mid_state = MID_RESPONSE_MALFORMED;
-	/*
-	 * Trying to handle/dequeue a mid after the send_recv()
-	 * function has finished processing it is a bug.
-	 */
 	if (mid->mid_flags & MID_DELETED) {
-		spin_unlock(&GlobalMid_Lock);
 		pr_warn_once("trying to dequeue a deleted mid\n");
-	} else {
-		list_del_init(&mid->qhead);
-		mid->mid_flags |= MID_DELETED;
-		spin_unlock(&GlobalMid_Lock);
+		return;
 	}
+
+	spin_lock(&GlobalMid_Lock);
+	list_del_init(&mid->qhead);
+	mid->mid_flags |= MID_DELETED;
+	spin_unlock(&GlobalMid_Lock);
 }
 
 static unsigned int
@@ -883,15 +875,16 @@ smb2_get_credits_from_hdr(char *buffer, struct TCP_Server_Info *server)
 }
 
 static void
-handle_mid(struct mid_q_entry *mid, struct TCP_Server_Info *server,
-	   char *buf, int malformed)
+handle_mid(struct mid_q_entry *mid, struct TCP_Server_Info *server, char *buf)
 {
 	if (server->ops->check_trans2 &&
-	    server->ops->check_trans2(mid, server, buf, malformed))
+	    server->ops->check_trans2(mid, server, buf))
 		return;
+
 	mid->credits_received = smb2_get_credits_from_hdr(buf, server);
 	mid->resp_buf = buf;
 	mid->large_buf = server->large_buf;
+
 	/* Was previous buf put in mpx struct for multi-rsp? */
 	if (!mid->multiRsp) {
 		/* smb buffer will be freed by user thread */
@@ -900,7 +893,8 @@ handle_mid(struct mid_q_entry *mid, struct TCP_Server_Info *server,
 		else
 			server->smallbuf = NULL;
 	}
-	dequeue_mid(mid, malformed);
+
+	dequeue_mid(mid);
 }
 
 static void clean_demultiplex_info(struct TCP_Server_Info *server)
@@ -1050,9 +1044,6 @@ cifs_handle_standard(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	 * into the payload for debugging purposes.
 	 */
 	rc = server->ops->check_message(buf, server->total_read, server);
-	if (rc)
-		cifs_dump_mem("Bad SMB: ", buf,
-			min_t(unsigned int, server->total_read, 48));
 
 	if (server->ops->is_session_expired &&
 	    server->ops->is_session_expired(buf)) {
@@ -1067,7 +1058,16 @@ cifs_handle_standard(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	if (!mid)
 		return rc;
 
-	handle_mid(mid, server, buf, rc);
+	if (unlikely(rc)) {
+		cifs_dump_mem("Bad SMB: ", buf,
+			      min_t(unsigned int, server->total_read, 48));
+		/* mid is malformed */
+		mid->mid_state = MID_RESPONSE_MALFORMED;
+	} else {
+		mid->mid_state = MID_RESPONSE_RECEIVED;
+	}
+
+	handle_mid(mid, server, buf);
 	return 0;
 }
 

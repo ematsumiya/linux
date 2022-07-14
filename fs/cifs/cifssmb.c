@@ -1406,24 +1406,15 @@ cifs_discard_remaining_data(struct TCP_Server_Info *server)
 }
 
 static int
-__cifs_readv_discard(struct TCP_Server_Info *server, struct mid_q_entry *mid,
-		     bool malformed)
+cifs_readv_discard(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 {
 	int length;
 
 	length = cifs_discard_remaining_data(server);
-	dequeue_mid(mid, malformed);
+	dequeue_mid(mid);
 	mid->resp_buf = server->smallbuf;
 	server->smallbuf = NULL;
 	return length;
-}
-
-static int
-cifs_readv_discard(struct TCP_Server_Info *server, struct mid_q_entry *mid)
-{
-	struct cifs_readdata *rdata = mid->callback_data;
-
-	return  __cifs_readv_discard(server, mid, rdata->result);
 }
 
 int
@@ -1483,7 +1474,8 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 		cifs_dbg(FYI, "%s: server returned error %d\n",
 			 __func__, rdata->result);
 		/* normal error on read response */
-		return __cifs_readv_discard(server, mid, false);
+		mid->mid_state = MID_RESPONSE_RECEIVED;
+		return cifs_readv_discard(server, mid);
 	}
 
 	/* Is there enough to get to the rest of the READ_RSP header? */
@@ -1491,8 +1483,7 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 		cifs_dbg(FYI, "%s: server returned short header. got=%u expected=%zu\n",
 			 __func__, server->total_read,
 			 server->vals->read_rsp_size);
-		rdata->result = -EIO;
-		return cifs_readv_discard(server, mid);
+		goto err_discard;
 	}
 
 	data_offset = server->ops->read_data_offset(buf) +
@@ -1510,8 +1501,7 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 		/* data_offset is beyond the end of smallbuf */
 		cifs_dbg(FYI, "%s: data offset (%u) beyond end of smallbuf\n",
 			 __func__, data_offset);
-		rdata->result = -EIO;
-		return cifs_readv_discard(server, mid);
+		goto err_discard;
 	}
 
 	cifs_dbg(FYI, "%s: total_read=%u data_offset=%u\n",
@@ -1534,8 +1524,7 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	data_len = server->ops->read_data_length(buf, use_rdma_mr);
 	if (!use_rdma_mr && (data_offset + data_len > buflen)) {
 		/* data_len is corrupt -- discard frame */
-		rdata->result = -EIO;
-		return cifs_readv_discard(server, mid);
+		goto err_discard;
 	}
 
 	length = rdata->read_into_pages(server, rdata, data_len);
@@ -1551,10 +1540,16 @@ cifs_readv_receive(struct TCP_Server_Info *server, struct mid_q_entry *mid)
 	if (server->total_read < buflen)
 		return cifs_readv_discard(server, mid);
 
-	dequeue_mid(mid, false);
+	mid->mid_state = MID_RESPONSE_RECEIVED;
+	dequeue_mid(mid);
 	mid->resp_buf = server->smallbuf;
 	server->smallbuf = NULL;
 	return length;
+
+err_discard:
+	rdata->result = -EIO;
+	mid->mid_state = MID_RESPONSE_MALFORMED;
+	return cifs_readv_discard(server, mid);
 }
 
 static void

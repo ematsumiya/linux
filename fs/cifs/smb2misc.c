@@ -26,17 +26,15 @@ check_smb2_hdr(struct smb2_hdr *shdr, __u64 mid)
 	 * Make sure that this really is an SMB, that it is a response,
 	 * and that the message ids match.
 	 */
-	if ((shdr->ProtocolId == SMB2_PROTO_NUMBER) &&
-	    (mid == wire_mid)) {
+	if ((shdr->ProtocolId == SMB2_PROTO_NUMBER) && (mid == wire_mid)) {
 		if (shdr->Flags & SMB2_FLAGS_SERVER_TO_REDIR)
 			return 0;
-		else {
-			/* only one valid case where server sends us request */
-			if (shdr->Command == SMB2_OPLOCK_BREAK)
-				return 0;
-			else
-				cifs_dbg(VFS, "Received Request not response\n");
-		}
+
+		/* only one valid case where server sends us request */
+		if (shdr->Command == SMB2_OPLOCK_BREAK)
+			return 0;
+
+		cifs_dbg(VFS, "Received Request not response\n");
 	} else { /* bad signature or mid */
 		if (shdr->ProtocolId != SMB2_PROTO_NUMBER)
 			cifs_dbg(VFS, "Bad protocol string signature header %x\n",
@@ -45,7 +43,7 @@ check_smb2_hdr(struct smb2_hdr *shdr, __u64 mid)
 			cifs_dbg(VFS, "Mids do not match: %llu and %llu\n",
 				 mid, wire_mid);
 	}
-	cifs_dbg(VFS, "Bad SMB detected. The Mid=%llu\n", wire_mid);
+	cifs_dbg(VFS, "Bad SMB detected, mid=%llu\n", wire_mid);
 	return 1;
 }
 

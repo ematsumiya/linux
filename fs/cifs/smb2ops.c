@@ -335,7 +335,7 @@ smb2_revert_current_mid(struct TCP_Server_Info *server, const unsigned int val)
 }
 
 static struct mid_q_entry *
-__smb2_find_mid(struct TCP_Server_Info *server, char *buf, bool dequeue)
+smb2_find_mid(struct TCP_Server_Info *server, char *buf)
 {
 	struct mid_q_entry *mid;
 	struct smb2_hdr *shdr = (struct smb2_hdr *)buf;
@@ -352,28 +352,12 @@ __smb2_find_mid(struct TCP_Server_Info *server, char *buf, bool dequeue)
 		    (mid->mid_state == MID_REQUEST_SUBMITTED) &&
 		    (mid->command == shdr->Command)) {
 			kref_get(&mid->refcount);
-			if (dequeue) {
-				list_del_init(&mid->qhead);
-				mid->mid_flags |= MID_DELETED;
-			}
 			spin_unlock(&GlobalMid_Lock);
 			return mid;
 		}
 	}
 	spin_unlock(&GlobalMid_Lock);
 	return NULL;
-}
-
-static struct mid_q_entry *
-smb2_find_mid(struct TCP_Server_Info *server, char *buf)
-{
-	return __smb2_find_mid(server, buf, false);
-}
-
-static struct mid_q_entry *
-smb2_find_dequeue_mid(struct TCP_Server_Info *server, char *buf)
-{
-	return __smb2_find_mid(server, buf, true);
 }
 
 static void
@@ -4912,7 +4896,7 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 	}
 
 	if (server->ops->is_status_pending &&
-			server->ops->is_status_pending(buf, server))
+	    server->ops->is_status_pending(buf, server))
 		return -1;
 
 	/* set up first two iov to get credits */
@@ -4931,11 +4915,9 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 		cifs_dbg(FYI, "%s: server returned error %d\n",
 			 __func__, rdata->result);
 		/* normal error on read response */
-		if (is_offloaded)
-			mid->mid_state = MID_RESPONSE_RECEIVED;
-		else
-			dequeue_mid(mid, false);
-		return 0;
+		mid->mid_state = MID_RESPONSE_RECEIVED;
+		length = 0;
+		goto err_out;
 	}
 
 	data_offset = server->ops->read_data_offset(buf);
@@ -4958,11 +4940,7 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 		cifs_dbg(FYI, "%s: data offset (%u) beyond end of smallbuf\n",
 			 __func__, data_offset);
 		rdata->result = -EIO;
-		if (is_offloaded)
-			mid->mid_state = MID_RESPONSE_MALFORMED;
-		else
-			dequeue_mid(mid, rdata->result);
-		return 0;
+		goto err_malformed;
 	}
 
 	pad_len = data_offset - server->vals->read_rsp_size;
@@ -4977,32 +4955,19 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 			cifs_dbg(FYI, "%s: data offset (%u) beyond 1st page of response\n",
 				 __func__, data_offset);
 			rdata->result = -EIO;
-			if (is_offloaded)
-				mid->mid_state = MID_RESPONSE_MALFORMED;
-			else
-				dequeue_mid(mid, rdata->result);
-			return 0;
+			goto err_malformed;
 		}
 
 		if (data_len > page_data_size - pad_len) {
 			/* data_len is corrupt -- discard frame */
 			rdata->result = -EIO;
-			if (is_offloaded)
-				mid->mid_state = MID_RESPONSE_MALFORMED;
-			else
-				dequeue_mid(mid, rdata->result);
-			return 0;
+			goto err_malformed;
 		}
 
 		rdata->result = init_read_bvec(pages, npages, page_data_size,
 					       cur_off, &bvec);
-		if (rdata->result != 0) {
-			if (is_offloaded)
-				mid->mid_state = MID_RESPONSE_MALFORMED;
-			else
-				dequeue_mid(mid, rdata->result);
-			return 0;
-		}
+		if (rdata->result != 0)
+			goto err_malformed;
 
 		iov_iter_bvec(&iter, WRITE, bvec, npages, data_len);
 	} else if (buf_len >= data_offset + data_len) {
@@ -5015,24 +4980,26 @@ handle_read_data(struct TCP_Server_Info *server, struct mid_q_entry *mid,
 		/* read response payload cannot be in both buf and pages */
 		WARN_ONCE(1, "buf can not contain only a part of read data");
 		rdata->result = -EIO;
-		if (is_offloaded)
-			mid->mid_state = MID_RESPONSE_MALFORMED;
-		else
-			dequeue_mid(mid, rdata->result);
-		return 0;
+		goto err_malformed;
 	}
 
 	length = rdata->copy_into_pages(server, rdata, &iter);
 
 	kfree(bvec);
 
-	if (length < 0)
+err_out:
+	if (length <= 0)
 		return length;
 
-	if (is_offloaded)
-		mid->mid_state = MID_RESPONSE_RECEIVED;
+err_malformed:
+	if (rdata->result != 0)
+		mid->mid_state = MID_RESPONSE_MALFORMED;
 	else
-		dequeue_mid(mid, false);
+		mid->mid_state = MID_RESPONSE_RECEIVED;
+
+	if (!is_offloaded)
+		dequeue_mid(mid);
+
 	return length;
 }
 
@@ -5061,43 +5028,44 @@ static void smb2_decrypt_offload(struct work_struct *work)
 	}
 
 	dw->server->lstrp = jiffies;
-	mid = smb2_find_dequeue_mid(dw->server, dw->buf);
-	if (mid == NULL)
+	mid = smb2_find_mid(dw->server, dw->buf);
+	if (mid == NULL) {
 		cifs_dbg(FYI, "mid not found\n");
-	else {
-		mid->decrypted = true;
-		rc = handle_read_data(dw->server, mid, dw->buf,
-				      dw->server->vals->read_rsp_size,
-				      dw->ppages, dw->npages, dw->len,
-				      true);
-		if (rc >= 0) {
-#ifdef CONFIG_CIFS_STATS2
-			mid->when_received = jiffies;
-#endif
-			if (dw->server->ops->is_network_name_deleted)
-				dw->server->ops->is_network_name_deleted(dw->buf,
-									 dw->server);
-
-			mid->callback(mid);
-		} else {
-			spin_lock(&cifs_tcp_ses_lock);
-			spin_lock(&GlobalMid_Lock);
-			if (dw->server->tcpStatus == CifsNeedReconnect) {
-				mid->mid_state = MID_RETRY_NEEDED;
-				spin_unlock(&GlobalMid_Lock);
-				spin_unlock(&cifs_tcp_ses_lock);
-				mid->callback(mid);
-			} else {
-				mid->mid_state = MID_REQUEST_SUBMITTED;
-				mid->mid_flags &= ~(MID_DELETED);
-				list_add_tail(&mid->qhead,
-					&dw->server->pending_mid_q);
-				spin_unlock(&GlobalMid_Lock);
-				spin_unlock(&cifs_tcp_ses_lock);
-			}
-		}
-		cifs_mid_q_entry_release(mid);
+		goto free_pages;
 	}
+
+	dequeue_mid(mid);
+
+	mid->decrypted = true;
+	rc = handle_read_data(dw->server, mid, dw->buf,
+			      dw->server->vals->read_rsp_size, dw->ppages,
+			      dw->npages, dw->len, true);
+	if (rc >= 0) {
+#ifdef CONFIG_CIFS_STATS2
+		mid->when_received = jiffies;
+#endif
+		if (dw->server->ops->is_network_name_deleted)
+			dw->server->ops->is_network_name_deleted(dw->buf, dw->server);
+
+		mid->callback(mid);
+	} else {
+		spin_lock(&cifs_tcp_ses_lock);
+		spin_lock(&GlobalMid_Lock);
+		if (dw->server->tcpStatus == CifsNeedReconnect) {
+			mid->mid_state = MID_RETRY_NEEDED;
+		} else {
+			mid->mid_state = MID_REQUEST_SUBMITTED;
+			mid->mid_flags &= ~(MID_DELETED);
+			list_add_tail(&mid->qhead, &dw->server->pending_mid_q);
+		}
+		spin_unlock(&GlobalMid_Lock);
+		spin_unlock(&cifs_tcp_ses_lock);
+
+		if (mid->mid_state == MID_RETRY_NEEDED)
+			mid->callback(mid);
+	}
+
+	cifs_mid_q_entry_release(mid);
 
 free_pages:
 	for (i = dw->npages-1; i >= 0; i--)
@@ -5191,21 +5159,17 @@ non_offloaded_decrypt:
 		goto free_pages;
 
 	*mid = smb2_find_mid(server, buf);
-	if (*mid == NULL)
+	if (*mid == NULL) {
 		cifs_dbg(FYI, "mid not found\n");
-	else {
-		cifs_dbg(FYI, "mid found\n");
-		(*mid)->decrypted = true;
-		rc = handle_read_data(server, *mid, buf,
-				      server->vals->read_rsp_size,
-				      pages, npages, len, false);
-		if (rc >= 0) {
-			if (server->ops->is_network_name_deleted) {
-				server->ops->is_network_name_deleted(buf,
-								server);
-			}
-		}
+		goto free_pages;
 	}
+
+	(*mid)->decrypted = true;
+	rc = handle_read_data(server, *mid, buf, server->vals->read_rsp_size,
+			      pages, npages, len, false);
+	if (rc >= 0)
+		if (server->ops->is_network_name_deleted)
+			server->ops->is_network_name_deleted(buf, server);
 
 free_pages:
 	for (i = i - 1; i >= 0; i--)
@@ -5253,7 +5217,7 @@ receive_encrypted_standard(struct TCP_Server_Info *server,
 		return length;
 
 	next_is_large = server->large_buf;
-one_more:
+next:
 	shdr = (struct smb2_hdr *)buf;
 	if (shdr->NextCommand) {
 		if (next_is_large)
@@ -5266,10 +5230,7 @@ one_more:
 	}
 
 	mid_entry = smb2_find_mid(server, buf);
-	if (mid_entry == NULL)
-		cifs_dbg(FYI, "mid not found\n");
-	else {
-		cifs_dbg(FYI, "mid found\n");
+	if (mid_entry) {
 		mid_entry->decrypted = true;
 		mid_entry->resp_buf_size = server->pdu_size;
 	}
@@ -5278,6 +5239,7 @@ one_more:
 		cifs_server_dbg(VFS, "too many PDUs in compound\n");
 		return -1;
 	}
+
 	bufs[*num_mids] = buf;
 	mids[(*num_mids)++] = mid_entry;
 
@@ -5293,7 +5255,7 @@ one_more:
 			server->bigbuf = buf = next_buffer;
 		else
 			server->smallbuf = buf = next_buffer;
-		goto one_more;
+		goto next;
 	} else if (ret != 0) {
 		/*
 		 * ret != 0 here means that we didn't get to handle_mid() thus

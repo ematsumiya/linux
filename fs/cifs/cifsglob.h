@@ -283,8 +283,7 @@ struct smb_version_operations {
 				 struct cifsInodeInfo *cinode, __u32 oplock,
 				 unsigned int epoch, bool *purge_cache);
 	/* process transaction2 response */
-	bool (*check_trans2)(struct mid_q_entry *, struct TCP_Server_Info *,
-			     char *, int);
+	bool (*check_trans2)(struct mid_q_entry *, struct TCP_Server_Info *, char *);
 	/* check if we need to negotiate */
 	bool (*need_neg)(struct TCP_Server_Info *);
 	/* negotiate to the server */
