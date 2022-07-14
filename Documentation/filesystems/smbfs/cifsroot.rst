@@ -1,15 +1,15 @@
 .. SPDX-License-Identifier: GPL-2.0
 
 ===========================================
-Mounting root file system via SMB (cifs.ko)
+Mounting root file system via SMB (smbfs.ko)
 ===========================================
 
 Written 2019 by Paulo Alcantara <palcantara@suse.de>
 
 Written 2019 by Aurelien Aptel <aaptel@suse.com>
 
-The CONFIG_CIFS_ROOT option enables experimental root file system
-support over the SMB protocol via cifs.ko.
+The CONFIG_SMBFS_ROOT option enables experimental root file system
+support over the SMB protocol via smbfs.ko.
 
 It introduces a new kernel command-line option called 'cifsroot='
 which will tell the kernel to mount the root file system over the
@@ -19,7 +19,7 @@ In order to mount, the network stack will also need to be set up by
 using 'ip=' config option. For more details, see
 Documentation/admin-guide/nfs/nfsroot.rst.
 
-A CIFS root mount currently requires the use of SMB1+UNIX Extensions
+A SMBFS root mount currently requires the use of SMB1+UNIX Extensions
 which is only supported by the Samba server. SMB1 is the older
 deprecated version of the protocol but it has been extended to support
 POSIX features (See [1]). The equivalent extensions for the newer
@@ -27,7 +27,7 @@ recommended version of the protocol (SMB3) have not been fully
 implemented yet which means SMB3 doesn't support some required POSIX
 file system objects (e.g. block devices, pipes, sockets).
 
-As a result, a CIFS root will default to SMB1 for now but the version
+As a result, a SMBFS root will default to SMB1 for now but the version
 to use can nonetheless be changed via the 'vers=' mount option.  This
 default will change once the SMB3 POSIX extensions are fully
 implemented.
@@ -59,7 +59,7 @@ the root file system via SMB protocol.
 Enables the kernel to mount the root file system via SMB that are
 located in the <server-ip> and <share> specified in this option.
 
-The default mount options are set in fs/cifs/cifsroot.c.
+The default mount options are set in fs/smbfs/cifsroot.c.
 
 server-ip
 	IPv4 address of the server.
@@ -94,7 +94,7 @@ Restart smb service::
 
     # systemctl restart smb
 
-Test it under QEMU on a kernel built with CONFIG_CIFS_ROOT and
+Test it under QEMU on a kernel built with CONFIG_SMBFS_ROOT and
 CONFIG_IP_PNP options enabled::
 
     # qemu-system-x86_64 -enable-kvm -cpu host -m 1024 \

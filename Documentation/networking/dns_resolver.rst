@@ -31,7 +31,7 @@ It does not yet support the following AFS features:
 
  (*) Dns query support for AFSDB resource record.
 
-This code is extracted from the CIFS filesystem.
+This code is extracted from the SMBFS filesystem.
 
 
 Compilation

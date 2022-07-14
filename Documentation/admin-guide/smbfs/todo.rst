@@ -42,8 +42,8 @@ f) Finish inotify support so kde and gnome file list windows
    will autorefresh (partially complete by Asser). Needs minor kernel
    vfs change to support removing D_NOTIFY on a file.
 
-g) Add GUI tool to configure /proc/fs/cifs settings and for display of
-   the CIFS statistics (started)
+g) Add GUI tool to configure /proc/fs/smbfs settings and for display of
+   the SMBFS statistics (started)
 
 h) implement support for security and trusted categories of xattrs
    (requires minor protocol extension) to enable better support for SELINUX
@@ -56,7 +56,7 @@ j) Create UID mapping facility so server UIDs can be mapped on a per
    exists. Also better integration with winbind for resolving SID owners
 
 k) Add tools to take advantage of more smb3 specific ioctls and features
-   (passthrough ioctl/fsctl is now implemented in cifs.ko to allow
+   (passthrough ioctl/fsctl is now implemented in smbfs.ko to allow
    sending various SMB3 fsctls and query info and set info calls
    directly from user space) Add tools to make setting various non-POSIX
    metadata attributes easier from tools (e.g. extending what was done
@@ -67,7 +67,7 @@ l) encrypted file support (currently the attribute showing the file is
    supported).
 
 m) improved stats gathering tools (perhaps integration with nfsometer?)
-   to extend and make easier to use what is currently in /proc/fs/cifs/Stats
+   to extend and make easier to use what is currently in /proc/fs/smbfs/Stats
 
 n) Add support for claims based ACLs ("DAC")
 
@@ -81,14 +81,14 @@ q) Allow mount.cifs to be more verbose in reporting errors with dialect
    or unsupported feature errors. This would now be easier due to the
    implementation of the new mount API.
 
-r) updating cifs documentation, and user guide.
+r) updating smbfs documentation, and user guide.
 
 s) Addressing bugs found by running a broader set of xfstests in standard
    file system xfstest suite.
 
 t) split cifs and smb3 support into separate modules so legacy (and less
    secure) CIFS dialect can be disabled in environments that don't need it
-   and simplify the code.
+   and simplify the code. (work in progress)
 
 v) Additional testing of POSIX Extensions for SMB3.1.1
 
