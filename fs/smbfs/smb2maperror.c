@@ -2456,7 +2456,7 @@ map_smb2_to_linux_error(char *buf, bool log_err)
 	if (log_err && (smb2err != STATUS_MORE_PROCESSING_REQUIRED) &&
 	    (smb2err != STATUS_END_OF_FILE))
 		smb2_print_status(smb2err);
-	else if (cifsFYI & CIFS_RC)
+	else if (debug_level & CIFS_RC)
 		smb2_print_status(smb2err);
 
 	for (i = 0; i < sizeof(smb2_error_map_table) /

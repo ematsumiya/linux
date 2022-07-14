@@ -62,7 +62,7 @@ config SMBFS_STATS_EXTRA
 	  Enabling this option will allow more detailed statistics on SMB
 	  request timing to be displayed in /proc/fs/smbfs/DebugData and also
 	  allow optional logging of slow responses to dmesg (depending on the
-	  value of /proc/fs/smbfs/cifsFYI). See Documentation/admin-guide/smbfs/usage.rst
+	  value of /proc/fs/smbfs/debug_level). See Documentation/admin-guide/smbfs/usage.rst
 	  for more details. These additional statistics may have a minor effect
 	  on performance and memory utilization.
 

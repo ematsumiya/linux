@@ -258,7 +258,7 @@ smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
 			return 0;
 
 		/* Only log a message if len was really miscalculated */
-		if (unlikely(cifsFYI))
+		if (unlikely(debug_level))
 			cifs_dbg(FYI, "Server response too short: calculated "
 				 "length %u doesn't match read length %u (cmd=%d, mid=%llu)\n",
 				 calc_len, len, command, mid);

@@ -56,7 +56,7 @@
 #define SMB_DATE_MIN (0<<9 | 1<<5 | 1)
 #define SMB_TIME_MAX (23<<11 | 59<<5 | 29)
 
-int cifsFYI = 0;
+int debug_level = 0;
 bool traceSMB;
 bool enable_oplocks = true;
 bool linuxExtEnabled = true;
@@ -847,7 +847,7 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	 * Prints in Kernel / CIFS log the attempted mount operation
 	 *	If CIFS_DEBUG && cifs_FYI
 	 */
-	if (cifsFYI)
+	if (debug_level)
 		cifs_dbg(FYI, "Devname: %s flags: %d\n", old_ctx->UNC, flags);
 	else
 		cifs_info("Attempting to mount %s\n", old_ctx->UNC);

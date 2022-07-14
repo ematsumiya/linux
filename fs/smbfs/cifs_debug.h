@@ -5,27 +5,26 @@
  *   Modified by Steve French (sfrench@us.ibm.com)
  */
 
-#ifndef _H_CIFS_DEBUG
-#define _H_CIFS_DEBUG
+#ifndef _CIFS_DEBUG_H
+#define _CIFS_DEBUG_H
 
-#ifdef pr_fmt
 #undef pr_fmt
-#endif
-
-#define pr_fmt(fmt) "CIFS: " fmt
+#define pr_fmt(fmt) "SMBFS: " fmt
 
 void cifs_dump_mem(char *label, void *data, int length);
 void cifs_dump_detail(void *buf, struct TCP_Server_Info *ptcp_info);
 void cifs_dump_mids(struct TCP_Server_Info *);
 extern bool traceSMB;		/* flag which enables the function below */
 void dump_smb(void *, int);
+
 #define CIFS_INFO	0x01
 #define CIFS_RC		0x02
 #define CIFS_TIMER	0x04
 
 #define VFS 1
 #define FYI 2
-extern int cifsFYI;
+extern int debug_level;
+
 #ifdef CONFIG_SMBFS_DEBUG_EXTRA
 #define NOISY 4
 #else
@@ -61,7 +60,7 @@ extern int cifsFYI;
 /* information message: e.g., configuration, major event */
 #define cifs_dbg_func(ratefunc, type, fmt, ...)				\
 do {									\
-	if ((type) & FYI && cifsFYI & CIFS_INFO) {			\
+	if ((type) & FYI && debug_level & CIFS_INFO) {			\
 		pr_debug_ ## ratefunc("%s: " fmt,			\
 				      __FILE__, ##__VA_ARGS__);		\
 	} else if ((type) & VFS) {					\
@@ -84,7 +83,7 @@ do {									\
 	const char *sn = "";						\
 	if (server && server->hostname)					\
 		sn = server->hostname;					\
-	if ((type) & FYI && cifsFYI & CIFS_INFO) {			\
+	if ((type) & FYI && debug_level & CIFS_INFO) {			\
 		pr_debug_ ## ratefunc("%s: \\\\%s " fmt,		\
 				      __FILE__, sn, ##__VA_ARGS__);	\
 	} else if ((type) & VFS) {					\
@@ -110,7 +109,7 @@ do {									\
 	const char *tn = "";						\
 	if (tcon && tcon->treeName)					\
 		tn = tcon->treeName;					\
-	if ((type) & FYI && cifsFYI & CIFS_INFO) {			\
+	if ((type) & FYI && debug_level & CIFS_INFO) {			\
 		pr_debug_ ## ratefunc("%s: %s "	fmt,			\
 				      __FILE__, tn, ##__VA_ARGS__);	\
 	} else if ((type) & VFS) {					\
@@ -157,4 +156,4 @@ do {									\
 	pr_info(fmt, ##__VA_ARGS__)
 #endif
 
-#endif				/* _H_CIFS_DEBUG */
+#endif /* _CIFS_DEBUG_H */

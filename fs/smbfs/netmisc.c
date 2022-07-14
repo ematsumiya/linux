@@ -827,7 +827,7 @@ map_smb_to_linux_error(char *buf, bool logErr)
 		__u32 err = le32_to_cpu(smb->Status.CifsError);
 		if (logErr && (err != (NT_STATUS_MORE_PROCESSING_REQUIRED)))
 			cifs_print_status(err);
-		else if (cifsFYI & CIFS_RC)
+		else if (debug_level & CIFS_RC)
 			cifs_print_status(err);
 		ntstatus_to_dos(err, &smberrclass, &smberrcode);
 	} else {

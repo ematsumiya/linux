@@ -137,7 +137,7 @@ static void _cifs_mid_q_entry_release(struct kref *refcount)
 
 		trace_smb3_slow_rsp(smb_cmd, midEntry->mid, midEntry->pid,
 			       midEntry->when_sent, midEntry->when_received);
-		if (cifsFYI & CIFS_TIMER) {
+		if (debug_level & CIFS_TIMER) {
 			pr_debug("slow rsp: cmd %d mid %llu",
 				 midEntry->command, midEntry->mid);
 			cifs_info("A: 0x%lx S: 0x%lx R: 0x%lx\n",

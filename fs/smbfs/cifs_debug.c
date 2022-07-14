@@ -695,7 +695,7 @@ PROC_FILE_DEFINE(smbd_receive_credit_max);
 #endif
 
 static struct proc_dir_entry *proc_fs_cifs;
-static const struct proc_ops cifsFYI_proc_ops;
+static const struct proc_ops debug_level_proc_ops;
 static const struct proc_ops cifs_lookup_cache_proc_ops;
 static const struct proc_ops traceSMB_proc_ops;
 static const struct proc_ops cifs_security_flags_proc_ops;
@@ -716,7 +716,7 @@ cifs_proc_init(void)
 			cifs_debug_files_proc_show);
 
 	proc_create("Stats", 0644, proc_fs_cifs, &cifs_stats_proc_ops);
-	proc_create("cifsFYI", 0644, proc_fs_cifs, &cifsFYI_proc_ops);
+	proc_create("debug_level", 0644, proc_fs_cifs, &debug_level_proc_ops);
 	proc_create("traceSMB", 0644, proc_fs_cifs, &traceSMB_proc_ops);
 	proc_create("LinuxExtensionsEnabled", 0644, proc_fs_cifs,
 		    &cifs_linux_ext_proc_ops);
@@ -759,7 +759,7 @@ cifs_proc_clean(void)
 
 	remove_proc_entry("DebugData", proc_fs_cifs);
 	remove_proc_entry("open_files", proc_fs_cifs);
-	remove_proc_entry("cifsFYI", proc_fs_cifs);
+	remove_proc_entry("debug_level", proc_fs_cifs);
 	remove_proc_entry("traceSMB", proc_fs_cifs);
 	remove_proc_entry("Stats", proc_fs_cifs);
 	remove_proc_entry("SecurityFlags", proc_fs_cifs);
@@ -783,18 +783,18 @@ cifs_proc_clean(void)
 	remove_proc_entry("fs/smbfs", NULL);
 }
 
-static int cifsFYI_proc_show(struct seq_file *m, void *v)
+static int debug_level_proc_show(struct seq_file *m, void *v)
 {
-	seq_printf(m, "%d\n", cifsFYI);
+	seq_printf(m, "%d\n", debug_level);
 	return 0;
 }
 
-static int cifsFYI_proc_open(struct inode *inode, struct file *file)
+static int debug_level_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, cifsFYI_proc_show, NULL);
+	return single_open(file, debug_level_proc_show, NULL);
 }
 
-static ssize_t cifsFYI_proc_write(struct file *file, const char __user *buffer,
+static ssize_t debug_level_proc_write(struct file *file, const char __user *buffer,
 		size_t count, loff_t *ppos)
 {
 	char c[2] = { '\0' };
@@ -805,21 +805,21 @@ static ssize_t cifsFYI_proc_write(struct file *file, const char __user *buffer,
 	if (rc)
 		return rc;
 	if (strtobool(c, &bv) == 0)
-		cifsFYI = bv;
+		debug_level = bv;
 	else if ((c[0] > '1') && (c[0] <= '9'))
-		cifsFYI = (int) (c[0] - '0'); /* see cifs_debug.h for meanings */
+		debug_level = (int) (c[0] - '0'); /* see cifs_debug.h for meanings */
 	else
 		return -EINVAL;
 
 	return count;
 }
 
-static const struct proc_ops cifsFYI_proc_ops = {
-	.proc_open	= cifsFYI_proc_open,
+static const struct proc_ops debug_level_proc_ops = {
+	.proc_open	= debug_level_proc_open,
 	.proc_read	= seq_read,
 	.proc_lseek	= seq_lseek,
 	.proc_release	= single_release,
-	.proc_write	= cifsFYI_proc_write,
+	.proc_write	= debug_level_proc_write,
 };
 
 static int cifs_linux_ext_proc_show(struct seq_file *m, void *v)
