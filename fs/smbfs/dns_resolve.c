@@ -17,7 +17,7 @@
 #include "dns_resolve.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 
 /**
  * dns_resolve_server_name_to_ip - Resolve UNC server name to ip address.
@@ -43,7 +43,7 @@ dns_resolve_server_name_to_ip(const char *unc, char **ip_addr, time64_t *expiry)
 
 	len = strlen(unc);
 	if (len < 3) {
-		cifs_dbg(FYI, "%s: unc is too short: %s\n", __func__, unc);
+		smbfs_dbg("UNC is too short: %s\n", unc);
 		return -EINVAL;
 	}
 
@@ -56,8 +56,7 @@ dns_resolve_server_name_to_ip(const char *unc, char **ip_addr, time64_t *expiry)
 	if (sep)
 		len = sep - hostname;
 	else
-		cifs_dbg(FYI, "%s: probably server name is whole unc: %s\n",
-			 __func__, unc);
+		smbfs_dbg("probably server name is whole UNC: %s\n", unc);
 
 	/* Try to interpret hostname as an IPv4 or IPv6 address */
 	rc = cifs_convert_address((struct sockaddr *)&ss, hostname, len);
@@ -68,12 +67,10 @@ dns_resolve_server_name_to_ip(const char *unc, char **ip_addr, time64_t *expiry)
 	rc = dns_query(current->nsproxy->net_ns, NULL, hostname, len,
 		       NULL, ip_addr, expiry, false);
 	if (rc < 0)
-		cifs_dbg(FYI, "%s: unable to resolve: %*.*s\n",
-			 __func__, len, len, hostname);
+		smbfs_dbg("unable to resolve: %*.*s\n", len, len, hostname);
 	else
-		cifs_dbg(FYI, "%s: resolved: %*.*s to %s expiry %llu\n",
-			 __func__, len, len, hostname, *ip_addr,
-			 expiry ? (*expiry) : 0);
+		smbfs_dbg("resolved: %*.*s to %s expiry %llu\n",
+			  len, len, hostname, *ip_addr, expiry ? (*expiry) : 0);
 	return rc;
 
 name_is_IP_address:
@@ -82,8 +79,7 @@ name_is_IP_address:
 		return -ENOMEM;
 	memcpy(name, hostname, len);
 	name[len] = 0;
-	cifs_dbg(FYI, "%s: unc is IP, skipping dns upcall: %s\n",
-		 __func__, name);
+	smbfs_dbg("UNC is IP, skipping DNS upcall: %s\n", name);
 	*ip_addr = name;
 	return 0;
 }

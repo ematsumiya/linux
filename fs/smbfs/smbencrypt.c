@@ -22,7 +22,7 @@
 #include "cifs_unicode.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifsproto.h"
 #include "../smbfs_common/md4.h"
 
@@ -47,17 +47,17 @@ mdfour(unsigned char *md4_hash, unsigned char *link_str, int link_len)
 
 	rc = cifs_md4_init(&mctx);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init MD4\n", __func__);
+		smbfs_log("%s: Could not init MD4\n", __func__);
 		goto mdfour_err;
 	}
 	rc = cifs_md4_update(&mctx, link_str, link_len);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update MD4\n", __func__);
+		smbfs_log("%s: Could not update MD4\n", __func__);
 		goto mdfour_err;
 	}
 	rc = cifs_md4_final(&mctx, md4_hash);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not finalize MD4\n", __func__);
+		smbfs_log("%s: Could not finalize MD4\n", __func__);
 
 
 mdfour_err:

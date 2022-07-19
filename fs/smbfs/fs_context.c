@@ -30,7 +30,7 @@
 #include "cifsglob.h"
 #include "cifsproto.h"
 #include "cifs_unicode.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "ntlmssp.h"
 #include "nterr.h"
@@ -484,7 +484,7 @@ smb3_parse_devname(const char *devname, struct smb3_fs_context *ctx)
 	size_t len;
 
 	if (unlikely(!devname || !*devname)) {
-		cifs_dbg(VFS, "Device name not specified\n");
+		smbfs_log("Device name not specified\n");
 		return -EINVAL;
 	}
 
@@ -844,7 +844,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 	kuid_t uid;
 	kgid_t gid;
 
-	cifs_dbg(FYI, "CIFS: parsing cifs mount option '%s'\n", param->key);
+	smbfs_dbg("CIFS: parsing cifs mount option '%s'\n", param->key);
 
 	/*
 	 * fs_parse can not handle string options with an empty value so
@@ -869,8 +869,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 	switch (opt) {
 	case Opt_compress:
 		ctx->compression = UNKNOWN_TYPE;
-		cifs_dbg(VFS,
-			"SMB3 compression support is experimental\n");
+		smbfs_log("SMB3 compression support is experimental\n");
 		break;
 	case Opt_nodfs:
 		ctx->nodfs = 1;
@@ -1191,7 +1190,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 			cifs_errorf(fc, "OOM when copying domainname string\n");
 			goto cifs_parse_mount_err;
 		}
-		cifs_dbg(FYI, "Domain name set\n");
+		smbfs_dbg("Domain name set\n");
 		break;
 	case Opt_srcaddr:
 		if (!cifs_convert_address(
@@ -1219,7 +1218,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		/* if iocharset not set then load_nls_default
 		 * is used by caller
 		 */
-		cifs_dbg(FYI, "iocharset set to %s\n", ctx->iocharset);
+		smbfs_dbg("iocharset set to %s\n", ctx->iocharset);
 		break;
 	case Opt_netbiosname:
 		memset(ctx->source_rfc1001_name, 0x20,
@@ -1300,7 +1299,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		break;
 	case Opt_rootfs:
 #ifndef CONFIG_SMBFS_ROOT
-		cifs_dbg(VFS, "rootfs support requires CONFIG_SMBFS_ROOT config option\n");
+		smbfs_log("rootfs support requires CONFIG_SMBFS_ROOT config option\n");
 		goto cifs_parse_mount_err;
 #endif
 		ctx->rootfs = true;
@@ -1396,7 +1395,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		ctx->seal = 1;
 		break;
 	case Opt_noac:
-		pr_warn("Mount option noac not supported. Instead set /proc/fs/smbfs/LookupCacheEnabled to 0\n");
+		pr_warn("Mount option noac not supported. Instead set /proc/fs/smbfs/lookup_cache to 0\n");
 		break;
 	case Opt_fsc:
 #ifndef CONFIG_SMBFS_FSCACHE
@@ -1738,7 +1737,7 @@ void smb3_update_mnt_flags(struct cifs_sb_info *cifs_sb)
 			 * Apple compatibility (probably better for Samba too)
 			 * while still recognizing old Windows style symlinks.
 			 */
-			cifs_dbg(VFS, "mount options mfsymlinks and sfu both enabled\n");
+			smbfs_log("mount options mfsymlinks and sfu both enabled\n");
 		}
 	}
 	cifs_sb->mnt_cifs_flags &= ~CIFS_MOUNT_SHUTDOWN;

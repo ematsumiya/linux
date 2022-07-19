@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (C) International Business Machines  Corp., 2002, 2011
+ *   Copyright (C) International Business Machines Corp., 2002, 2011
  *                 Etersoft, 2012
  *   Author(s): Pavel Shilovsky (pshilovsky@samba.org),
  *              Steve French (sfrench@us.ibm.com)
@@ -16,7 +16,7 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "fscache.h"
@@ -339,7 +339,7 @@ smb2_compound_op(const unsigned int xid, struct cifs_tcon *tcon,
 		trace_smb3_hardlink_enter(xid, ses->Suid, tcon->tid, full_path);
 		break;
 	default:
-		cifs_dbg(VFS, "Invalid command\n");
+		smbfs_log("Invalid command\n");
 		rc = -EINVAL;
 	}
 	if (rc)

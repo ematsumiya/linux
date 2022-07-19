@@ -8,7 +8,7 @@
  */
 #include "fscache.h"
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifsproto.h"
 
@@ -39,7 +39,7 @@ int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon)
 	case AF_INET6:
 		break;
 	default:
-		cifs_dbg(VFS, "Unknown network family '%d'\n", sa->sa_family);
+		smbfs_log("Unknown network family '%d'\n", sa->sa_family);
 		return -EINVAL;
 	}
 
@@ -47,7 +47,7 @@ int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon)
 
 	sharename = extract_sharename(tcon->treeName);
 	if (IS_ERR(sharename)) {
-		cifs_dbg(FYI, "%s: couldn't extract sharename\n", __func__);
+		smbfs_dbg("couldn't extract sharename\n");
 		return -EINVAL;
 	}
 
@@ -64,7 +64,7 @@ int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon)
 	vcookie = fscache_acquire_volume(key,
 					 NULL, /* preferred_cache */
 					 &cd, sizeof(cd));
-	cifs_dbg(FYI, "%s: (%s/0x%p)\n", __func__, key, vcookie);
+	smbfs_dbg("(%s/0x%p)\n", key, vcookie);
 	if (IS_ERR(vcookie)) {
 		if (vcookie != ERR_PTR(-EBUSY)) {
 			ret = PTR_ERR(vcookie);
@@ -87,7 +87,7 @@ void cifs_fscache_release_super_cookie(struct cifs_tcon *tcon)
 {
 	struct cifs_fscache_volume_coherency_data cd;
 
-	cifs_dbg(FYI, "%s: (0x%p)\n", __func__, tcon->fscache);
+	smbfs_dbg("(0x%p)\n", tcon->fscache);
 
 	cifs_fscache_fill_volume_coherency(tcon, &cd);
 	fscache_relinquish_volume(tcon->fscache, &cd, false);
@@ -129,7 +129,7 @@ void cifs_fscache_release_inode_cookie(struct inode *inode)
 	struct fscache_cookie *cookie = cifs_inode_cookie(inode);
 
 	if (cookie) {
-		cifs_dbg(FYI, "%s: (0x%p)\n", __func__, cookie);
+		smbfs_dbg("(0x%p)\n", cookie);
 		fscache_relinquish_cookie(cookie, false);
 		cifsi->netfs.cache = NULL;
 	}
@@ -201,8 +201,8 @@ int __cifs_readpage_from_fscache(struct inode *inode, struct page *page)
 {
 	int ret;
 
-	cifs_dbg(FYI, "%s: (fsc:%p, p:%p, i:0x%p\n",
-		 __func__, cifs_inode_cookie(inode), page, inode);
+	smbfs_dbg("(fsc 0x%p, page 0x%p, inode 0x%p\n",
+		  cifs_inode_cookie(inode), page, inode);
 
 	ret = fscache_fallback_read_page(inode, page);
 	if (ret < 0)
@@ -215,8 +215,8 @@ int __cifs_readpage_from_fscache(struct inode *inode, struct page *page)
 
 void __cifs_readpage_to_fscache(struct inode *inode, struct page *page)
 {
-	cifs_dbg(FYI, "%s: (fsc: %p, p: %p, i: %p)\n",
-		 __func__, cifs_inode_cookie(inode), page, inode);
+	smbfs_dbg("(fsc 0x%p, page 0x%p, inode 0x%p)\n",
+		  cifs_inode_cookie(inode), page, inode);
 
 	fscache_fallback_write_page(inode, page, true);
 }

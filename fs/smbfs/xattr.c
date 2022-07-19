@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (c) International Business Machines  Corp., 2003, 2007
+ *   Copyright (c) International Business Machines Corp., 2003, 2007
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
@@ -14,7 +14,7 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "cifs_ioctl.h"
@@ -123,14 +123,14 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 		search server for EAs or streams to
 		returns as xattrs */
 	if (size > MAX_EA_VALUE_SIZE) {
-		cifs_dbg(FYI, "size of EA value too large\n");
+		smbfs_dbg("size of EA value too large\n");
 		rc = -EOPNOTSUPP;
 		goto out;
 	}
 
 	switch (handler->flags) {
 	case XATTR_USER:
-		cifs_dbg(FYI, "%s:setting user xattr %s\n", __func__, name);
+		smbfs_dbg("%s:setting user xattr %s\n", __func__, name);
 		if ((strcmp(name, CIFS_XATTR_ATTRIB) == 0) ||
 		    (strcmp(name, SMB3_XATTR_ATTRIB) == 0)) {
 			rc = cifs_attrib_set(xid, pTcon, inode, full_path,
@@ -309,7 +309,7 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 	/* return alt name if available as pseudo attr */
 	switch (handler->flags) {
 	case XATTR_USER:
-		cifs_dbg(FYI, "%s:querying user xattr %s\n", __func__, name);
+		smbfs_dbg("%s:querying user xattr %s\n", __func__, name);
 		if ((strcmp(name, CIFS_XATTR_ATTRIB) == 0) ||
 		    (strcmp(name, SMB3_XATTR_ATTRIB) == 0)) {
 			rc = cifs_attrib_get(dentry, inode, value, size);
@@ -350,7 +350,7 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 				inode, full_path, &acllen, extra_info);
 		if (IS_ERR(pacl)) {
 			rc = PTR_ERR(pacl);
-			cifs_dbg(VFS, "%s: error %zd getting sec desc\n",
+			smbfs_log("%s: error %zd getting sec desc\n",
 				 __func__, rc);
 		} else {
 			if (value) {

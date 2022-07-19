@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (C) International Business Machines  Corp., 2002,2008
+ *   Copyright (C) International Business Machines Corp., 2002,2008
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
@@ -13,7 +13,7 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "smb2proto.h"
@@ -47,17 +47,17 @@ symlink_hash(unsigned int link_len, const char *link_str, u8 *md5_hash)
 
 	rc = crypto_shash_init(&sdescmd5->shash);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init md5 shash\n", __func__);
+		smbfs_log("%s: Could not init md5 shash\n", __func__);
 		goto symlink_hash_err;
 	}
 	rc = crypto_shash_update(&sdescmd5->shash, link_str, link_len);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update with link_str\n", __func__);
+		smbfs_log("%s: Could not update with link_str\n", __func__);
 		goto symlink_hash_err;
 	}
 	rc = crypto_shash_final(&sdescmd5->shash, md5_hash);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not generate md5 hash\n", __func__);
+		smbfs_log("%s: Could not generate md5 hash\n", __func__);
 
 symlink_hash_err:
 	cifs_free_hash(&md5, &sdescmd5);
@@ -90,7 +90,7 @@ parse_mf_symlink(const u8 *buf, unsigned int buf_len, unsigned int *_link_len,
 
 	rc = symlink_hash(link_len, link_str, md5_hash);
 	if (rc) {
-		cifs_dbg(FYI, "%s: MD5 hash failure: %d\n", __func__, rc);
+		smbfs_dbg("MD5 hash failure: %d\n", rc);
 		return rc;
 	}
 
@@ -129,7 +129,7 @@ format_mf_symlink(u8 *buf, unsigned int buf_len, const char *link_str)
 
 	rc = symlink_hash(link_len, link_str, md5_hash);
 	if (rc) {
-		cifs_dbg(FYI, "%s: MD5 hash failure: %d\n", __func__, rc);
+		smbfs_dbg("MD5 hash failure: %d\n", rc);
 		return rc;
 	}
 
@@ -446,7 +446,7 @@ smb3_create_mf_symlink(unsigned int xid, struct cifs_tcon *tcon,
 	__u8 oplock = SMB2_OPLOCK_LEVEL_NONE;
 	struct kvec iov[2];
 
-	cifs_dbg(FYI, "%s: path: %s\n", __func__, path);
+	smbfs_dbg("path: %s\n", path);
 
 	utf16_path = cifs_convert_path_to_utf16(path, cifs_sb);
 	if (!utf16_path)
@@ -630,7 +630,7 @@ cifs_get_link(struct dentry *direntry, struct inode *inode,
 		return ERR_CAST(full_path);
 	}
 
-	cifs_dbg(FYI, "Full path: %s inode = 0x%p\n", full_path, inode);
+	smbfs_dbg("Full path: %s inode = 0x%p\n", full_path, inode);
 
 	rc = -EACCES;
 	/*
@@ -698,8 +698,8 @@ cifs_symlink(struct user_namespace *mnt_userns, struct inode *inode,
 		goto symlink_exit;
 	}
 
-	cifs_dbg(FYI, "Full path: %s\n", full_path);
-	cifs_dbg(FYI, "symname is %s\n", symname);
+	smbfs_dbg("Full path: %s\n", full_path);
+	smbfs_dbg("symname is %s\n", symname);
 
 	/* BB what if DFS and this volume is on different share? BB */
 	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_MF_SYMLINKS)
@@ -723,7 +723,7 @@ cifs_symlink(struct user_namespace *mnt_userns, struct inode *inode,
 						 inode->i_sb, xid, NULL);
 
 		if (rc != 0) {
-			cifs_dbg(FYI, "Create symlink ok, getinodeinfo fail rc = %d\n",
+			smbfs_dbg("Create symlink ok, getinodeinfo fail rc=%d\n",
 				 rc);
 		} else {
 			d_instantiate(direntry, newinode);

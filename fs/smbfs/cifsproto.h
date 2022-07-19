@@ -35,7 +35,7 @@ extern void _free_xid(unsigned int);
 #define get_xid()							\
 ({									\
 	unsigned int __xid = _get_xid();				\
-	cifs_dbg(FYI, "VFS: in %s as Xid: %u with uid: %d\n",		\
+	smbfs_dbg("VFS: in %s as Xid: %u with uid: %d\n",		\
 		 __func__, __xid,					\
 		 from_kuid(&init_user_ns, current_fsuid()));		\
 	trace_smb3_enter(__xid, __func__);				\
@@ -45,7 +45,7 @@ extern void _free_xid(unsigned int);
 #define free_xid(curr_xid)						\
 do {									\
 	_free_xid(curr_xid);						\
-	cifs_dbg(FYI, "VFS: leaving %s (xid = %u) rc = %d\n",		\
+	smbfs_dbg("VFS: leaving %s (xid = %u) rc = %d\n",		\
 		 __func__, curr_xid, (int)rc);				\
 	if (rc)								\
 		trace_smb3_exit_err(curr_xid, __func__, (int)rc);	\
@@ -290,8 +290,8 @@ extern void cifs_dfs_release_automount_timer(void);
 #define cifs_dfs_release_automount_timer()	do { } while (0)
 #endif /* ! IS_ENABLED(CONFIG_SMBFS_DFS_UPCALL) */
 
-void cifs_proc_init(void);
-void cifs_proc_clean(void);
+void smbfs_proc_init(void);
+void smbfs_proc_clean(void);
 
 extern void cifs_move_llist(struct list_head *source, struct list_head *dest);
 extern void cifs_free_llist(struct list_head *llist);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (C) International Business Machines  Corp., 2002, 2011
+ *   Copyright (C) International Business Machines Corp., 2002, 2011
  *   Author(s): Steve French (sfrench@us.ibm.com),
  *              Pavel Shilovsky ((pshilovsky@samba.org) 2012
  *
@@ -15,7 +15,7 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "fscache.h"
@@ -65,11 +65,10 @@ smb2_open_file(const unsigned int xid, struct cifs_open_parms *oparms,
 			(char *)&nr_ioctl_req, sizeof(nr_ioctl_req),
 			CIFSMaxBufSize, NULL, NULL /* no return info */);
 		if (rc == -EOPNOTSUPP) {
-			cifs_dbg(VFS,
-			     "resiliency not supported by server, disabling\n");
+			smbfs_log("resiliency not supported by server, disabling\n");
 			oparms->tcon->use_resilient = false;
 		} else if (rc)
-			cifs_dbg(FYI, "error %d setting resiliency\n", rc);
+			smbfs_dbg("error %d setting resiliency\n", rc);
 
 		rc = 0;
 	}

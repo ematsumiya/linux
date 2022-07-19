@@ -4,7 +4,7 @@
 #include <linux/kernel.h>
 #include <linux/oid_registry.h>
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifsproto.h"
 #include "cifs_spnego_negtokeninit.asn1.h"
 
@@ -29,7 +29,7 @@ int cifs_gssapi_this_mech(void *context, size_t hdrlen,
 		char buf[50];
 
 		sprint_oid(value, vlen, buf, sizeof(buf));
-		cifs_dbg(FYI, "Error decoding negTokenInit header: unexpected OID %s\n",
+		smbfs_dbg("Error decoding negTokenInit header: unexpected OID %s\n",
 			 buf);
 		return -EBADMSG;
 	}
@@ -56,7 +56,7 @@ int cifs_neg_token_init_mech_type(void *context, size_t hdrlen,
 		char buf[50];
 
 		sprint_oid(value, vlen, buf, sizeof(buf));
-		cifs_dbg(FYI, "Decoding negTokenInit: unsupported OID %s\n",
+		smbfs_dbg("Decoding negTokenInit: unsupported OID %s\n",
 			 buf);
 	}
 	return 0;

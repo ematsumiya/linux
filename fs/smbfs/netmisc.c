@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *
- *   Copyright (c) International Business Machines  Corp., 2002,2008
+ *   Copyright (c) International Business Machines Corp., 2002,2008
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  *   Error mapping routines from Samba libsmb/errormap.c
@@ -21,7 +21,7 @@
 #include "cifsglob.h"
 #include "cifsproto.h"
 #include "smberr.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "nterr.h"
 
 struct smb_to_posix_error {
@@ -124,19 +124,19 @@ static const struct smb_to_posix_error mapping_table_ERRSRV[] = {
 static int
 cifs_inet_pton(const int address_family, const char *cp, int len, void *dst)
 {
-	int ret = 0;
+	int rc = 0;
 
 	/* calculate length by finding first slash or NULL */
 	if (address_family == AF_INET)
-		ret = in4_pton(cp, len, dst, '\\', NULL);
+		rc = in4_pton(cp, len, dst, '\\', NULL);
 	else if (address_family == AF_INET6)
-		ret = in6_pton(cp, len, dst , '\\', NULL);
+		rc = in6_pton(cp, len, dst , '\\', NULL);
 
-	cifs_dbg(NOISY, "address conversion returned %d for %*.*s\n",
-		 ret, len, len, cp);
-	if (ret > 0)
-		ret = 1;
-	return ret;
+	smbfs_dbg_noisy("address conversion for %*.*s, rc=%d\n",
+			len, len, cp, rc);
+	if (rc > 0)
+		rc = 1;
+	return rc;
 }
 
 /*
@@ -827,7 +827,7 @@ map_smb_to_linux_error(char *buf, bool logErr)
 		__u32 err = le32_to_cpu(smb->Status.CifsError);
 		if (logErr && (err != (NT_STATUS_MORE_PROCESSING_REQUIRED)))
 			cifs_print_status(err);
-		else if (debug_level & CIFS_RC)
+		else
 			cifs_print_status(err);
 		ntstatus_to_dos(err, &smberrclass, &smberrcode);
 	} else {
@@ -871,7 +871,7 @@ map_smb_to_linux_error(char *buf, bool logErr)
 	}
 	/* else ERRHRD class errors or junk  - return EIO */
 
-	cifs_dbg(FYI, "Mapping smb error code 0x%x to POSIX err %d\n",
+	smbfs_dbg("Mapping smb error code 0x%x to POSIX err %d\n",
 		 le32_to_cpu(smb->Status.CifsError), rc);
 
 	/* generic corrective action e.g. reconnect SMB session on
@@ -894,7 +894,7 @@ map_and_check_smb_error(struct mid_q_entry *mid, bool logErr)
 
 		/* switch can be used to handle different errors */
 		if (class == ERRSRV && code == ERRbaduid) {
-			cifs_dbg(FYI, "Server returned 0x%x, reconnecting session...\n",
+			smbfs_dbg("Server returned 0x%x, reconnecting session...\n",
 				code);
 			cifs_signal_cifsd_for_reconnect(mid->server, false);
 		}
@@ -975,20 +975,20 @@ struct timespec64 cnvrtDosUnixTm(__le16 le_date, __le16 le_time, int offset)
 	SMB_TIME *st = (SMB_TIME *)&time;
 	SMB_DATE *sd = (SMB_DATE *)&date;
 
-	cifs_dbg(FYI, "date %d time %d\n", date, time);
+	smbfs_dbg("date %d time %d\n", date, time);
 
 	sec = 2 * st->TwoSeconds;
 	min = st->Minutes;
 	if ((sec > 59) || (min > 59))
-		cifs_dbg(VFS, "Invalid time min %d sec %lld\n", min, sec);
+		smbfs_log("Invalid time min %d sec %lld\n", min, sec);
 	sec += (min * 60);
 	sec += 60 * 60 * st->Hours;
 	if (st->Hours > 24)
-		cifs_dbg(VFS, "Invalid hours %d\n", st->Hours);
+		smbfs_log("Invalid hours %d\n", st->Hours);
 	day = sd->Day;
 	month = sd->Month;
 	if (day < 1 || day > 31 || month < 1 || month > 12) {
-		cifs_dbg(VFS, "Invalid date, month %d day: %d\n", month, day);
+		smbfs_log("Invalid date, month %d day: %d\n", month, day);
 		day = clamp(day, 1, 31);
 		month = clamp(month, 1, 12);
 	}
@@ -1013,8 +1013,6 @@ struct timespec64 cnvrtDosUnixTm(__le16 le_date, __le16 le_time, int offset)
 	sec += 24 * 60 * 60 * days;
 
 	ts.tv_sec = sec + offset;
-
-	/* cifs_dbg(FYI, "sec after cnvrt dos to unix time %d\n",sec); */
 
 	ts.tv_nsec = 0;
 	return ts;

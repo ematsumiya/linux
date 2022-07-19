@@ -13,7 +13,7 @@
 #include "cifsglob.h"
 #include "cifsproto.h"
 #include "fscache.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "netlink.h"
 
 static DEFINE_IDR(cifs_swnreg_idr);
@@ -143,7 +143,7 @@ static int cifs_swn_send_register_message(struct cifs_swn_reg *swnreg)
 	case Kerberos:
 		ret = cifs_swn_auth_info_krb(swnreg->tcon, skb);
 		if (ret < 0) {
-			cifs_dbg(VFS, "%s: Failed to get kerberos auth info: %d\n", __func__, ret);
+			smbfs_log("%s: Failed to get kerberos auth info: %d\n", ret);
 			goto nlmsg_fail;
 		}
 		break;
@@ -151,12 +151,12 @@ static int cifs_swn_send_register_message(struct cifs_swn_reg *swnreg)
 	case RawNTLMSSP:
 		ret = cifs_swn_auth_info_ntlm(swnreg->tcon, skb);
 		if (ret < 0) {
-			cifs_dbg(VFS, "%s: Failed to get NTLM auth info: %d\n", __func__, ret);
+			smbfs_log("%s: Failed to get NTLM auth info: %d\n", ret);
 			goto nlmsg_fail;
 		}
 		break;
 	default:
-		cifs_dbg(VFS, "%s: secType %d not supported!\n", __func__, authtype);
+		smbfs_log("%s: secType %d not supported!\n", authtype);
 		ret = -EINVAL;
 		goto nlmsg_fail;
 	}
@@ -164,8 +164,8 @@ static int cifs_swn_send_register_message(struct cifs_swn_reg *swnreg)
 	genlmsg_end(skb, hdr);
 	genlmsg_multicast(&cifs_genl_family, skb, 0, CIFS_GENL_MCGRP_SWN, GFP_ATOMIC);
 
-	cifs_dbg(FYI, "%s: Message to register for network name %s with id %d sent\n", __func__,
-			swnreg->net_name, swnreg->id);
+	smbfs_dbg("Message to register for network name %s with id %d sent\n",
+		  swnreg->net_name, swnreg->id);
 
 	return 0;
 
@@ -233,8 +233,8 @@ static int cifs_swn_send_unregister_message(struct cifs_swn_reg *swnreg)
 	genlmsg_end(skb, hdr);
 	genlmsg_multicast(&cifs_genl_family, skb, 0, CIFS_GENL_MCGRP_SWN, GFP_ATOMIC);
 
-	cifs_dbg(FYI, "%s: Message to unregister for network name %s with id %d sent\n", __func__,
-			swnreg->net_name, swnreg->id);
+	smbfs_dbg("Message to unregister for network name %s with id %d sent\n",
+		  swnreg->net_name, swnreg->id);
 
 	return 0;
 
@@ -261,7 +261,7 @@ static struct cifs_swn_reg *cifs_find_swn_reg(struct cifs_tcon *tcon)
 		int ret;
 
 		ret = PTR_ERR(net_name);
-		cifs_dbg(VFS, "%s: failed to extract host name from target '%s': %d\n",
+		smbfs_log("%s: failed to extract host name from target '%s': %d\n",
 				__func__, tcon->treeName, ret);
 		return ERR_PTR(-EINVAL);
 	}
@@ -271,7 +271,7 @@ static struct cifs_swn_reg *cifs_find_swn_reg(struct cifs_tcon *tcon)
 		int ret;
 
 		ret = PTR_ERR(share_name);
-		cifs_dbg(VFS, "%s: failed to extract share name from target '%s': %d\n",
+		smbfs_log("%s: failed to extract share name from target '%s': %d\n",
 				__func__, tcon->treeName, ret);
 		kfree(net_name);
 		return ERR_PTR(-EINVAL);
@@ -283,8 +283,8 @@ static struct cifs_swn_reg *cifs_find_swn_reg(struct cifs_tcon *tcon)
 			continue;
 		}
 
-		cifs_dbg(FYI, "Existing swn registration for %s:%s found\n", swnreg->net_name,
-				swnreg->share_name);
+		smbfs_dbg("Existing swn registration for %s:%s found\n", swnreg->net_name,
+			  swnreg->share_name);
 
 		kfree(net_name);
 		kfree(share_name);
@@ -330,7 +330,7 @@ static struct cifs_swn_reg *cifs_get_swn_reg(struct cifs_tcon *tcon)
 
 	reg->id = idr_alloc(&cifs_swnreg_idr, reg, 1, 0, GFP_ATOMIC);
 	if (reg->id < 0) {
-		cifs_dbg(FYI, "%s: failed to allocate registration id\n", __func__);
+		smbfs_dbg("failed to allocate registration id\n");
 		ret = reg->id;
 		goto fail;
 	}
@@ -338,14 +338,14 @@ static struct cifs_swn_reg *cifs_get_swn_reg(struct cifs_tcon *tcon)
 	reg->net_name = extract_hostname(tcon->treeName);
 	if (IS_ERR(reg->net_name)) {
 		ret = PTR_ERR(reg->net_name);
-		cifs_dbg(VFS, "%s: failed to extract host name from target: %d\n", __func__, ret);
+		smbfs_log("%s: failed to extract host name from target: %d\n", ret);
 		goto fail_idr;
 	}
 
 	reg->share_name = extract_sharename(tcon->treeName);
 	if (IS_ERR(reg->share_name)) {
 		ret = PTR_ERR(reg->share_name);
-		cifs_dbg(VFS, "%s: failed to extract share name from target: %d\n", __func__, ret);
+		smbfs_log("%s: failed to extract share name from target: %d\n", ret);
 		goto fail_net_name;
 	}
 
@@ -376,7 +376,7 @@ static void cifs_swn_reg_release(struct kref *ref)
 
 	ret = cifs_swn_send_unregister_message(swnreg);
 	if (ret < 0)
-		cifs_dbg(VFS, "%s: Failed to send unregister message: %d\n", __func__, ret);
+		smbfs_log("%s: Failed to send unregister message: %d\n", ret);
 
 	idr_remove(&cifs_swnreg_idr, swnreg->id);
 	kfree(swnreg->net_name);
@@ -395,15 +395,15 @@ static int cifs_swn_resource_state_changed(struct cifs_swn_reg *swnreg, const ch
 {
 	switch (state) {
 	case CIFS_SWN_RESOURCE_STATE_UNAVAILABLE:
-		cifs_dbg(FYI, "%s: resource name '%s' become unavailable\n", __func__, name);
+		smbfs_dbg("resource name '%s' become unavailable\n", name);
 		cifs_signal_cifsd_for_reconnect(swnreg->tcon->ses->server, true);
 		break;
 	case CIFS_SWN_RESOURCE_STATE_AVAILABLE:
-		cifs_dbg(FYI, "%s: resource name '%s' become available\n", __func__, name);
+		smbfs_dbg("resource name '%s' become available\n", name);
 		cifs_signal_cifsd_for_reconnect(swnreg->tcon->ses->server, true);
 		break;
 	case CIFS_SWN_RESOURCE_STATE_UNKNOWN:
-		cifs_dbg(FYI, "%s: resource name '%s' changed to unknown state\n", __func__, name);
+		smbfs_dbg("resource name '%s' changed to unknown state\n", name);
 		break;
 	}
 	return 0;
@@ -472,7 +472,7 @@ static int cifs_swn_reconnect(struct cifs_tcon *tcon, struct sockaddr_storage *a
 	ret = cifs_swn_store_swn_addr(addr, &tcon->ses->server->dstaddr,
 				      &tcon->ses->server->swn_dstaddr);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: failed to store address: %d\n", __func__, ret);
+		smbfs_log("%s: failed to store address: %d\n", ret);
 		goto unlock;
 	}
 	tcon->ses->server->use_swn_dstaddr = true;
@@ -482,7 +482,7 @@ static int cifs_swn_reconnect(struct cifs_tcon *tcon, struct sockaddr_storage *a
 	 */
 	ret = cifs_swn_unregister(tcon);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: Failed to unregister for witness notifications: %d\n",
+		smbfs_log("%s: Failed to unregister for witness notifications: %d\n",
 			 __func__, ret);
 		goto unlock;
 	}
@@ -493,7 +493,7 @@ static int cifs_swn_reconnect(struct cifs_tcon *tcon, struct sockaddr_storage *a
 	 */
 	ret = cifs_swn_register(tcon);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: Failed to register for witness notifications: %d\n",
+		smbfs_log("%s: Failed to register for witness notifications: %d\n",
 			 __func__, ret);
 		goto unlock;
 	}
@@ -512,9 +512,9 @@ static int cifs_swn_client_move(struct cifs_swn_reg *swnreg, struct sockaddr_sto
 	struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)addr;
 
 	if (addr->ss_family == AF_INET)
-		cifs_dbg(FYI, "%s: move to %pI4\n", __func__, &ipv4->sin_addr);
+		smbfs_dbg("move to %pI4\n", &ipv4->sin_addr);
 	else if (addr->ss_family == AF_INET6)
-		cifs_dbg(FYI, "%s: move to %pI6\n", __func__, &ipv6->sin6_addr);
+		smbfs_dbg("move to %pI6\n", &ipv6->sin6_addr);
 
 	return cifs_swn_reconnect(swnreg->tcon, addr);
 }
@@ -533,18 +533,18 @@ int cifs_swn_notify(struct sk_buff *skb, struct genl_info *info)
 		swnreg = idr_find(&cifs_swnreg_idr, swnreg_id);
 		mutex_unlock(&cifs_swnreg_idr_mutex);
 		if (swnreg == NULL) {
-			cifs_dbg(FYI, "%s: registration id %d not found\n", __func__, swnreg_id);
+			smbfs_dbg("registration id %d not found\n", swnreg_id);
 			return -EINVAL;
 		}
 	} else {
-		cifs_dbg(FYI, "%s: missing registration id attribute\n", __func__);
+		smbfs_dbg("missing registration id attribute\n");
 		return -EINVAL;
 	}
 
 	if (info->attrs[CIFS_GENL_ATTR_SWN_NOTIFICATION_TYPE]) {
 		type = nla_get_u32(info->attrs[CIFS_GENL_ATTR_SWN_NOTIFICATION_TYPE]);
 	} else {
-		cifs_dbg(FYI, "%s: missing notification type attribute\n", __func__);
+		smbfs_dbg("missing notification type attribute\n");
 		return -EINVAL;
 	}
 
@@ -556,13 +556,13 @@ int cifs_swn_notify(struct sk_buff *skb, struct genl_info *info)
 			nla_strscpy(name, info->attrs[CIFS_GENL_ATTR_SWN_RESOURCE_NAME],
 					sizeof(name));
 		} else {
-			cifs_dbg(FYI, "%s: missing resource name attribute\n", __func__);
+			smbfs_dbg("missing resource name attribute\n");
 			return -EINVAL;
 		}
 		if (info->attrs[CIFS_GENL_ATTR_SWN_RESOURCE_STATE]) {
 			state = nla_get_u32(info->attrs[CIFS_GENL_ATTR_SWN_RESOURCE_STATE]);
 		} else {
-			cifs_dbg(FYI, "%s: missing resource state attribute\n", __func__);
+			smbfs_dbg("missing resource state attribute\n");
 			return -EINVAL;
 		}
 		return cifs_swn_resource_state_changed(swnreg, name, state);
@@ -573,13 +573,13 @@ int cifs_swn_notify(struct sk_buff *skb, struct genl_info *info)
 		if (info->attrs[CIFS_GENL_ATTR_SWN_IP]) {
 			nla_memcpy(&addr, info->attrs[CIFS_GENL_ATTR_SWN_IP], sizeof(addr));
 		} else {
-			cifs_dbg(FYI, "%s: missing IP address attribute\n", __func__);
+			smbfs_dbg("missing IP address attribute\n");
 			return -EINVAL;
 		}
 		return cifs_swn_client_move(swnreg, &addr);
 	}
 	default:
-		cifs_dbg(FYI, "%s: unknown notification type %d\n", __func__, type);
+		smbfs_dbg("unknown notification type %d\n", type);
 		break;
 	}
 
@@ -597,7 +597,7 @@ int cifs_swn_register(struct cifs_tcon *tcon)
 
 	ret = cifs_swn_send_register_message(swnreg);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: Failed to send swn register message: %d\n", __func__, ret);
+		smbfs_log("%s: Failed to send swn register message: %d\n", ret);
 		/* Do not put the swnreg or return error, the echo task will retry */
 	}
 
@@ -668,7 +668,7 @@ void cifs_swn_check(void)
 	idr_for_each_entry(&cifs_swnreg_idr, swnreg, id) {
 		ret = cifs_swn_send_register_message(swnreg);
 		if (ret < 0)
-			cifs_dbg(FYI, "%s: Failed to send register message: %d\n", __func__, ret);
+			smbfs_dbg("Failed to send register message: %d\n", ret);
 	}
 	mutex_unlock(&cifs_swnreg_idr_mutex);
 }

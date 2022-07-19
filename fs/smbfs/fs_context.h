@@ -17,7 +17,7 @@
 #define cifs_errorf(fc, fmt, ...)			\
 	do {						\
 		errorf(fc, fmt, ## __VA_ARGS__);	\
-		cifs_dbg(VFS, fmt, ## __VA_ARGS__);	\
+		smbfs_log(fmt, ## __VA_ARGS__);	\
 	} while (0)
 
 enum smb_version {

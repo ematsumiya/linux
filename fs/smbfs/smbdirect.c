@@ -7,7 +7,8 @@
 #include <linux/module.h>
 #include <linux/highmem.h>
 #include "smbdirect.h"
-#include "cifs_debug.h"
+#include "debug.h"
+#include "proc.h"
 #include "cifsproto.h"
 #include "smb2proto.h"
 
@@ -135,7 +136,7 @@ MODULE_PARM_DESC(smbd_logging_level,
 #define log_rdma(level, class, fmt, args...)				\
 do {									\
 	if (level <= smbd_logging_level || class & smbd_logging_class)	\
-		cifs_dbg(VFS, "%s:%d " fmt, __func__, __LINE__, ##args);\
+		smbfs_log("%s:%d " fmt, __func__, __LINE__, ##args);\
 } while (0)
 
 #define log_outgoing(level, fmt, args...) \
@@ -239,7 +240,7 @@ smbd_qp_async_error_upcall(struct ib_event *event, void *context)
 {
 	struct smbd_connection *info = context;
 
-	log_rdma_event(ERR, "%s on device %s info %p\n",
+	log_rdma_event(ERR, "%s on device %s info 0x%p\n",
 		ib_event_msg(event->event), event->device->name, info);
 
 	switch (event->event) {
@@ -270,7 +271,7 @@ static void send_done(struct ib_cq *cq, struct ib_wc *wc)
 	struct smbd_request *request =
 		container_of(wc->wr_cqe, struct smbd_request, cqe);
 
-	log_rdma_send(INFO, "smbd_request %p completed wc->status=%d\n",
+	log_rdma_send(INFO, "smbd_request 0x%p completed wc->status=%d\n",
 		request, wc->status);
 
 	if (wc->status != IB_WC_SUCCESS || wc->opcode != IB_WC_SEND) {
@@ -321,7 +322,7 @@ static bool process_negotiation_response(
 	}
 
 	if (le16_to_cpu(packet->negotiated_version) != SMBD_V1) {
-		log_rdma_event(ERR, "error: negotiated_version=%x\n",
+		log_rdma_event(ERR, "error: negotiated_version=0x%x\n",
 			le16_to_cpu(packet->negotiated_version));
 		return false;
 	}
@@ -448,7 +449,7 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 	struct smbd_connection *info = response->info;
 	int data_length = 0;
 
-	log_rdma_recv(INFO, "response=%p type=%d wc status=%d wc opcode %d byte_len=%d pkey_index=%x\n",
+	log_rdma_recv(INFO, "response 0x%p type=%d wc status=%d wc opcode %d byte_len=%d pkey_index=0x%x\n",
 		      response, response->type, wc->status, wc->opcode,
 		      wc->byte_len, wc->pkey_index);
 
@@ -639,7 +640,7 @@ static int smbd_ia_open(
 
 	if (!frwr_is_supported(&info->id->device->attrs)) {
 		log_rdma_event(ERR, "Fast Registration Work Requests (FRWR) is not supported\n");
-		log_rdma_event(ERR, "Device capability flags = %llx max_fast_reg_page_list_len = %u\n",
+		log_rdma_event(ERR, "Device capability flags=0x%llx max_fast_reg_page_list_len=%u\n",
 			       info->id->device->attrs.device_cap_flags,
 			       info->id->device->attrs.max_fast_reg_page_list_len);
 		rc = -EPROTONOSUPPORT;
@@ -723,7 +724,7 @@ static int smbd_post_send_negotiate_req(struct smbd_connection *info)
 	send_wr.opcode = IB_WR_SEND;
 	send_wr.send_flags = IB_SEND_SIGNALED;
 
-	log_rdma_send(INFO, "sge addr=%llx length=%x lkey=%x\n",
+	log_rdma_send(INFO, "sge addr=0x%llx length=0x%x lkey=0x%x\n",
 		request->sge[0].addr,
 		request->sge[0].length, request->sge[0].lkey);
 
@@ -1020,7 +1021,7 @@ static int smbd_post_send_data(
 	struct scatterlist sgl[SMBDIRECT_MAX_SGE];
 
 	if (n_vec > SMBDIRECT_MAX_SGE) {
-		cifs_dbg(VFS, "Can't fit data to SGL, n_vec=%d\n", n_vec);
+		smbfs_log("Can't fit data to SGL, n_vec=%d\n", n_vec);
 		return -EINVAL;
 	}
 
@@ -1079,7 +1080,7 @@ static int smbd_negotiate(struct smbd_connection *info)
 
 	response->type = SMBD_NEGOTIATE_RESP;
 	rc = smbd_post_recv(info, response);
-	log_rdma_event(INFO, "smbd_post_recv rc=%d iov.addr=%llx iov.length=%x iov.lkey=%x\n",
+	log_rdma_event(INFO, "smbd_post_recv rc=%d iov.addr=0x%llx iov.length=0x%x iov.lkey=0x%x\n",
 		       rc, response->sge.addr,
 		       response->sge.length, response->sge.lkey);
 	if (rc)
@@ -1435,7 +1436,7 @@ create_conn:
 		server, (struct sockaddr *) &server->dstaddr);
 
 	if (server->smbd_conn)
-		cifs_dbg(VFS, "RDMA transport re-established\n");
+		smbfs_log("RDMA transport re-established\n");
 
 	return server->smbd_conn ? 0 : -ENOENT;
 }
@@ -1456,7 +1457,7 @@ static int allocate_caches_and_workqueue(struct smbd_connection *info)
 	char name[MAX_NAME_LEN];
 	int rc;
 
-	scnprintf(name, MAX_NAME_LEN, "smbd_request_%p", info);
+	scnprintf(name, MAX_NAME_LEN, "smbd_request 0x%p", info);
 	info->request_cache =
 		kmem_cache_create(
 			name,
@@ -1472,7 +1473,7 @@ static int allocate_caches_and_workqueue(struct smbd_connection *info)
 	if (!info->request_mempool)
 		goto out1;
 
-	scnprintf(name, MAX_NAME_LEN, "smbd_response_%p", info);
+	scnprintf(name, MAX_NAME_LEN, "smbd_response 0x%p", info);
 	info->response_cache =
 		kmem_cache_create(
 			name,
@@ -1488,7 +1489,7 @@ static int allocate_caches_and_workqueue(struct smbd_connection *info)
 	if (!info->response_mempool)
 		goto out3;
 
-	scnprintf(name, MAX_NAME_LEN, "smbd_%p", info);
+	scnprintf(name, MAX_NAME_LEN, "smbd 0x%p", info);
 	info->workqueue = create_workqueue(name);
 	if (!info->workqueue)
 		goto out4;
@@ -1539,7 +1540,7 @@ static struct smbd_connection *_smbd_get_connection(
 
 	if (smbd_send_credit_target > info->id->device->attrs.max_cqe ||
 	    smbd_send_credit_target > info->id->device->attrs.max_qp_wr) {
-		log_rdma_event(ERR, "consider lowering send_credit_target = %d. Possible CQE overrun, device reporting max_cpe %d max_qp_wr %d\n",
+		log_rdma_event(ERR, "consider lowering send_credit_target=%d. Possible CQE overrun, device reporting max_cpe %d max_qp_wr %d\n",
 			       smbd_send_credit_target,
 			       info->id->device->attrs.max_cqe,
 			       info->id->device->attrs.max_qp_wr);
@@ -1548,7 +1549,7 @@ static struct smbd_connection *_smbd_get_connection(
 
 	if (smbd_receive_credit_max > info->id->device->attrs.max_cqe ||
 	    smbd_receive_credit_max > info->id->device->attrs.max_qp_wr) {
-		log_rdma_event(ERR, "consider lowering receive_credit_max = %d. Possible CQE overrun, device reporting max_cpe %d max_qp_wr %d\n",
+		log_rdma_event(ERR, "consider lowering receive_credit_max=%d. Possible CQE overrun, device reporting max_cpe %d max_qp_wr %d\n",
 			       smbd_receive_credit_max,
 			       info->id->device->attrs.max_cqe,
 			       info->id->device->attrs.max_qp_wr);
@@ -1564,13 +1565,13 @@ static struct smbd_connection *_smbd_get_connection(
 
 	if (info->id->device->attrs.max_send_sge < SMBDIRECT_MAX_SGE) {
 		log_rdma_event(ERR,
-			"warning: device max_send_sge = %d too small\n",
+			"warning: device max_send_sge=%d too small\n",
 			info->id->device->attrs.max_send_sge);
 		log_rdma_event(ERR, "Queue Pair creation may fail\n");
 	}
 	if (info->id->device->attrs.max_recv_sge < SMBDIRECT_MAX_SGE) {
 		log_rdma_event(ERR,
-			"warning: device max_recv_sge = %d too small\n",
+			"warning: device max_recv_sge=%d too small\n",
 			info->id->device->attrs.max_recv_sge);
 		log_rdma_event(ERR, "Queue Pair creation may fail\n");
 	}
@@ -1919,7 +1920,7 @@ static int smbd_recv_page(struct smbd_connection *info,
 	page_address = kmap_atomic(page);
 	to_address = (char *) page_address + page_offset;
 
-	log_read(INFO, "reading from page=%p address=%p to_read=%d\n",
+	log_read(INFO, "reading from page 0x%p address 0x%p to_read=%d\n",
 		page, to_address, to_read);
 
 	ret = smbd_recv_buf(info, to_address, to_read);
@@ -1942,7 +1943,7 @@ int smbd_recv(struct smbd_connection *info, struct msghdr *msg)
 
 	if (iov_iter_rw(&msg->msg_iter) == WRITE) {
 		/* It's a bug in upper layer to get there */
-		cifs_dbg(VFS, "Invalid msg iter dir %u\n",
+		smbfs_log("Invalid msg iter dir %u\n",
 			 iov_iter_rw(&msg->msg_iter));
 		rc = -EINVAL;
 		goto out;
@@ -1964,7 +1965,7 @@ int smbd_recv(struct smbd_connection *info, struct msghdr *msg)
 
 	default:
 		/* It's a bug in upper layer to get there */
-		cifs_dbg(VFS, "Invalid msg type %d\n",
+		smbfs_log("Invalid msg type %d\n",
 			 iov_iter_type(&msg->msg_iter));
 		rc = -EINVAL;
 	}
@@ -2027,11 +2028,10 @@ next_rqst:
 	rqst = &rqst_array[rqst_idx];
 	iov = rqst->rq_iov;
 
-	cifs_dbg(FYI, "Sending smb (RDMA): idx=%d smb_len=%lu\n",
-		rqst_idx, smb_rqst_len(server, rqst));
+	smbfs_dbg("Sending smb (RDMA): idx=%d smb_len=%lu\n",
+		  rqst_idx, smb_rqst_len(server, rqst));
 	for (i = 0; i < rqst->rq_nvec; i++)
-		dump_smb(iov[i].iov_base, iov[i].iov_len);
-
+		smbfs_dump_smb(iov[i].iov_base, iov[i].iov_len);
 
 	log_write(INFO, "rqst_idx=%d nvec=%d rqst->rq_npages=%d rq_pagesz=%d rq_tailsz=%d buflen=%lu\n",
 		  rqst_idx, rqst->rq_nvec, rqst->rq_npages, rqst->rq_pagesz,
@@ -2056,7 +2056,7 @@ next_rqst:
 			} else {
 				/* iov[start] is too big, break it */
 				nvecs = (buflen+max_iov_size-1)/max_iov_size;
-				log_write(INFO, "iov[%d] iov_base=%p buflen=%d break to %d vectors\n",
+				log_write(INFO, "iov[%d] iov_base 0x%p buflen=%d break to %d vectors\n",
 					  start, iov[start].iov_base,
 					  buflen, nvecs);
 				for (j = 0; j < nvecs; j++) {
@@ -2070,7 +2070,7 @@ next_rqst:
 							max_iov_size*(nvecs-1);
 					remaining_data_length -= vec.iov_len;
 					log_write(INFO,
-						"sending vec j=%d iov_base=%p iov_len=%zu remaining_data_length=%d\n",
+						"sending vec j=%d iov_base 0x%p iov_len=%zu remaining_data_length=%d\n",
 						  j, vec.iov_base, vec.iov_len,
 						  remaining_data_length);
 					rc = smbd_post_send_data(
@@ -2182,7 +2182,7 @@ static void smbd_mr_recovery_work(struct work_struct *work)
 			rc = ib_dereg_mr(smbdirect_mr->mr);
 			if (rc) {
 				log_rdma_mr(ERR,
-					"ib_dereg_mr failed rc=%x\n",
+					"ib_dereg_mr failed rc=0x%x\n",
 					rc);
 				smbd_disconnect_rdma_connection(info);
 				continue;
@@ -2192,7 +2192,7 @@ static void smbd_mr_recovery_work(struct work_struct *work)
 				info->pd, info->mr_type,
 				info->max_frmr_depth);
 			if (IS_ERR(smbdirect_mr->mr)) {
-				log_rdma_mr(ERR, "ib_alloc_mr failed mr_type=%x max_frmr_depth=%x\n",
+				log_rdma_mr(ERR, "ib_alloc_mr failed mr_type=0x%x max_frmr_depth=0x%x\n",
 					    info->mr_type,
 					    info->max_frmr_depth);
 				smbd_disconnect_rdma_connection(info);
@@ -2257,7 +2257,7 @@ static int allocate_mr_list(struct smbd_connection *info)
 		smbdirect_mr->mr = ib_alloc_mr(info->pd, info->mr_type,
 					info->max_frmr_depth);
 		if (IS_ERR(smbdirect_mr->mr)) {
-			log_rdma_mr(ERR, "ib_alloc_mr failed mr_type=%x max_frmr_depth=%x\n",
+			log_rdma_mr(ERR, "ib_alloc_mr failed mr_type=0x%x max_frmr_depth=0x%x\n",
 				    info->mr_type, info->max_frmr_depth);
 			goto out;
 		}
@@ -2307,12 +2307,12 @@ again:
 		atomic_read(&info->mr_ready_count) ||
 		info->transport_status != SMBD_CONNECTED);
 	if (rc) {
-		log_rdma_mr(ERR, "wait_event_interruptible rc=%x\n", rc);
+		log_rdma_mr(ERR, "wait_event_interruptible rc=0x%x\n", rc);
 		return NULL;
 	}
 
 	if (info->transport_status != SMBD_CONNECTED) {
-		log_rdma_mr(ERR, "info->transport_status=%x\n",
+		log_rdma_mr(ERR, "info->transport_status=0x%x\n",
 			info->transport_status);
 		return NULL;
 	}
@@ -2393,7 +2393,7 @@ skip_multiple_pages:
 	smbdirect_mr->dir = dir;
 	rc = ib_dma_map_sg(info->id->device, smbdirect_mr->sgl, num_pages, dir);
 	if (!rc) {
-		log_rdma_mr(ERR, "ib_dma_map_sg num_pages=%x dir=%x rc=%x\n",
+		log_rdma_mr(ERR, "ib_dma_map_sg num_pages=0x%x dir=0x%x rc=0x%x\n",
 			num_pages, dir, rc);
 		goto dma_map_error;
 	}
@@ -2402,7 +2402,7 @@ skip_multiple_pages:
 		NULL, PAGE_SIZE);
 	if (rc != num_pages) {
 		log_rdma_mr(ERR,
-			"ib_map_mr_sg failed rc = %d num_pages = %x\n",
+			"ib_map_mr_sg failed rc=%d num_pages=0x%x\n",
 			rc, num_pages);
 		goto map_mr_error;
 	}
@@ -2430,7 +2430,7 @@ skip_multiple_pages:
 	if (!rc)
 		return smbdirect_mr;
 
-	log_rdma_mr(ERR, "ib_post_send failed rc=%x reg_wr->key=%x\n",
+	log_rdma_mr(ERR, "ib_post_send failed rc=0x%x reg_wr->key=0x%x\n",
 		rc, reg_wr->key);
 
 	/* If all failed, attempt to recover this MR by setting it MR_ERROR*/
@@ -2457,7 +2457,7 @@ static void local_inv_done(struct ib_cq *cq, struct ib_wc *wc)
 	smbdirect_mr = container_of(cqe, struct smbd_mr, cqe);
 	smbdirect_mr->state = MR_INVALIDATED;
 	if (wc->status != IB_WC_SUCCESS) {
-		log_rdma_mr(ERR, "invalidate failed status=%x\n", wc->status);
+		log_rdma_mr(ERR, "invalidate failed status=0x%x\n", wc->status);
 		smbdirect_mr->state = MR_ERROR;
 	}
 	complete(&smbdirect_mr->invalidate_done);
@@ -2488,7 +2488,7 @@ int smbd_deregister_mr(struct smbd_mr *smbdirect_mr)
 		init_completion(&smbdirect_mr->invalidate_done);
 		rc = ib_post_send(info->id->qp, wr, NULL);
 		if (rc) {
-			log_rdma_mr(ERR, "ib_post_send failed rc=%x\n", rc);
+			log_rdma_mr(ERR, "ib_post_send failed rc=0x%x\n", rc);
 			smbd_disconnect_rdma_connection(info);
 			goto done;
 		}

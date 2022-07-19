@@ -3,13 +3,13 @@
  *
  *   Functions which do error mapping of SMB2 status codes to POSIX errors
  *
- *   Copyright (C) International Business Machines  Corp., 2009
+ *   Copyright (C) International Business Machines Corp., 2009
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
 #include <linux/errno.h>
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
 #include "smb2status.h"
@@ -2456,7 +2456,7 @@ map_smb2_to_linux_error(char *buf, bool log_err)
 	if (log_err && (smb2err != STATUS_MORE_PROCESSING_REQUIRED) &&
 	    (smb2err != STATUS_END_OF_FILE))
 		smb2_print_status(smb2err);
-	else if (debug_level & CIFS_RC)
+	else
 		smb2_print_status(smb2err);
 
 	for (i = 0; i < sizeof(smb2_error_map_table) /
@@ -2469,7 +2469,7 @@ map_smb2_to_linux_error(char *buf, bool log_err)
 
 	/* on error mapping not found  - return EIO */
 
-	cifs_dbg(FYI, "Mapping SMB2 status code 0x%08x to POSIX err %d\n",
+	smbfs_dbg("Mapping SMB2 status code 0x%08x to POSIX err %d\n",
 		 __le32_to_cpu(smb2err), rc);
 
 	trace_smb3_cmd_err(le32_to_cpu(shdr->Id.SyncId.TreeId),

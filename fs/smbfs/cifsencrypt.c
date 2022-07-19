@@ -4,7 +4,7 @@
  *   Encryption and hashing operations relating to NTLM, NTLMv2.  See MS-NLMP
  *   for more detailed information
  *
- *   Copyright (C) International Business Machines  Corp., 2005,2013
+ *   Copyright (C) International Business Machines Corp., 2005,2013
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
@@ -13,7 +13,8 @@
 #include <linux/slab.h>
 #include "cifspdu.h"
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
+#include "proc.h"
 #include "cifs_unicode.h"
 #include "cifsproto.h"
 #include "ntlmssp.h"
@@ -49,14 +50,14 @@ int __cifs_calc_signature(struct smb_rqst *rqst,
 		if (iov[i].iov_len == 0)
 			continue;
 		if (iov[i].iov_base == NULL) {
-			cifs_dbg(VFS, "null iovec entry\n");
+			smbfs_log("null iovec entry\n");
 			return -EIO;
 		}
 
 		rc = crypto_shash_update(shash,
 					 iov[i].iov_base, iov[i].iov_len);
 		if (rc) {
-			cifs_dbg(VFS, "%s: Could not update with payload\n",
+			smbfs_log("%s: Could not update with payload\n",
 				 __func__);
 			return rc;
 		}
@@ -73,7 +74,7 @@ int __cifs_calc_signature(struct smb_rqst *rqst,
 
 		rc = crypto_shash_update(shash, kaddr, len);
 		if (rc) {
-			cifs_dbg(VFS, "%s: Could not update with payload\n",
+			smbfs_log("%s: Could not update with payload\n",
 				 __func__);
 			kunmap(rqst->rq_pages[i]);
 			return rc;
@@ -84,7 +85,7 @@ int __cifs_calc_signature(struct smb_rqst *rqst,
 
 	rc = crypto_shash_final(shash, signature);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not generate hash\n", __func__);
+		smbfs_log("%s: Could not generate hash\n", __func__);
 
 	return rc;
 }
@@ -111,14 +112,14 @@ static int cifs_calc_signature(struct smb_rqst *rqst,
 
 	rc = crypto_shash_init(&server->secmech.sdescmd5->shash);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init md5\n", __func__);
+		smbfs_log("%s: Could not init md5\n", __func__);
 		return rc;
 	}
 
 	rc = crypto_shash_update(&server->secmech.sdescmd5->shash,
 		server->session_key.response, server->session_key.len);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update with response\n", __func__);
+		smbfs_log("%s: Could not update with response\n", __func__);
 		return rc;
 	}
 
@@ -225,7 +226,7 @@ int cifs_verify_signature(struct smb_rqst *rqst,
 
 	/* Do not need to verify session setups with signature "BSRSPYL "  */
 	if (memcmp(cifs_pdu->Signature.SecuritySignature, "BSRSPYL ", 8) == 0)
-		cifs_dbg(FYI, "dummy signature received for smb command 0x%x\n",
+		smbfs_dbg("dummy signature received for smb command 0x%x\n",
 			 cifs_pdu->Command);
 
 	/* save off the origiginal signature so we can modify the smb and check
@@ -242,9 +243,6 @@ int cifs_verify_signature(struct smb_rqst *rqst,
 
 	if (rc)
 		return rc;
-
-/*	cifs_dump_mem("what we think it should be: ",
-		      what_we_think_sig_should_be, 16); */
 
 	if (memcmp(server_response_sig, what_we_think_sig_should_be, 8))
 		return -EACCES;
@@ -353,7 +351,7 @@ find_domain_name(struct cifs_ses *ses, const struct nls_table *nls_cp)
 				break;
 			}
 		}
-		blobptr += attrsize; /* advance attr  value */
+		blobptr += attrsize; /* advance attr value */
 	}
 
 	return 0;
@@ -414,7 +412,7 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 	wchar_t *server;
 
 	if (!ses->server->secmech.sdeschmacmd5) {
-		cifs_dbg(VFS, "%s: can't generate ntlmv2 hash\n", __func__);
+		smbfs_log("%s: can't generate ntlmv2 hash\n", __func__);
 		return -1;
 	}
 
@@ -424,13 +422,13 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 	rc = crypto_shash_setkey(ses->server->secmech.hmacmd5, nt_hash,
 				CIFS_NTHASH_SIZE);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not set NT Hash as a key\n", __func__);
+		smbfs_log("%s: Could not set NT Hash as a key\n", __func__);
 		return rc;
 	}
 
 	rc = crypto_shash_init(&ses->server->secmech.sdeschmacmd5->shash);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init hmacmd5\n", __func__);
+		smbfs_log("%s: Could not init hmacmd5\n", __func__);
 		return rc;
 	}
 
@@ -453,7 +451,7 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 				(char *)user, 2 * len);
 	kfree(user);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update with user\n", __func__);
+		smbfs_log("%s: Could not update with user\n", __func__);
 		return rc;
 	}
 
@@ -473,7 +471,7 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 					(char *)domain, 2 * len);
 		kfree(domain);
 		if (rc) {
-			cifs_dbg(VFS, "%s: Could not update with domain\n",
+			smbfs_log("%s: Could not update with domain\n",
 				 __func__);
 			return rc;
 		}
@@ -493,7 +491,7 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 					(char *)server, 2 * len);
 		kfree(server);
 		if (rc) {
-			cifs_dbg(VFS, "%s: Could not update with server\n",
+			smbfs_log("%s: Could not update with server\n",
 				 __func__);
 			return rc;
 		}
@@ -502,7 +500,7 @@ static int calc_ntlmv2_hash(struct cifs_ses *ses, char *ntlmv2_hash,
 	rc = crypto_shash_final(&ses->server->secmech.sdeschmacmd5->shash,
 					ntlmv2_hash);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not generate md5 hash\n", __func__);
+		smbfs_log("%s: Could not generate md5 hash\n", __func__);
 
 	return rc;
 }
@@ -520,21 +518,21 @@ CalcNTLMv2_response(const struct cifs_ses *ses, char *ntlmv2_hash)
 		offsetof(struct ntlmv2_resp, challenge.key[0]));
 
 	if (!ses->server->secmech.sdeschmacmd5) {
-		cifs_dbg(VFS, "%s: can't generate ntlmv2 hash\n", __func__);
+		smbfs_log("%s: can't generate ntlmv2 hash\n", __func__);
 		return -1;
 	}
 
 	rc = crypto_shash_setkey(ses->server->secmech.hmacmd5,
 				 ntlmv2_hash, CIFS_HMAC_MD5_HASH_SIZE);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not set NTLMV2 Hash as a key\n",
+		smbfs_log("%s: Could not set NTLMV2 Hash as a key\n",
 			 __func__);
 		return rc;
 	}
 
 	rc = crypto_shash_init(&ses->server->secmech.sdeschmacmd5->shash);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init hmacmd5\n", __func__);
+		smbfs_log("%s: Could not init hmacmd5\n", __func__);
 		return rc;
 	}
 
@@ -547,7 +545,7 @@ CalcNTLMv2_response(const struct cifs_ses *ses, char *ntlmv2_hash)
 	rc = crypto_shash_update(&ses->server->secmech.sdeschmacmd5->shash,
 				 ntlmv2->challenge.key, hash_len);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update with response\n", __func__);
+		smbfs_log("%s: Could not update with response\n", __func__);
 		return rc;
 	}
 
@@ -555,7 +553,7 @@ CalcNTLMv2_response(const struct cifs_ses *ses, char *ntlmv2_hash)
 	rc = crypto_shash_final(&ses->server->secmech.sdeschmacmd5->shash,
 				ntlmv2->ntlmv2_hash);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not generate md5 hash\n", __func__);
+		smbfs_log("%s: Could not generate md5 hash\n", __func__);
 
 	return rc;
 }
@@ -572,7 +570,7 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 	__le64 rsp_timestamp;
 
 	if (nls_cp == NULL) {
-		cifs_dbg(VFS, "%s called with nls_cp==NULL\n", __func__);
+		smbfs_log("%s called with nls_cp==NULL\n", __func__);
 		return -EINVAL;
 	}
 
@@ -581,7 +579,7 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 			if (ses->domainAuto) {
 				rc = find_domain_name(ses, nls_cp);
 				if (rc) {
-					cifs_dbg(VFS, "error %d finding domain name\n",
+					smbfs_log("error %d finding domain name\n",
 						 rc);
 					goto setup_ntlmv2_rsp_ret;
 				}
@@ -592,7 +590,7 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 	} else {
 		rc = build_avpair_blob(ses, nls_cp);
 		if (rc) {
-			cifs_dbg(VFS, "error %d building av pair blob\n", rc);
+			smbfs_log("error %d building av pair blob\n", rc);
 			goto setup_ntlmv2_rsp_ret;
 		}
 	}
@@ -638,14 +636,14 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 	/* calculate ntlmv2_hash */
 	rc = calc_ntlmv2_hash(ses, ntlmv2_hash, nls_cp);
 	if (rc) {
-		cifs_dbg(VFS, "Could not get v2 hash rc %d\n", rc);
+		smbfs_log("Could not get v2 hash rc %d\n", rc);
 		goto unlock;
 	}
 
 	/* calculate first part of the client response (CR1) */
 	rc = CalcNTLMv2_response(ses, ntlmv2_hash);
 	if (rc) {
-		cifs_dbg(VFS, "Could not calculate CR1 rc: %d\n", rc);
+		smbfs_log("Could not calculate CR1 rc: %d\n", rc);
 		goto unlock;
 	}
 
@@ -653,14 +651,14 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 	rc = crypto_shash_setkey(ses->server->secmech.hmacmd5,
 		ntlmv2_hash, CIFS_HMAC_MD5_HASH_SIZE);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not set NTLMV2 Hash as a key\n",
+		smbfs_log("%s: Could not set NTLMV2 Hash as a key\n",
 			 __func__);
 		goto unlock;
 	}
 
 	rc = crypto_shash_init(&ses->server->secmech.sdeschmacmd5->shash);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not init hmacmd5\n", __func__);
+		smbfs_log("%s: Could not init hmacmd5\n", __func__);
 		goto unlock;
 	}
 
@@ -668,14 +666,14 @@ setup_ntlmv2_rsp(struct cifs_ses *ses, const struct nls_table *nls_cp)
 		ntlmv2->ntlmv2_hash,
 		CIFS_HMAC_MD5_HASH_SIZE);
 	if (rc) {
-		cifs_dbg(VFS, "%s: Could not update with response\n", __func__);
+		smbfs_log("%s: Could not update with response\n", __func__);
 		goto unlock;
 	}
 
 	rc = crypto_shash_final(&ses->server->secmech.sdeschmacmd5->shash,
 		ses->auth_key.response);
 	if (rc)
-		cifs_dbg(VFS, "%s: Could not generate md5 hash\n", __func__);
+		smbfs_log("%s: Could not generate md5 hash\n", __func__);
 
 unlock:
 	cifs_server_unlock(ses->server);
@@ -698,7 +696,7 @@ calc_seckey(struct cifs_ses *ses)
 
 	ctx_arc4 = kmalloc(sizeof(*ctx_arc4), GFP_KERNEL);
 	if (!ctx_arc4) {
-		cifs_dbg(VFS, "Could not allocate arc4 context\n");
+		smbfs_log("Could not allocate arc4 context\n");
 		return -ENOMEM;
 	}
 

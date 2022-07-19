@@ -4,7 +4,7 @@
  *   traversal via DFS junction point
  *
  *   Copyright (c) 2007 Igor Mammedov
- *   Copyright (C) International Business Machines  Corp., 2008
+ *   Copyright (C) International Business Machines Corp., 2008
  *   Author(s): Igor Mammedov (niallain@gmail.com)
  *		Steve French (sfrench@us.ibm.com)
  */
@@ -20,7 +20,7 @@
 #include "cifsproto.h"
 #include "smbfs.h"
 #include "dns_resolve.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_unicode.h"
 #include "dfs_cache.h"
 #include "fs_context.h"
@@ -178,8 +178,7 @@ char *cifs_compose_mount_options(const char *sb_mountdata,
 
 	rc = dns_resolve_server_name_to_ip(name, &srvIP, NULL);
 	if (rc < 0) {
-		cifs_dbg(FYI, "%s: Failed to resolve server part of %s to IP: %d\n",
-			 __func__, name, rc);
+		smbfs_dbg("Failed to resolve server part of %s to IP, rc=%d\n", name, rc);
 		goto compose_mount_options_err;
 	}
 
@@ -243,9 +242,6 @@ char *cifs_compose_mount_options(const char *sb_mountdata,
 		*devname = name;
 	else
 		kfree(name);
-
-	/*cifs_dbg(FYI, "%s: parent mountdata: %s\n", __func__, sb_mountdata);*/
-	/*cifs_dbg(FYI, "%s: submount mountdata: %s\n", __func__, mountdata );*/
 
 compose_mount_options_out:
 	kfree(srvIP);
@@ -311,7 +307,7 @@ static struct vfsmount *cifs_dfs_do_automount(struct dentry *mntpt)
 	char *full_path;
 	struct vfsmount *mnt;
 
-	cifs_dbg(FYI, "in %s\n", __func__);
+	smbfs_dbg("enter\n");
 	BUG_ON(IS_ROOT(mntpt));
 
 	/*
@@ -335,15 +331,15 @@ static struct vfsmount *cifs_dfs_do_automount(struct dentry *mntpt)
 	}
 
 	convert_delimiter(full_path, '\\');
-	cifs_dbg(FYI, "%s: full_path: %s\n", __func__, full_path);
+	smbfs_dbg("full_path: %s\n", full_path);
 
 	mnt = cifs_dfs_do_mount(mntpt, cifs_sb, full_path);
-	cifs_dbg(FYI, "%s: cifs_dfs_do_mount:%s , mnt:%p\n", __func__, full_path + 1, mnt);
+	smbfs_dbg("cifs_dfs_do_mount: %s , mnt 0x%p\n", full_path + 1, mnt);
 
 free_full_path:
 	free_dentry_path(page);
 cdda_exit:
-	cifs_dbg(FYI, "leaving %s\n" , __func__);
+	smbfs_dbg("leaving\n");
 	return mnt;
 }
 
@@ -354,11 +350,11 @@ struct vfsmount *cifs_dfs_d_automount(struct path *path)
 {
 	struct vfsmount *newmnt;
 
-	cifs_dbg(FYI, "in %s\n", __func__);
+	smbfs_dbg("enter\n");
 
 	newmnt = cifs_dfs_do_automount(path->dentry);
 	if (IS_ERR(newmnt)) {
-		cifs_dbg(FYI, "leaving %s [automount failed]\n" , __func__);
+		smbfs_dbg("leaving, automount failed\n");
 		return newmnt;
 	}
 
@@ -366,7 +362,7 @@ struct vfsmount *cifs_dfs_d_automount(struct path *path)
 	mnt_set_expiry(newmnt, &cifs_dfs_automount_list);
 	schedule_delayed_work(&cifs_dfs_automount_task,
 			      cifs_dfs_mountpoint_expiry_timeout);
-	cifs_dbg(FYI, "leaving %s [ok]\n" , __func__);
+	smbfs_dbg("leaving, ok\n");
 	return newmnt;
 }
 

@@ -3,7 +3,7 @@
  *
  *   vfs operations that deal with dentries
  *
- *   Copyright (C) International Business Machines  Corp., 2002,2009
+ *   Copyright (C) International Business Machines Corp., 2002,2009
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
@@ -17,12 +17,15 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "fs_context.h"
 #include "cifs_ioctl.h"
 #include "fscache.h"
+
+extern bool unix_extensions;
+extern bool lookup_cache;
 
 static void
 renew_parental_timestamps(struct dentry *direntry)
@@ -108,7 +111,7 @@ build_path_from_dentry_optional_prefix(struct dentry *direntry, void *page,
 	if (s < (char *)page + pplen + dfsplen)
 		return ERR_PTR(-ENAMETOOLONG);
 	if (pplen) {
-		cifs_dbg(FYI, "using cifs_sb prepath <%s>\n", cifs_sb->prepath);
+		smbfs_dbg("using cifs_sb prepath <%s>\n", cifs_sb->prepath);
 		s -= pplen;
 		memcpy(s + 1, cifs_sb->prepath, pplen - 1);
 		*s = '/';
@@ -154,7 +157,7 @@ check_name(struct dentry *direntry, struct cifs_tcon *tcon)
 	if (!(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_POSIX_PATHS)) {
 		for (i = 0; i < direntry->d_name.len; i++) {
 			if (direntry->d_name.name[i] == '\\') {
-				cifs_dbg(FYI, "Invalid file name\n");
+				smbfs_dbg("Invalid file name\n");
 				return -EINVAL;
 			}
 		}
@@ -276,7 +279,7 @@ cifs_do_create(struct inode *inode, struct dentry *direntry, unsigned int xid,
 	else if ((oflags & O_CREAT) == O_CREAT)
 		disposition = FILE_OPEN_IF;
 	else
-		cifs_dbg(FYI, "Create flag not set in create function\n");
+		smbfs_dbg("Create flag not set in create function\n");
 
 	/*
 	 * BB add processing to set equivalent of mode - e.g. via CreateX with
@@ -312,7 +315,7 @@ cifs_do_create(struct inode *inode, struct dentry *direntry, unsigned int xid,
 	oparms.mode = mode;
 	rc = server->ops->open(xid, &oparms, oplock, buf);
 	if (rc) {
-		cifs_dbg(FYI, "cifs_create returned 0x%x\n", rc);
+		smbfs_dbg("cifs_create returned 0x%x\n", rc);
 		goto out;
 	}
 
@@ -379,7 +382,7 @@ cifs_create_get_file_info:
 
 cifs_create_set_dentry:
 	if (rc != 0) {
-		cifs_dbg(FYI, "Create worked, get_inode_info failed rc = %d\n",
+		smbfs_dbg("Create worked, get_inode_info failed rc=%d\n",
 			 rc);
 		goto out_err;
 	}
@@ -453,7 +456,7 @@ cifs_atomic_open(struct inode *inode, struct dentry *direntry,
 
 	xid = get_xid();
 
-	cifs_dbg(FYI, "parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
+	smbfs_dbg("parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
 		 inode, direntry, direntry);
 
 	tlink = cifs_sb_tlink(CIFS_SB(inode->i_sb));
@@ -540,7 +543,7 @@ int cifs_create(struct user_namespace *mnt_userns, struct inode *inode,
 	struct cifs_fid fid;
 	__u32 oplock;
 
-	cifs_dbg(FYI, "cifs_create parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
+	smbfs_dbg("cifs_create parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
 		 inode, direntry, direntry);
 
 	if (unlikely(cifs_forced_shutdown(CIFS_SB(inode->i_sb))))
@@ -627,7 +630,7 @@ cifs_lookup(struct inode *parent_dir_inode, struct dentry *direntry,
 
 	xid = get_xid();
 
-	cifs_dbg(FYI, "parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
+	smbfs_dbg("parent inode = 0x%p name is: %pd and dentry = 0x%p\n",
 		 parent_dir_inode, direntry, direntry);
 
 	/* check whether path exists */
@@ -660,11 +663,11 @@ cifs_lookup(struct inode *parent_dir_inode, struct dentry *direntry,
 	}
 
 	if (d_really_is_positive(direntry)) {
-		cifs_dbg(FYI, "non-NULL inode in lookup\n");
+		smbfs_dbg("non-NULL inode in lookup\n");
 	} else {
-		cifs_dbg(FYI, "NULL inode in lookup\n");
+		smbfs_dbg("NULL inode in lookup\n");
 	}
-	cifs_dbg(FYI, "Full path: %s inode = 0x%p\n",
+	smbfs_dbg("Full path: %s inode = 0x%p\n",
 		 full_path, d_inode(direntry));
 
 again:
@@ -689,7 +692,7 @@ again:
 		newInode = NULL;
 	} else {
 		if (rc != -EACCES) {
-			cifs_dbg(FYI, "Unexpected lookup error %d\n", rc);
+			smbfs_dbg("Unexpected lookup error %d\n", rc);
 			/* We special case check for Access Denied - since that
 			is a common return code */
 		}
@@ -717,7 +720,7 @@ cifs_d_revalidate(struct dentry *direntry, unsigned int flags)
 
 		rc = cifs_revalidate_dentry(direntry);
 		if (rc) {
-			cifs_dbg(FYI, "cifs_revalidate_dentry failed with rc=%d", rc);
+			smbfs_dbg("cifs_revalidate_dentry failed with rc=%d", rc);
 			switch (rc) {
 			case -ENOENT:
 			case -ESTALE:
@@ -768,7 +771,7 @@ cifs_d_revalidate(struct dentry *direntry, unsigned int flags)
 	if (flags & (LOOKUP_CREATE | LOOKUP_RENAME_TARGET))
 		return 0;
 
-	if (time_after(jiffies, cifs_get_time(direntry) + HZ) || !lookupCacheEnabled)
+	if (time_after(jiffies, cifs_get_time(direntry) + HZ) || !lookup_cache)
 		return 0;
 
 	return 1;
@@ -778,7 +781,7 @@ cifs_d_revalidate(struct dentry *direntry, unsigned int flags)
 {
 	int rc = 0;
 
-	cifs_dbg(FYI, "In cifs d_delete, name = %pd\n", direntry);
+	smbfs_dbg("In cifs d_delete, name = %pd\n", direntry);
 
 	return rc;
 }     */

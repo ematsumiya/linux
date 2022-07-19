@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *   Copyright (C) International Business Machines  Corp., 2002,2008
+ *   Copyright (C) International Business Machines Corp., 2002,2008
  *   Copyright (c) SUSE LLC, 2022
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *		Enzo Matsumiya <ematsumiya@suse.de>
@@ -33,7 +33,7 @@
 #define DECLARE_GLOBALS_HERE
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_fs_sb.h"
 #include <linux/mm.h>
 #include <linux/key-type.h>
@@ -56,19 +56,17 @@
 #define SMB_DATE_MIN (0<<9 | 1<<5 | 1)
 #define SMB_TIME_MAX (23<<11 | 59<<5 | 29)
 
-int debug_level = 0;
-bool traceSMB;
+/* debug/log level (see debug.h) */
+int log_level = 0;
+
 bool enable_oplocks = true;
-bool linuxExtEnabled = true;
-bool lookupCacheEnabled = true;
 bool disable_legacy_dialects; /* false by default */
 bool enable_gcm_256 = true;
 bool require_gcm_256; /* false by default */
 bool enable_negotiate_signing; /* false by default */
-unsigned int global_secflags = CIFSSEC_DEF;
-/* unsigned int ntlmv2_support = 0; */
 unsigned int sign_CIFS_PDUs = 1;
 static const struct super_operations cifs_super_ops;
+
 unsigned int CIFSMaxBufSize = CIFS_MAX_MSGSIZE;
 module_param(CIFSMaxBufSize, uint, 0444);
 MODULE_PARM_DESC(CIFSMaxBufSize, "Network buffer size (not including header) "
@@ -240,7 +238,7 @@ cifs_read_super(struct super_block *sb)
 
 #ifdef CONFIG_SMBFS_NFSD_EXPORT
 	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SERVER_INUM) {
-		cifs_dbg(FYI, "export ops supported\n");
+		smbfs_dbg("export ops supported\n");
 		sb->s_export_op = &cifs_export_ops;
 	}
 #endif /* CONFIG_SMBFS_NFSD_EXPORT */
@@ -248,7 +246,7 @@ cifs_read_super(struct super_block *sb)
 	return 0;
 
 out_no_root:
-	cifs_dbg(VFS, "%s: get root inode failed\n", __func__);
+	smbfs_log("%s: get root inode failed\n", __func__);
 	return rc;
 }
 
@@ -716,7 +714,7 @@ static void cifs_umount_begin(struct super_block *sb)
 	/* cancel_brl_requests(tcon); */ /* BB mark all brl mids as exiting */
 	/* cancel_notify_requests(tcon); */
 	if (tcon->ses && tcon->ses->server) {
-		cifs_dbg(FYI, "wake up tasks now - umount begin not complete\n");
+		smbfs_dbg("wake up tasks now - umount begin not complete\n");
 		wake_up_all(&tcon->ses->server->request_q);
 		wake_up_all(&tcon->ses->server->response_q);
 		msleep(1); /* yield */
@@ -792,7 +790,7 @@ cifs_get_root(struct smb3_fs_context *ctx, struct super_block *sb)
 	if (full_path == NULL)
 		return ERR_PTR(-ENOMEM);
 
-	cifs_dbg(FYI, "Get root dentry for %s\n", full_path);
+	smbfs_dbg("Get root dentry for %s\n", full_path);
 
 	sep = CIFS_DIR_SEP(cifs_sb);
 	dentry = dget(sb->s_root);
@@ -843,14 +841,11 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	struct cifs_mnt_data mnt_data;
 	struct dentry *root;
 
-	/*
-	 * Prints in Kernel / CIFS log the attempted mount operation
-	 *	If CIFS_DEBUG && cifs_FYI
-	 */
-	if (debug_level)
-		cifs_dbg(FYI, "Devname: %s flags: %d\n", old_ctx->UNC, flags);
-	else
-		cifs_info("Attempting to mount %s\n", old_ctx->UNC);
+#ifdef CONFIG_SMBFS_DEBUG
+	smbfs_dbg("Devname: %s flags: %d\n", old_ctx->UNC, flags);
+#else
+	smbfs_info("Attempting to mount %s\n", old_ctx->UNC);
+#endif /* CONFIG_SMBFS_DEBUG */
 
 	cifs_sb = kzalloc(sizeof(struct cifs_sb_info), GFP_KERNEL);
 	if (cifs_sb == NULL) {
@@ -884,7 +879,7 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	rc = cifs_mount(cifs_sb, cifs_sb->ctx);
 	if (rc) {
 		if (!(flags & SB_SILENT))
-			cifs_dbg(VFS, "cifs_mount failed w/return code = %d\n",
+			smbfs_log("cifs_mount failed w/return code = %d\n",
 				 rc);
 		root = ERR_PTR(rc);
 		goto out;
@@ -906,7 +901,7 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	}
 
 	if (sb->s_root) {
-		cifs_dbg(FYI, "Use existing superblock\n");
+		smbfs_dbg("Use existing superblock\n");
 		cifs_umount(cifs_sb);
 		cifs_sb = NULL;
 	} else {
@@ -926,7 +921,7 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	if (cifs_sb)
 		cifs_sb->root = dget(root);
 
-	cifs_dbg(FYI, "dentry root is: %p\n", root);
+	smbfs_dbg("dentry root 0x%p\n", root);
 	return root;
 
 out_super:
@@ -971,8 +966,7 @@ static ssize_t cifs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 		written = cifs_user_writev(iocb, from);
 		if (written > 0 && CIFS_CACHE_READ(cinode)) {
 			cifs_zap_mapping(inode);
-			cifs_dbg(FYI,
-				 "Set no oplock for inode=%p after a write operation\n",
+			smbfs_dbg("Set no oplock for inode 0x%p after a write operation\n",
 				 inode);
 			cinode->oplock = 0;
 		}
@@ -990,7 +984,7 @@ static ssize_t cifs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 
 	rc = filemap_fdatawrite(inode->i_mapping);
 	if (rc)
-		cifs_dbg(FYI, "cifs_file_write_iter: %d rc on %p inode\n",
+		smbfs_dbg("cifs_file_write_iter: %d rc on 0x%p inode\n",
 			 rc, inode);
 
 out:
@@ -1142,13 +1136,13 @@ static loff_t cifs_remap_file_range(struct file *src_file, loff_t off,
 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
 		return -EINVAL;
 
-	cifs_dbg(FYI, "clone range\n");
+	smbfs_dbg("clone range\n");
 
 	xid = get_xid();
 
 	if (!src_file->private_data || !dst_file->private_data) {
 		rc = -EBADF;
-		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+		smbfs_log("missing cifsFileInfo on copy range src file\n");
 		goto out;
 	}
 
@@ -1165,7 +1159,7 @@ static loff_t cifs_remap_file_range(struct file *src_file, loff_t off,
 	if (len == 0)
 		len = src_inode->i_size - off;
 
-	cifs_dbg(FYI, "about to flush pages\n");
+	smbfs_dbg("about to flush pages\n");
 	/* should we flush first and last page first */
 	truncate_inode_pages_range(&target_inode->i_data, destoff,
 				   PAGE_ALIGN(destoff + len)-1);
@@ -1200,11 +1194,11 @@ ssize_t cifs_file_copychunk_range(unsigned int xid,
 	struct cifs_tcon *target_tcon;
 	ssize_t rc;
 
-	cifs_dbg(FYI, "copychunk range\n");
+	smbfs_dbg("copychunk range\n");
 
 	if (!src_file->private_data || !dst_file->private_data) {
 		rc = -EBADF;
-		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+		smbfs_log("missing cifsFileInfo on copy range src file\n");
 		goto out;
 	}
 
@@ -1215,7 +1209,7 @@ ssize_t cifs_file_copychunk_range(unsigned int xid,
 	target_tcon = tlink_tcon(smb_file_target->tlink);
 
 	if (src_tcon->ses != target_tcon->ses) {
-		cifs_dbg(VFS, "source and target of copy not on same server\n");
+		smbfs_log("source and target of copy not on same server\n");
 		goto out;
 	}
 
@@ -1230,7 +1224,7 @@ ssize_t cifs_file_copychunk_range(unsigned int xid,
 	 */
 	lock_two_nondirectories(target_inode, src_inode);
 
-	cifs_dbg(FYI, "about to flush pages\n");
+	smbfs_dbg("about to flush pages\n");
 	/* should we flush first and last page first */
 	truncate_inode_pages(&target_inode->i_data, 0);
 
@@ -1260,7 +1254,7 @@ out:
  */
 static int cifs_dir_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 {
-	cifs_dbg(FYI, "Sync directory - name: %pD datasync: 0x%x\n",
+	smbfs_dbg("Sync directory - name: %pD datasync: 0x%x\n",
 		 file, datasync);
 
 	return 0;
@@ -1465,7 +1459,7 @@ cifs_init_request_bufs(void)
 		CIFSMaxBufSize &= 0x1FE00; /* Round size to even 512 byte mult*/
 	}
 /*
-	cifs_dbg(VFS, "CIFSMaxBufSize %d 0x%x\n",
+	smbfs_log("CIFSMaxBufSize %d 0x%x\n",
 		 CIFSMaxBufSize, CIFSMaxBufSize);
 */
 	cifs_req_cachep = kmem_cache_create_usercopy("cifs_request",
@@ -1480,7 +1474,7 @@ cifs_init_request_bufs(void)
 		cifs_min_rcv = 1;
 	else if (cifs_min_rcv > 64) {
 		cifs_min_rcv = 64;
-		cifs_dbg(VFS, "cifs_min_rcv set to maximum (64)\n");
+		smbfs_log("cifs_min_rcv set to maximum (64)\n");
 	}
 
 	cifs_req_poolp = mempool_create_slab_pool(cifs_min_rcv,
@@ -1511,7 +1505,7 @@ cifs_init_request_bufs(void)
 		cifs_min_small = 2;
 	else if (cifs_min_small > 256) {
 		cifs_min_small = 256;
-		cifs_dbg(FYI, "cifs_min_small set to maximum (256)\n");
+		smbfs_dbg("cifs_min_small set to maximum (256)\n");
 	}
 
 	cifs_sm_req_poolp = mempool_create_slab_pool(cifs_min_small,
@@ -1566,7 +1560,7 @@ static int __init
 init_smbfs(void)
 {
 	int rc = 0;
-	cifs_proc_init();
+	smbfs_proc_init();
 	INIT_LIST_HEAD(&cifs_tcp_ses_list);
 /*
  *  Initialize Global counters
@@ -1584,10 +1578,9 @@ init_smbfs(void)
 	atomic_set(&totBufAllocCount, 0);
 	atomic_set(&totSmBufAllocCount, 0);
 	if (slow_rsp_threshold < 1)
-		cifs_dbg(FYI, "slow_response_threshold msgs disabled\n");
+		smbfs_dbg("slow_response_threshold msgs disabled\n");
 	else if (slow_rsp_threshold > 32767)
-		cifs_dbg(VFS,
-		       "slow response threshold set higher than recommended (0 to 32767)\n");
+		smbfs_log("slow response threshold set higher than recommended (0 to 32767)\n");
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
 
 	atomic_set(&midCount, 0);
@@ -1601,10 +1594,10 @@ init_smbfs(void)
 
 	if (cifs_max_pending < 2) {
 		cifs_max_pending = 2;
-		cifs_dbg(FYI, "cifs_max_pending set to min of 2\n");
+		smbfs_dbg("cifs_max_pending set to min of 2\n");
 	} else if (cifs_max_pending > CIFS_MAX_REQ) {
 		cifs_max_pending = CIFS_MAX_REQ;
-		cifs_dbg(FYI, "cifs_max_pending set to max of %u\n",
+		smbfs_dbg("cifs_max_pending set to max of %u\n",
 			 CIFS_MAX_REQ);
 	}
 
@@ -1724,14 +1717,14 @@ out_destroy_decrypt_wq:
 out_destroy_cifsiod_wq:
 	destroy_workqueue(cifsiod_wq);
 out_clean_proc:
-	cifs_proc_clean();
+	smbfs_proc_clean();
 	return rc;
 }
 
 static void __exit
 exit_smbfs(void)
 {
-	cifs_dbg(NOISY, "exit_smb3\n");
+	smbfs_dbg_noisy("exit_smb3\n");
 	unregister_filesystem(&cifs_fs_type);
 	unregister_filesystem(&smb3_fs_type);
 	cifs_dfs_release_automount_timer();
@@ -1753,7 +1746,7 @@ exit_smbfs(void)
 	destroy_workqueue(decrypt_wq);
 	destroy_workqueue(fileinfo_put_wq);
 	destroy_workqueue(cifsiod_wq);
-	cifs_proc_clean();
+	smbfs_proc_clean();
 }
 
 MODULE_AUTHOR("Steve French");

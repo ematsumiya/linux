@@ -271,10 +271,6 @@ struct smb_version_operations {
 	int (*map_error)(char *, bool);
 	/* find mid corresponding to the response message */
 	struct mid_q_entry * (*find_mid)(struct TCP_Server_Info *, char *);
-	void (*dump_detail)(void *buf, struct TCP_Server_Info *ptcp_info);
-	void (*clear_stats)(struct cifs_tcon *);
-	void (*print_stats)(struct seq_file *m, struct cifs_tcon *);
-	void (*dump_share_caps)(struct seq_file *, struct cifs_tcon *);
 	/* verify the message */
 	int (*check_message)(char *, unsigned int, struct TCP_Server_Info *);
 	bool (*is_oplock_break)(char *, struct TCP_Server_Info *);
@@ -1984,14 +1980,10 @@ GLOBAL_EXTERN atomic_t midCount;
 
 /* Misc globals */
 extern bool enable_oplocks; /* enable or disable oplocks */
-extern bool lookupCacheEnabled;
-extern unsigned int global_secflags;	/* if on, session setup sent
-				with more secure ntlmssp2 challenge/resp */
 extern unsigned int sign_CIFS_PDUs;  /* enable smb packet signing */
 extern bool enable_gcm_256; /* allow optional negotiate of strongest signing (aes-gcm-256) */
 extern bool require_gcm_256; /* require use of strongest signing (aes-gcm-256) */
 extern bool enable_negotiate_signing; /* request use of faster (GMAC) signing if available */
-extern bool linuxExtEnabled;/*enable Linux/Unix CIFS extensions*/
 extern unsigned int CIFSMaxBufSize;  /* max size not including hdr */
 extern unsigned int cifs_min_rcv;    /* min size of big ntwrk buf pool */
 extern unsigned int cifs_min_small;  /* min size of small buf pool */

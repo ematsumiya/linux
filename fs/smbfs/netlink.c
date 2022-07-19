@@ -10,7 +10,7 @@
 
 #include "netlink.h"
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_swn.h"
 
 static const struct nla_policy cifs_genl_policy[CIFS_GENL_ATTR_MAX + 1] = {
@@ -66,7 +66,7 @@ int cifs_genl_init(void)
 
 	ret = genl_register_family(&cifs_genl_family);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: failed to register netlink family\n",
+		smbfs_log("%s: failed to register netlink family\n",
 				__func__);
 		return ret;
 	}
@@ -83,7 +83,7 @@ void cifs_genl_exit(void)
 
 	ret = genl_unregister_family(&cifs_genl_family);
 	if (ret < 0) {
-		cifs_dbg(VFS, "%s: failed to unregister netlink family\n",
+		smbfs_log("%s: failed to unregister netlink family\n",
 				__func__);
 	}
 }

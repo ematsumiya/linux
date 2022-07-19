@@ -16,8 +16,11 @@
 #include <linux/inet.h>
 #include "cifsglob.h"
 #include "cifs_spnego.h"
-#include "cifs_debug.h"
+#include "debug.h"
+#include "proc.h"
 #include "cifsproto.h"
+
+
 static const struct cred *spnego_cred;
 
 /* create a new cifs key */
@@ -136,7 +139,7 @@ cifs_get_spnego_key(struct cifs_ses *sesInfo,
 	else if (server->sec_mskerberos)
 		sprintf(dp, ";sec=mskrb5");
 	else {
-		cifs_dbg(VFS, "unknown or missing server auth type, use krb5\n");
+		smbfs_log("unknown or missing server auth type, use krb5\n");
 		sprintf(dp, ";sec=krb5");
 	}
 
@@ -156,16 +159,16 @@ cifs_get_spnego_key(struct cifs_ses *sesInfo,
 	dp = description + strlen(description);
 	sprintf(dp, ";pid=0x%x", current->pid);
 
-	cifs_dbg(FYI, "key description = %s\n", description);
+	smbfs_dbg("key description = %s\n", description);
 	saved_cred = override_creds(spnego_cred);
 	spnego_key = request_key(&cifs_spnego_key_type, description, "");
 	revert_creds(saved_cred);
 
 #ifdef CONFIG_SMBFS_DEBUG_EXTRA
-	if (debug_level && !IS_ERR(spnego_key)) {
+	if (!IS_ERR(spnego_key)) {
 		struct cifs_spnego_msg *msg = spnego_key->payload.data[0];
-		cifs_dump_mem("SPNEGO reply blob:", msg->data, min(1024U,
-				msg->secblob_len + msg->sesskey_len));
+		size_t blob_len = min(1024U, msg->secblob_len + msg->sesskey_len);
+		smbfs_dump_mem("SPNEGO reply blob:", msg->data, blob_len);
 	}
 #endif /* CONFIG_SMBFS_DEBUG_EXTRA */
 
@@ -181,7 +184,7 @@ init_cifs_spnego(void)
 	struct key *keyring;
 	int ret;
 
-	cifs_dbg(FYI, "Registering the %s key type\n",
+	smbfs_dbg("Registering the %s key type\n",
 		 cifs_spnego_key_type.name);
 
 	/*
@@ -216,7 +219,7 @@ init_cifs_spnego(void)
 	cred->jit_keyring = KEY_REQKEY_DEFL_THREAD_KEYRING;
 	spnego_cred = cred;
 
-	cifs_dbg(FYI, "cifs spnego keyring: %d\n", key_serial(keyring));
+	smbfs_dbg("cifs spnego keyring: %d\n", key_serial(keyring));
 	return 0;
 
 failed_put_key:
@@ -232,5 +235,5 @@ exit_cifs_spnego(void)
 	key_revoke(spnego_cred->thread_keyring);
 	unregister_key_type(&cifs_spnego_key_type);
 	put_cred(spnego_cred);
-	cifs_dbg(FYI, "Unregistered %s key type\n", cifs_spnego_key_type.name);
+	smbfs_dbg("Unregistered %s key type\n", cifs_spnego_key_type.name);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (C) International Business Machines  Corp., 2007
+ *   Copyright (C) International Business Machines Corp., 2007
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  *   Common Internet FileSystem (CIFS) client
@@ -29,14 +29,14 @@
 #include <linux/fs.h>
 #include <linux/exportfs.h>
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "smbfs.h"
 
 #ifdef CONFIG_SMBFS_NFSD_EXPORT
 static struct dentry *cifs_get_parent(struct dentry *dentry)
 {
 	/* BB need to add code here eventually to enable export via NFSD */
-	cifs_dbg(FYI, "get parent for %p\n", dentry);
+	smbfs_dbg("get parent for 0x%p\n", dentry);
 	return ERR_PTR(-EACCES);
 }
 

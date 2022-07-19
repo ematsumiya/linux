@@ -10,7 +10,7 @@
 #include <uapi/linux/magic.h>
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifspdu.h"
 #include "cifs_unicode.h"
 #include "fs_context.h"
@@ -57,7 +57,7 @@ send_nt_cancel(struct TCP_Server_Info *server, struct smb_rqst *rqst,
 
 	cifs_server_unlock(server);
 
-	cifs_dbg(FYI, "issued NT_CANCEL for mid %u, rc = %d\n",
+	smbfs_dbg("issued NT_CANCEL for mid %u, rc=%d\n",
 		 get_mid(in_buf), rc);
 
 	return rc;
@@ -254,7 +254,7 @@ check2ndT2(char *buf)
 	/* check for plausible wct, bcc and t2 data and parm sizes */
 	/* check for parm and data offset going beyond end of smb */
 	if (pSMB->WordCount != 10) { /* coalesce_t2 depends on this */
-		cifs_dbg(FYI, "Invalid transact2 word count\n");
+		smbfs_dbg("Invalid transact2 word count\n");
 		return -EINVAL;
 	}
 
@@ -266,17 +266,17 @@ check2ndT2(char *buf)
 	if (total_data_size == data_in_this_rsp)
 		return 0;
 	else if (total_data_size < data_in_this_rsp) {
-		cifs_dbg(FYI, "total data %d smaller than data in frame %d\n",
+		smbfs_dbg("total data %d smaller than data in frame %d\n",
 			 total_data_size, data_in_this_rsp);
 		return -EINVAL;
 	}
 
 	remaining = total_data_size - data_in_this_rsp;
 
-	cifs_dbg(FYI, "missing %d bytes from transact2, check next response\n",
+	smbfs_dbg("missing %d bytes from transact2, check next response\n",
 		 remaining);
 	if (total_data_size > CIFSMaxBufSize) {
-		cifs_dbg(VFS, "TotalDataSize %d is over maximum buffer %d\n",
+		smbfs_log("TotalDataSize %d is over maximum buffer %d\n",
 			 total_data_size, CIFSMaxBufSize);
 		return -EINVAL;
 	}
@@ -298,7 +298,7 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 	tgt_total_cnt = get_unaligned_le16(&pSMBt->t2_rsp.TotalDataCount);
 
 	if (tgt_total_cnt != src_total_cnt)
-		cifs_dbg(FYI, "total data count of primary and secondary t2 differ source=%hu target=%hu\n",
+		smbfs_dbg("total data count of primary and secondary t2 differ source=%hu target=%hu\n",
 			 src_total_cnt, tgt_total_cnt);
 
 	total_in_tgt = get_unaligned_le16(&pSMBt->t2_rsp.DataCount);
@@ -306,20 +306,20 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 	remaining = tgt_total_cnt - total_in_tgt;
 
 	if (remaining < 0) {
-		cifs_dbg(FYI, "Server sent too much data. tgt_total_cnt=%hu total_in_tgt=%u\n",
+		smbfs_dbg("Server sent too much data. tgt_total_cnt=%hu total_in_tgt=%u\n",
 			 tgt_total_cnt, total_in_tgt);
 		return -EPROTO;
 	}
 
 	if (remaining == 0) {
 		/* nothing to do, ignore */
-		cifs_dbg(FYI, "no more data remains\n");
+		smbfs_dbg("no more data remains\n");
 		return 0;
 	}
 
 	total_in_src = get_unaligned_le16(&pSMBs->t2_rsp.DataCount);
 	if (remaining < total_in_src)
-		cifs_dbg(FYI, "transact2 2nd response contains too much data\n");
+		smbfs_dbg("transact2 2nd response contains too much data\n");
 
 	/* find end of first SMB data area */
 	data_area_of_tgt = (char *)&pSMBt->hdr.Protocol +
@@ -334,7 +334,7 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 	total_in_tgt += total_in_src;
 	/* is the result too big for the field? */
 	if (total_in_tgt > USHRT_MAX) {
-		cifs_dbg(FYI, "coalesced DataCount too large (%u)\n",
+		smbfs_dbg("coalesced DataCount too large (%u)\n",
 			 total_in_tgt);
 		return -EPROTO;
 	}
@@ -345,7 +345,7 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 	byte_count += total_in_src;
 	/* is the result too big for the field? */
 	if (byte_count > USHRT_MAX) {
-		cifs_dbg(FYI, "coalesced BCC too large (%u)\n", byte_count);
+		smbfs_dbg("coalesced BCC too large (%u)\n", byte_count);
 		return -EPROTO;
 	}
 	put_bcc(byte_count, target_hdr);
@@ -354,7 +354,7 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 	byte_count += total_in_src;
 	/* don't allow buffer to overflow */
 	if (byte_count > CIFSMaxBufSize + MAX_CIFS_HDR_SIZE - 4) {
-		cifs_dbg(FYI, "coalesced BCC exceeds buffer size (%u)\n",
+		smbfs_dbg("coalesced BCC exceeds buffer size (%u)\n",
 			 byte_count);
 		return -ENOBUFS;
 	}
@@ -365,12 +365,12 @@ coalesce_t2(char *second_buf, struct smb_hdr *target_hdr)
 
 	if (remaining != total_in_src) {
 		/* more responses to go */
-		cifs_dbg(FYI, "waiting for more secondary responses\n");
+		smbfs_dbg("waiting for more secondary responses\n");
 		return 1;
 	}
 
 	/* we are done */
-	cifs_dbg(FYI, "found the last secondary response\n");
+	smbfs_dbg("found the last secondary response\n");
 	return 0;
 }
 
@@ -403,7 +403,7 @@ cifs_check_trans2(struct mid_q_entry *mid, struct TCP_Server_Info *server,
 	}
 	if (!server->large_buf) {
 		/*FIXME: switch to already allocated largebuf?*/
-		cifs_dbg(VFS, "1st trans2 resp needs bigbuf\n");
+		smbfs_log("1st trans2 resp needs bigbuf\n");
 	} else {
 		/* Have first buffer */
 		mid->resp_buf = buf;
@@ -621,68 +621,6 @@ cifs_query_file_info(const unsigned int xid, struct cifs_tcon *tcon,
 }
 
 static void
-cifs_clear_stats(struct cifs_tcon *tcon)
-{
-	atomic_set(&tcon->stats.cifs_stats.num_writes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_reads, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_flushes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_oplock_brks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_opens, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_posixopens, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_posixmkdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_closes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_deletes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_mkdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_rmdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_renames, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_t2renames, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_ffirst, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_fnext, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_fclose, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_hardlinks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_symlinks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_locks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_acl_get, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_acl_set, 0);
-}
-
-static void
-cifs_print_stats(struct seq_file *m, struct cifs_tcon *tcon)
-{
-	seq_printf(m, " Oplocks breaks: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_oplock_brks));
-	seq_printf(m, "\nReads:  %d Bytes: %llu",
-		   atomic_read(&tcon->stats.cifs_stats.num_reads),
-		   (long long)(tcon->bytes_read));
-	seq_printf(m, "\nWrites: %d Bytes: %llu",
-		   atomic_read(&tcon->stats.cifs_stats.num_writes),
-		   (long long)(tcon->bytes_written));
-	seq_printf(m, "\nFlushes: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_flushes));
-	seq_printf(m, "\nLocks: %d HardLinks: %d Symlinks: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_locks),
-		   atomic_read(&tcon->stats.cifs_stats.num_hardlinks),
-		   atomic_read(&tcon->stats.cifs_stats.num_symlinks));
-	seq_printf(m, "\nOpens: %d Closes: %d Deletes: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_opens),
-		   atomic_read(&tcon->stats.cifs_stats.num_closes),
-		   atomic_read(&tcon->stats.cifs_stats.num_deletes));
-	seq_printf(m, "\nPosix Opens: %d Posix Mkdirs: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_posixopens),
-		   atomic_read(&tcon->stats.cifs_stats.num_posixmkdirs));
-	seq_printf(m, "\nMkdirs: %d Rmdirs: %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_mkdirs),
-		   atomic_read(&tcon->stats.cifs_stats.num_rmdirs));
-	seq_printf(m, "\nRenames: %d T2 Renames %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_renames),
-		   atomic_read(&tcon->stats.cifs_stats.num_t2renames));
-	seq_printf(m, "\nFindFirst: %d FNext %d FClose %d",
-		   atomic_read(&tcon->stats.cifs_stats.num_ffirst),
-		   atomic_read(&tcon->stats.cifs_stats.num_fnext),
-		   atomic_read(&tcon->stats.cifs_stats.num_fclose));
-}
-
-static void
 cifs_mkdir_setinfo(struct inode *inode, const char *full_path,
 		   struct cifs_sb_info *cifs_sb, struct cifs_tcon *tcon,
 		   const unsigned int xid)
@@ -809,7 +747,7 @@ smb_set_file_info(struct inode *inode, const char *full_path,
 	oparms.fid = &fid;
 	oparms.reconnect = false;
 
-	cifs_dbg(FYI, "calling SetFileInfo since SetPathInfo for times not supported by this server\n");
+	smbfs_dbg("calling SetFileInfo since SetPathInfo for times not supported by this server\n");
 	rc = CIFS_open(xid, &oparms, &oplock, NULL);
 	if (rc != 0) {
 		if (rc == -EIO)
@@ -852,7 +790,7 @@ cifs_query_dir_first(const unsigned int xid, struct cifs_tcon *tcon,
 	rc = CIFSFindFirst(xid, tcon, path, cifs_sb,
 			   &fid->netfid, search_flags, srch_inf, true);
 	if (rc)
-		cifs_dbg(FYI, "find first failed=%d\n", rc);
+		smbfs_dbg("find first failed=%d\n", rc);
 	return rc;
 }
 
@@ -955,10 +893,10 @@ cifs_query_symlink(const unsigned int xid, struct cifs_tcon *tcon,
 	struct cifs_fid fid;
 	struct cifs_open_parms oparms;
 
-	cifs_dbg(FYI, "%s: path: %s\n", __func__, full_path);
+	smbfs_dbg("path: %s\n", full_path);
 
 	if (is_reparse_point) {
-		cifs_dbg(VFS, "reparse points not handled for SMB1 symlinks\n");
+		smbfs_log("reparse points not handled for SMB1 symlinks\n");
 		return -EOPNOTSUPP;
 	}
 
@@ -999,7 +937,7 @@ out_close:
 	CIFSSMBClose(xid, tcon, fid.netfid);
 out:
 	if (!rc)
-		cifs_dbg(FYI, "%s: target path: %s\n", __func__, *target_path);
+		smbfs_dbg("target path: %s\n", *target_path);
 	return rc;
 }
 
@@ -1090,7 +1028,7 @@ cifs_make_node(unsigned int xid, struct inode *inode,
 	if (!S_ISCHR(mode) && !S_ISBLK(mode))
 		goto out;
 
-	cifs_dbg(FYI, "sfu compat create special file\n");
+	smbfs_dbg("sfu compat create special file\n");
 
 	buf = kmalloc(sizeof(FILE_ALL_INFO), GFP_KERNEL);
 	if (buf == NULL) {
@@ -1150,8 +1088,6 @@ out:
 	return rc;
 }
 
-
-
 struct smb_version_operations smb1_operations = {
 	.send_cancel = send_nt_cancel,
 	.compare_fids = cifs_compare_fids,
@@ -1169,9 +1105,6 @@ struct smb_version_operations smb1_operations = {
 	.map_error = map_smb_to_linux_error,
 	.find_mid = cifs_find_mid,
 	.check_message = checkSMB,
-	.dump_detail = cifs_dump_detail,
-	.clear_stats = cifs_clear_stats,
-	.print_stats = cifs_print_stats,
 	.is_oplock_break = is_valid_oplock_break,
 	.downgrade_oplock = cifs_downgrade_oplock,
 	.check_trans2 = cifs_check_trans2,

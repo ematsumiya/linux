@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *
- *   Copyright (c) International Business Machines  Corp., 2000,2009
+ *   Copyright (c) International Business Machines Corp., 2000,2009
  *   Modified by Steve French (sfrench@us.ibm.com)
  */
 #include <linux/fs.h>
@@ -11,7 +11,7 @@
 #include "cifs_uniupr.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
-#include "cifs_debug.h"
+#include "debug.h"
 
 int cifs_remap(struct cifs_sb_info *cifs_sb)
 {
@@ -277,8 +277,8 @@ cifs_strtoUTF16(__le16 *to, const char *from, int len,
 	for (i = 0; len && *from; i++, from += charlen, len -= charlen) {
 		charlen = codepage->char2uni(from, len, &wchar_to);
 		if (charlen < 1) {
-			cifs_dbg(VFS, "strtoUTF16: char2uni of 0x%x returned %d\n",
-				 *from, charlen);
+			smbfs_log("%s: char2uni of 0x%x returned %d\n",
+				  __func__, *from, charlen);
 			/* A question mark */
 			wchar_to = 0x003f;
 			charlen = 1;

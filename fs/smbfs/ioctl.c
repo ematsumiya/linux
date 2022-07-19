@@ -3,7 +3,7 @@
  *
  *   vfs operations that deal with io control
  *
- *   Copyright (C) International Business Machines  Corp., 2005,2013
+ *   Copyright (C) International Business Machines Corp., 2005,2013
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */
@@ -16,7 +16,7 @@
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "smbfs.h"
 #include "cifs_ioctl.h"
 #include "smb2proto.h"
@@ -41,7 +41,7 @@ static long cifs_ioctl_query_info(unsigned int xid, struct file *filep,
 		return PTR_ERR(path);
 	}
 
-	cifs_dbg(FYI, "%s %s\n", __func__, path);
+	smbfs_dbg("path=%s\n", path);
 
 	if (!path[0]) {
 		root_path = 0;
@@ -75,17 +75,17 @@ static long cifs_ioctl_copychunk(unsigned int xid, struct file *dst_file,
 	struct fd src_file;
 	struct inode *src_inode;
 
-	cifs_dbg(FYI, "ioctl copychunk range\n");
+	smbfs_dbg("ioctl copychunk range\n");
 	/* the destination must be opened for writing */
 	if (!(dst_file->f_mode & FMODE_WRITE)) {
-		cifs_dbg(FYI, "file target not open for write\n");
+		smbfs_dbg("file target not open for write\n");
 		return -EINVAL;
 	}
 
 	/* check if target volume is readonly and take reference */
 	rc = mnt_want_write_file(dst_file);
 	if (rc) {
-		cifs_dbg(FYI, "mnt_want_write failed with rc %d\n", rc);
+		smbfs_dbg("mnt_want_write failed with rc %d\n", rc);
 		return rc;
 	}
 
@@ -97,7 +97,7 @@ static long cifs_ioctl_copychunk(unsigned int xid, struct file *dst_file,
 
 	if (src_file.file->f_op->unlocked_ioctl != cifs_ioctl) {
 		rc = -EBADF;
-		cifs_dbg(VFS, "src file seems to be from a different filesystem type\n");
+		smbfs_log("src file seems to be from a different filesystem type\n");
 		goto out_fput;
 	}
 
@@ -169,7 +169,7 @@ static int cifs_shutdown(struct super_block *sb, unsigned long arg)
 	if (cifs_forced_shutdown(sbi))
 		return 0;
 
-	cifs_dbg(VFS, "shut down requested (%d)", flags);
+	smbfs_log("shut down requested (%d)", flags);
 /*	trace_cifs_shutdown(sb, flags);*/
 
 	/*
@@ -185,7 +185,7 @@ static int cifs_shutdown(struct super_block *sb, unsigned long arg)
 	 * the mount and then issue fsync to server (if nostrictsync not set)
 	 */
 	case CIFS_GOING_FLAGS_DEFAULT:
-		cifs_dbg(FYI, "shutdown with default flag not supported\n");
+		smbfs_dbg("shutdown with default flag not supported\n");
 		return -EINVAL;
 	/*
 	 * FLAGS_LOGFLUSH is easy since it asks to write out metadata (not
@@ -325,7 +325,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 
 	xid = get_xid();
 
-	cifs_dbg(FYI, "cifs ioctl 0x%x\n", command);
+	smbfs_dbg("cifs ioctl 0x%x\n", command);
 	switch (command) {
 		case FS_IOC_GETFLAGS:
 			if (pSMBFile == NULL)
@@ -383,7 +383,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			if (tcon->ses->server->ops->set_compression) {
 				rc = tcon->ses->server->ops->set_compression(
 							xid, tcon, pSMBFile);
-				cifs_dbg(FYI, "set compress flag rc %d\n", rc);
+				smbfs_dbg("set compress flag rc %d\n", rc);
 			}
 			break;
 		case CIFS_IOC_COPYCHUNK_FILE:
@@ -483,7 +483,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			if (tcon && tcon->ses->server->ops->notify) {
 				rc = tcon->ses->server->ops->notify(xid,
 						filep, (void __user *)arg);
-				cifs_dbg(FYI, "ioctl notify rc %d\n", rc);
+				smbfs_dbg("ioctl notify rc %d\n", rc);
 			} else
 				rc = -EOPNOTSUPP;
 			cifs_put_tlink(tlink);
@@ -492,7 +492,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			rc = cifs_shutdown(inode->i_sb, arg);
 			break;
 		default:
-			cifs_dbg(FYI, "unsupported ioctl\n");
+			smbfs_dbg("unsupported ioctl\n");
 			break;
 	}
 cifs_ioc_exit:

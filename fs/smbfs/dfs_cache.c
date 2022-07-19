@@ -16,7 +16,7 @@
 #include "smb2pdu.h"
 #include "smb2proto.h"
 #include "cifsproto.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "cifs_unicode.h"
 #include "smb2glob.h"
 #include "dns_resolve.h"
@@ -197,7 +197,7 @@ char *dfs_cache_canonical_path(const char *path, const struct nls_table *cp, int
 	if (unlikely(strcmp(cp->charset, cache_cp->charset))) {
 		tmp = (char *)cifs_strndup_to_utf16(path, strlen(path), &plen, cp, remap);
 		if (!tmp) {
-			cifs_dbg(VFS, "%s: failed to convert path to utf16\n", __func__);
+			smbfs_log("%s: failed to convert path to UTF16\n", __func__);
 			return ERR_PTR(-EINVAL);
 		}
 
@@ -205,7 +205,7 @@ char *dfs_cache_canonical_path(const char *path, const struct nls_table *cp, int
 		kfree(tmp);
 
 		if (!npath) {
-			cifs_dbg(VFS, "%s: failed to convert path from utf16\n", __func__);
+			smbfs_log("%s: failed to convert path from UTF16\n", __func__);
 			return ERR_PTR(-EINVAL);
 		}
 	} else {
@@ -312,7 +312,7 @@ static ssize_t dfscache_proc_write(struct file *file, const char __user *buffer,
 	if (c != '0')
 		return -EINVAL;
 
-	cifs_dbg(FYI, "clearing dfs cache\n");
+	smbfs_dbg("clearing dfs cache\n");
 
 	down_write(&htable_rw_lock);
 	flush_cache_ents();
@@ -339,16 +339,16 @@ static inline void dump_tgts(const struct cache_entry *ce)
 {
 	struct cache_dfs_tgt *t;
 
-	cifs_dbg(FYI, "target list:\n");
+	smbfs_dbg("target list:\n");
 	list_for_each_entry(t, &ce->tlist, list) {
-		cifs_dbg(FYI, "  %s%s\n", t->name,
+		smbfs_dbg("  %s%s\n", t->name,
 			 ce->tgthint == t ? " (target hint)" : "");
 	}
 }
 
 static inline void dump_ce(const struct cache_entry *ce)
 {
-	cifs_dbg(FYI, "cache entry: path=%s,type=%s,ttl=%d,etime=%ld,hdr_flags=0x%x,ref_flags=0x%x,interlink=%s,path_consumed=%d,expired=%s\n",
+	smbfs_dbg("cache entry: path=%s,type=%s,ttl=%d,etime=%ld,hdr_flags=0x%x,ref_flags=0x%x,interlink=%s,path_consumed=%d,expired=%s\n",
 		 ce->path,
 		 ce->srvtype == DFS_TYPE_ROOT ? "root" : "link", ce->ttl,
 		 ce->etime.tv_nsec,
@@ -363,22 +363,21 @@ static inline void dump_refs(const struct dfs_info3_param *refs, int numrefs)
 {
 	int i;
 
-	cifs_dbg(FYI, "DFS referrals returned by the server:\n");
+	smbfs_dbg("DFS referrals returned by the server:\n");
 	for (i = 0; i < numrefs; i++) {
 		const struct dfs_info3_param *ref = &refs[i];
 
-		cifs_dbg(FYI,
-			 "\n"
-			 "flags:         0x%x\n"
-			 "path_consumed: %d\n"
-			 "server_type:   0x%x\n"
-			 "ref_flag:      0x%x\n"
-			 "path_name:     %s\n"
-			 "node_name:     %s\n"
-			 "ttl:           %d (%dm)\n",
-			 ref->flags, ref->path_consumed, ref->server_type,
-			 ref->ref_flag, ref->path_name, ref->node_name,
-			 ref->ttl, ref->ttl / 60);
+		smbfs_dbg("flags:         0x%x\n"
+			  "path_consumed: %d\n"
+			  "server_type:   0x%x\n"
+			  "ref_flag:      0x%x\n"
+			  "path_name:     %s\n"
+			  "node_name:     %s\n"
+			  "ttl:           %d (%dm)\n",
+			  ref->flags, ref->path_consumed, ref->server_type,
+			  ref->ref_flag, ref->path_name, ref->node_name,
+			  ref->ttl, ref->ttl / 60);
+		smbfs_dbg("\n");
 	}
 }
 #else
@@ -417,7 +416,7 @@ int dfs_cache_init(void)
 	if (!cache_cp)
 		cache_cp = load_nls_default();
 
-	cifs_dbg(FYI, "%s: initialized DFS referral cache\n", __func__);
+	smbfs_dbg("initialized DFS referral cache\n");
 	return 0;
 
 out_destroy_wq:
@@ -435,7 +434,7 @@ static int cache_entry_hash(const void *data, int size, unsigned int *hash)
 	for (i = 0; i < size; i += clen) {
 		clen = cache_cp->char2uni(&s[i], size - i, &c);
 		if (unlikely(clen < 0)) {
-			cifs_dbg(VFS, "%s: can't convert char\n", __func__);
+			smbfs_log("%s: can't convert char\n", __func__);
 			return clen;
 		}
 		c = cifs_toupper(c);
@@ -569,11 +568,11 @@ static void remove_oldest_entry_locked(void)
 	}
 
 	if (!to_del) {
-		cifs_dbg(FYI, "%s: no entry to remove\n", __func__);
+		smbfs_dbg("no entry to remove\n");
 		return;
 	}
 
-	cifs_dbg(FYI, "%s: removing entry\n", __func__);
+	smbfs_dbg("removing entry\n");
 	dump_ce(to_del);
 	flush_cache_ent(to_del);
 }
@@ -588,7 +587,7 @@ static int add_cache_entry_locked(struct dfs_info3_param *refs, int numrefs)
 	WARN_ON(!rwsem_is_locked(&htable_rw_lock));
 
 	if (atomic_read(&cache_count) >= CACHE_MAX_ENTRIES) {
-		cifs_dbg(FYI, "%s: reached max cache size (%d)\n", __func__, CACHE_MAX_ENTRIES);
+		smbfs_dbg("reached max cache size (%d)\n", CACHE_MAX_ENTRIES);
 		remove_oldest_entry_locked();
 	}
 
@@ -725,7 +724,7 @@ void dfs_cache_destroy(void)
 	kmem_cache_destroy(cache_slab);
 	destroy_workqueue(dfscache_wq);
 
-	cifs_dbg(FYI, "%s: destroyed DFS referral cache\n", __func__);
+	smbfs_dbg("destroyed DFS referral cache\n");
 }
 
 /* Update a cache entry with the new referral in @refs */
@@ -760,7 +759,7 @@ static int get_dfs_referral(const unsigned int xid, struct cifs_ses *ses, const 
 	int rc;
 	int i;
 
-	cifs_dbg(FYI, "%s: get an DFS referral for %s\n", __func__, path);
+	smbfs_dbg("get an DFS referral for %s\n", path);
 
 	*refs = NULL;
 	*numrefs = 0;
@@ -798,7 +797,7 @@ static int cache_refresh_path(const unsigned int xid, struct cifs_ses *ses, cons
 	int numrefs = 0;
 	bool newent = false;
 
-	cifs_dbg(FYI, "%s: search path: %s\n", __func__, path);
+	smbfs_dbg("search path: %s\n", path);
 
 	down_write(&htable_rw_lock);
 
@@ -846,7 +845,7 @@ static int setup_referral(const char *path, struct cache_entry *ce,
 {
 	int rc;
 
-	cifs_dbg(FYI, "%s: set up new ref\n", __func__);
+	smbfs_dbg("set up new ref\n");
 
 	memset(ref, 0, sizeof(*ref));
 
@@ -1002,7 +1001,7 @@ int dfs_cache_noreq_find(const char *path, struct dfs_info3_param *ref,
 	int rc;
 	struct cache_entry *ce;
 
-	cifs_dbg(FYI, "%s: path: %s\n", __func__, path);
+	smbfs_dbg("path: %s\n", path);
 
 	down_read(&htable_rw_lock);
 
@@ -1055,7 +1054,7 @@ int dfs_cache_update_tgthint(const unsigned int xid, struct cifs_ses *ses,
 	if (IS_ERR(npath))
 		return PTR_ERR(npath);
 
-	cifs_dbg(FYI, "%s: update target hint - path: %s\n", __func__, npath);
+	smbfs_dbg("update target hint - path: %s\n", npath);
 
 	rc = cache_refresh_path(xid, ses, npath);
 	if (rc)
@@ -1077,7 +1076,7 @@ int dfs_cache_update_tgthint(const unsigned int xid, struct cifs_ses *ses,
 	list_for_each_entry(t, &ce->tlist, list) {
 		if (!strcasecmp(t->name, it->it_name)) {
 			ce->tgthint = t;
-			cifs_dbg(FYI, "%s: new target hint: %s\n", __func__,
+			smbfs_dbg("new target hint: %s\n",
 				 it->it_name);
 			break;
 		}
@@ -1113,7 +1112,7 @@ int dfs_cache_noreq_update_tgthint(const char *path, const struct dfs_cache_tgt_
 	if (!it)
 		return -EINVAL;
 
-	cifs_dbg(FYI, "%s: path: %s\n", __func__, path);
+	smbfs_dbg("path: %s\n", path);
 
 	down_write(&htable_rw_lock);
 
@@ -1132,7 +1131,7 @@ int dfs_cache_noreq_update_tgthint(const char *path, const struct dfs_cache_tgt_
 	list_for_each_entry(t, &ce->tlist, list) {
 		if (!strcasecmp(t->name, it->it_name)) {
 			ce->tgthint = t;
-			cifs_dbg(FYI, "%s: new target hint: %s\n", __func__,
+			smbfs_dbg("new target hint: %s\n",
 				 it->it_name);
 			break;
 		}
@@ -1162,7 +1161,7 @@ int dfs_cache_get_tgt_referral(const char *path, const struct dfs_cache_tgt_iter
 	if (!it || !ref)
 		return -EINVAL;
 
-	cifs_dbg(FYI, "%s: path: %s\n", __func__, path);
+	smbfs_dbg("path: %s\n", path);
 
 	down_read(&htable_rw_lock);
 
@@ -1172,7 +1171,7 @@ int dfs_cache_get_tgt_referral(const char *path, const struct dfs_cache_tgt_iter
 		goto out_unlock;
 	}
 
-	cifs_dbg(FYI, "%s: target name: %s\n", __func__, it->it_name);
+	smbfs_dbg("target name: %s\n", it->it_name);
 
 	rc = setup_referral(path, ce, ref, it->it_name);
 
@@ -1332,14 +1331,12 @@ static bool target_share_equal(struct TCP_Server_Info *server, const char *s1, c
 
 	rc = dns_resolve_server_name_to_ip(unc, &ip, NULL);
 	if (rc < 0) {
-		cifs_dbg(FYI, "%s: could not resolve %.*s. assuming server address matches.\n",
-			 __func__, (int)hostlen, host);
+		smbfs_dbg("could not resolve %.*s. assuming server address matches\n", (int)hostlen, host);
 		return true;
 	}
 
 	if (!cifs_convert_address(&sa, ip, strlen(ip))) {
-		cifs_dbg(VFS, "%s: failed to convert address \'%s\'. skip address matching.\n",
-			 __func__, ip);
+		smbfs_log("%s: failed to convert address '%s', skip address matching\n", __func__, ip);
 	} else {
 		cifs_server_lock(server);
 		match = cifs_match_ipaddr((struct sockaddr *)&server->dstaddr, &sa);
@@ -1368,7 +1365,7 @@ static void mark_for_reconnect_if_needed(struct cifs_tcon *tcon, struct dfs_cach
 		}
 	}
 
-	cifs_dbg(FYI, "%s: no cached or matched targets. mark dfs share for reconnect.\n", __func__);
+	smbfs_dbg("no cached or matched targets. mark dfs share for reconnect\n");
 	cifs_signal_cifsd_for_reconnect(tcon->ses->server, true);
 }
 
@@ -1387,7 +1384,7 @@ static int __refresh_tcon(const char *path, struct cifs_ses **sessions, struct c
 
 	ses = find_ipc_from_server_path(sessions, path);
 	if (IS_ERR(ses)) {
-		cifs_dbg(FYI, "%s: could not find ipc session\n", __func__);
+		smbfs_dbg("could not find IPC session\n");
 		return PTR_ERR(ses);
 	}
 
@@ -1397,7 +1394,7 @@ static int __refresh_tcon(const char *path, struct cifs_ses **sessions, struct c
 	if (!IS_ERR(ce)) {
 		rc = get_targets(ce, &tl);
 		if (rc)
-			cifs_dbg(FYI, "%s: could not get dfs targets: %d\n", __func__, rc);
+			smbfs_dbg("could not get dfs targets: %d\n", rc);
 	}
 	up_read(&htable_rw_lock);
 
@@ -1472,12 +1469,12 @@ int dfs_cache_remount_fs(struct cifs_sb_info *cifs_sb)
 	server = tcon->ses->server;
 
 	if (!server->origin_fullpath) {
-		cifs_dbg(FYI, "%s: not a dfs mount\n", __func__);
+		smbfs_dbg("not a dfs mount\n");
 		return 0;
 	}
 
 	if (uuid_is_null(&cifs_sb->dfs_mount_id)) {
-		cifs_dbg(FYI, "%s: no dfs mount group id\n", __func__);
+		smbfs_dbg("no DFS mount group ID\n");
 		return -EINVAL;
 	}
 
@@ -1485,7 +1482,7 @@ int dfs_cache_remount_fs(struct cifs_sb_info *cifs_sb)
 	mg = find_mount_group_locked(&cifs_sb->dfs_mount_id);
 	if (IS_ERR(mg)) {
 		mutex_unlock(&mount_group_list_lock);
-		cifs_dbg(FYI, "%s: no ipc session for refreshing referral\n", __func__);
+		smbfs_dbg("no IPC session for refreshing referral\n");
 		return PTR_ERR(mg);
 	}
 	kref_get(&mg->refcount);
