@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Functions which do error mapping of SMB2 status codes to POSIX errors
  *
- *   Functions which do error mapping of SMB2 status codes to POSIX errors
- *
- *   Copyright (c) International Business Machines Corp., 2009
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2009
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 #include <linux/errno.h>
 #include "defs.h"
 #include "debug.h"

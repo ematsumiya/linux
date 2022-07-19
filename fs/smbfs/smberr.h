@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Copyright (c) International Business Machines  Corp., 2002,2004
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *
- *   Copyright (c) International Business Machines  Corp., 2002,2004
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- *   See Error Codes section of the SNIA CIFS Specification
- *   for more information
- *
- */
+ * See Error Codes section of the SNIA CIFS Specification
+ * for more information
+*/
 
 #define SUCCESS	0x00	/* The request was successful. */
 #define ERRDOS	0x01	/* Error is from the core DOS operating system set */

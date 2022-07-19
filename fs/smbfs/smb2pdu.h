@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines  Corp., 2009, 2013
+ * Copyright (c) International Business Machines  Corp., 2009, 2013
  *                 Etersoft, 2012
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *              Pavel Shilovsky (pshilovsky@samba.org) 2012
- *
- */
+*/
 
 #ifndef _SMB2PDU_H
 #define _SMB2PDU_H
@@ -51,8 +49,7 @@ struct smb2_rdma_crypto_transform {
  *  See MS-SMB2.PDF specification for protocol details.
  *  The Naming convention is the lower case version of the SMB2
  *  command code name for the struct. Note that structures must be packed.
- *
- */
+*/
 
 #define COMPOUND_FID 0xFFFFFFFFFFFFFFFFULL
 

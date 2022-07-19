@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- *   Copyright (c) 2018, Microsoft Corporation.
+ * Copyright (c) 2018, Microsoft Corporation.
  *
- *   Author(s): Steve French <stfrench@microsoft.com>
+ * Author(s): Steve French <stfrench@microsoft.com>
  */
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM cifs

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines  Corp., 2002, 2011
+ * Copyright (c) International Business Machines  Corp., 2002, 2011
  *                 Etersoft, 2012
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *              Pavel Shilovsky (pshilovsky@samba.org) 2012
- *
- */
+*/
 #ifndef _SMB2PROTO_H
 #define _SMB2PROTO_H
 #include <linux/nls.h>

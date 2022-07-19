@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * vfs operations that deal with files
  *
- *   vfs operations that deal with files
- *
- *   Copyright (c) International Business Machines Corp., 2002,2010
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Copyright (c) International Business Machines Corp., 2002,2010
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *              Jeremy Allison (jra@samba.org)
- *
- */
+*/
 #include <linux/fs.h>
 #include <linux/backing-dev.h>
 #include <linux/stat.h>
@@ -431,8 +429,7 @@ void cifsFileInfo_put(struct cifsFileInfo *cifs_file)
  * @cifs_file:	cifs/smb3 specific info (eg refcounts) for an open file
  * @wait_oplock_handler: must be false if called from oplock_break_handler
  * @offload:	not offloaded on close and oplock breaks
- *
- */
+*/
 void _cifsFileInfo_put(struct cifsFileInfo *cifs_file,
 		       bool wait_oplock_handler, bool offload)
 {

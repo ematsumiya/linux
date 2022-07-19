@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (c) 2017, Microsoft Corporation.
+ * Copyright (c) 2017, Microsoft Corporation.
  *
- *   Author(s): Long Li <longli@microsoft.com>
+ * Author(s): Long Li <longli@microsoft.com>
  */
 #ifndef _SMBDIRECT_H
 #define _SMBDIRECT_H

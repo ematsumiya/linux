@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Copyright (c) International Business Machines Corp., 2007
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *
- *   Copyright (c) International Business Machines Corp., 2007
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Common Internet FileSystem (CIFS) client
  *
- *   Common Internet FileSystem (CIFS) client
- *
- *   Operations related to support for exporting files via NFSD
- *
- */
+ * Operations related to support for exporting files via NFSD
+*/
 
  /*
   * See Documentation/filesystems/nfs/exporting.rst

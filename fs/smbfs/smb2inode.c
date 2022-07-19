@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2002, 2011
+ * Copyright (c) International Business Machines Corp., 2002, 2011
  *                 Etersoft, 2012
- *   Author(s): Pavel Shilovsky (pshilovsky@samba.org),
+ * Author(s): Pavel Shilovsky (pshilovsky@samba.org),
  *              Steve French (sfrench@us.ibm.com)
- *
- */
+*/
 #include <linux/fs.h>
 #include <linux/stat.h>
 #include <linux/slab.h>

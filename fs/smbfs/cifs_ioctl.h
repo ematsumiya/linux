@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Structure definitions for io control for cifs/smb3
  *
- *   Structure definitions for io control for cifs/smb3
- *
- *   Copyright (c) 2015 Steve French <steve.french@primarydata.com>
- *
- */
+ * Copyright (c) 2015 Steve French <steve.french@primarydata.com>
+*/
 
 struct smb_mnt_fs_info {
 	__u32	version; /* 0001 */

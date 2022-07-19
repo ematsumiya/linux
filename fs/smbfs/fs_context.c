@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (c) 2020, Microsoft Corporation.
+ * Copyright (c) 2020, Microsoft Corporation.
  *
- *   Author(s): Steve French <stfrench@microsoft.com>
+ * Author(s): Steve French <stfrench@microsoft.com>
  *              David Howells <dhowells@redhat.com>
  */
 #include <linux/ctype.h>

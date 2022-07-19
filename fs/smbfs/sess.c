@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * SMB/CIFS session setup handling routines
  *
- *   SMB/CIFS session setup handling routines
- *
- *   Copyright (c) International Business Machines Corp., 2006, 2009
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2006, 2009
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 #include "cifspdu.h"
 #include "defs.h"

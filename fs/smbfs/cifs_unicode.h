@@ -6,7 +6,7 @@
  *     Convert a unicode character to upper or lower case using
  *     compressed tables.
  *
- *   Copyright (c) International Business Machines  Corp., 2000,2009
+ * Copyright (c) International Business Machines  Corp., 2000,2009
  *
  * Notes:
  *     These APIs are based on the C library functions.  The semantics
@@ -62,8 +62,7 @@
  * NO_MAP_UNI_RSVD  = do not perform any remapping of the character
  * SFM_MAP_UNI_RSVD = map reserved characters using SFM scheme (MAC compatible)
  * SFU_MAP_UNI_RSVD = map reserved characters ala SFU ("mapchars" option)
- *
- */
+*/
 #define NO_MAP_UNI_RSVD		0
 #define SFM_MAP_UNI_RSVD	1
 #define SFU_MAP_UNI_RSVD	2

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Copyright (c) International Business Machines Corp., 2002,2010
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *
- *   Copyright (c) International Business Machines Corp., 2002,2010
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- *   Contains the routines for constructing the SMB PDUs themselves
- *
- */
+ * Contains the routines for constructing the SMB PDUs themselves
+*/
 
  /* SMB/CIFS PDU handling routines here - except for leftovers in connect.c   */
  /* These are mostly routines that operate on a pathname, or on a tree id     */

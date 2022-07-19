@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * vfs operations that deal with io control
  *
- *   vfs operations that deal with io control
- *
- *   Copyright (c) International Business Machines Corp., 2005,2013
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2005,2013
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 #include <linux/fs.h>
 #include <linux/file.h>
@@ -173,7 +171,7 @@ static int cifs_shutdown(struct super_block *sb, unsigned long arg)
 
 	/*
 	 * see:
-	 *   https://man7.org/linux/man-pages/man2/ioctl_xfs_goingdown.2.html
+	 * https://man7.org/linux/man-pages/man2/ioctl_xfs_goingdown.2.html
 	 * for more information and description of original intent of the flags
 	 */
 	switch (flags) {

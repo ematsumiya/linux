@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Contains the CIFS DFS referral mounting routines used for handling
- *   traversal via DFS junction point
+ * Contains the CIFS DFS referral mounting routines used for handling
+ * traversal via DFS junction point
  *
- *   Copyright (c) 2007 Igor Mammedov
- *   Copyright (c) International Business Machines Corp., 2008
- *   Author(s): Igor Mammedov (niallain@gmail.com)
+ * Copyright (c) 2007 Igor Mammedov
+ * Copyright (c) International Business Machines Corp., 2008
+ * Author(s): Igor Mammedov (niallain@gmail.com)
  *		Steve French (sfrench@us.ibm.com)
  */
 

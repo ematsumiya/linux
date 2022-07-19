@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2002,2011
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2002,2011
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 #include <linux/fs.h>
 #include <linux/net.h>
 #include <linux/string.h>
@@ -377,8 +375,7 @@ static bool cifs_tcp_ses_needs_reconnect(struct TCP_Server_Info *server, int num
  * if mark_smb_session is passed as true, unconditionally mark
  * the smb session (and tcon) for reconnect as well. This value
  * doesn't really matter for non-multichannel scenario.
- *
- */
+*/
 static int __cifs_reconnect(struct TCP_Server_Info *server,
 			    bool mark_smb_session)
 {

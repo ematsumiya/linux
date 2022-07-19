@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Encryption and hashing operations relating to NTLM, NTLMv2.  See MS-NLMP
+ * for more detailed information
  *
- *   Encryption and hashing operations relating to NTLM, NTLMv2.  See MS-NLMP
- *   for more detailed information
- *
- *   Copyright (c) International Business Machines Corp., 2005,2013
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2005,2013
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 #include <linux/fs.h>
 #include <linux/slab.h>

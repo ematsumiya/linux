@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (c) International Business Machines  Corp., 2000,2002
- *   Copyright (c) SUSE LLC, 2022
+ * Copyright (c) International Business Machines  Corp., 2000,2002
+ * Copyright (c) SUSE LLC, 2022
  *
- *   Modified by Steve French (sfrench@us.ibm.com)
- *   Modified by Enzo Matsumiya <ematsumiya@suse.de>
+ * Modified by Steve French (sfrench@us.ibm.com)
+ * Modified by Enzo Matsumiya <ematsumiya@suse.de>
  *
- *   SMBFS debugging.
+ * SMBFS debugging.
  */
 
 #ifndef _SMBFS_DEBUG_H
@@ -42,7 +42,7 @@ extern bool trace_smb;
  * - smbfs*info(): for informational messages (can be filtered via loglevel > 6)
  * - smbfs*dbg(): for debug messages, off by default
  * - trace_smb3_*():  ftrace functions are preferred for complex debug messages
- *   intended for developers or experienced admins, off by default
+ * intended for developers or experienced admins, off by default
  *
  * smbfs*log() and smbfs*dbg() has a _once() variation to log messages only once
  */

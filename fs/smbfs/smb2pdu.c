@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2009, 2013
+ * Copyright (c) International Business Machines Corp., 2009, 2013
  *                 Etersoft, 2012
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *              Pavel Shilovsky (pshilovsky@samba.org) 2012
  *
- *   Contains the routines for constructing the SMB2 PDUs themselves
- *
- */
+ * Contains the routines for constructing the SMB2 PDUs themselves
+*/
 
  /* SMB2 PDU handling routines here - except for leftovers (eg session setup) */
  /* Note that there are handle based routines which must be		      */
@@ -836,7 +834,6 @@ add_posix_context(struct kvec *iov, unsigned int *num_iovec, umode_t mode)
 
 
 /*
- *
  *	SMB2 Worker functions follow:
  *
  *	The general structure of the worker functions is:
@@ -847,8 +844,7 @@ add_posix_context(struct kvec *iov, unsigned int *num_iovec, umode_t mode)
  *	5) Decode variable length data area (if any for this SMB2 command type)
  *	6) Call free smb buffer
  *	7) return
- *
- */
+*/
 
 int
 SMB2_negotiate(const unsigned int xid,
@@ -3259,7 +3255,7 @@ ioctl_exit:
 }
 
 /*
- *   Individual callers to ioctl worker function follow
+ * Individual callers to ioctl worker function follow
  */
 
 int

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines  Corp., 2002,2009
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines  Corp., 2002,2009
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 #ifndef _CIFSPDU_H
 #define _CIFSPDU_H
@@ -477,8 +475,7 @@ put_bcc(__u16 count, struct smb_hdr *hdr)
  *  Typedefs can always be removed later if they are too distracting
  *  and they are only used for the CIFSs PDUs themselves, not
  *  internal cifs vfs structures
- *
- */
+*/
 
 typedef struct negotiate_req {
 	struct smb_hdr hdr;	/* wct = 0 */
@@ -749,8 +746,7 @@ typedef struct smb_com_tconx_rsp_ext {
  * IPC      ie named pipe
  * COMM
  * ?????    ie any type
- *
- */
+*/
 
 typedef struct smb_com_echo_req {
 	struct	smb_hdr hdr;

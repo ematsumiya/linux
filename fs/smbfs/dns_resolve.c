@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) 2007 Igor Mammedov
- *   Author(s): Igor Mammedov (niallain@gmail.com)
+ * Copyright (c) 2007 Igor Mammedov
+ * Author(s): Igor Mammedov (niallain@gmail.com)
  *              Steve French (sfrench@us.ibm.com)
  *              Wang Lei (wang840925@gmail.com)
  *		David Howells (dhowells@redhat.com)
  *
- *   Contains the CIFS DFS upcall routines used for hostname to
- *   IP address translation.
- *
- */
+ * Contains the CIFS DFS upcall routines used for hostname to
+ * IP address translation.
+*/
 
 #include <linux/slab.h>
 #include <linux/dns_resolver.h>

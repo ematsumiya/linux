@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2002,2008
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *   Jeremy Allison (jra@samba.org) 2006.
- *
- */
+ * Copyright (c) International Business Machines Corp., 2002,2008
+ * Author(s): Steve French (sfrench@us.ibm.com)
+ * Jeremy Allison (jra@samba.org) 2006.
+*/
 
 #include <linux/fs.h>
 #include <linux/list.h>
@@ -877,14 +875,12 @@ cifs_call_async(struct TCP_Server_Info *server, struct smb_rqst *rqst,
 }
 
 /*
- *
  * Send an SMB Request.  No response info (other than return code)
  * needs to be parsed.
  *
  * flags indicate the type of request buffer and how long to wait
  * and whether to log NT STATUS code (error) before mapping it to POSIX error
- *
- */
+*/
 int
 SendReceiveNoRsp(const unsigned int xid, struct cifs_ses *ses,
 		 char *in_buf, int flags)

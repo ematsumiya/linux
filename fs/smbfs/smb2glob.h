@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * Definitions for various global variables and structures
  *
- *   Definitions for various global variables and structures
- *
- *   Copyright (c) International Business Machines  Corp., 2002, 2011
+ * Copyright (c) International Business Machines  Corp., 2002, 2011
  *                 Etersoft, 2012
- *   Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French (sfrench@us.ibm.com)
  *              Jeremy Allison (jra@samba.org)
  *              Pavel Shilovsky (pshilovsky@samba.org) 2012
- *
- */
+*/
 #ifndef _SMB2_GLOB_H
 #define _SMB2_GLOB_H
 

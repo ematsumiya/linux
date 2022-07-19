@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2000,2009
- *   Modified by Steve French (sfrench@us.ibm.com)
+ * Copyright (c) International Business Machines Corp., 2000,2009
+ * Modified by Steve French (sfrench@us.ibm.com)
  */
 #include <linux/fs.h>
 #include <linux/slab.h>
@@ -243,8 +242,7 @@ cifs_from_utf16(char *to, const __le16 *from, int tolen, int fromlen,
  * NAME:	cifs_strtoUTF16()
  *
  * FUNCTION:	Convert character string to unicode string
- *
- */
+*/
 int
 cifs_strtoUTF16(__le16 *to, const char *from, int len,
 	      const struct nls_table *codepage)

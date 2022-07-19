@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
+ * SMB2 Status code (network error) definitions
+ * Definitions are from MS-ERREF
  *
- *   SMB2 Status code (network error) definitions
- *   Definitions are from MS-ERREF
- *
- *   Copyright (c) International Business Machines  Corp., 2009,2011
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines  Corp., 2009,2011
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 /*
  *  0 1 2 3 4 5 6 7 8 9 0 A B C D E F 0 1 2 3 4 5 6 7 8 9 A B C D E F

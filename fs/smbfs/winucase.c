@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *
  * Copyright (c) Jeffrey Layton <jlayton@redhat.com>, 2013
  *
  * The const tables in this file were converted from the following info

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *
- *   Copyright (c) International Business Machines Corp., 2003, 2007
- *   Author(s): Steve French (sfrench@us.ibm.com)
- *
- */
+ * Copyright (c) International Business Machines Corp., 2003, 2007
+ * Author(s): Steve French (sfrench@us.ibm.com)
+*/
 
 #include <linux/fs.h>
 #include <linux/posix_acl_xattr.h>
