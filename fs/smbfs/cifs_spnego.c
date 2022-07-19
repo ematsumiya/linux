@@ -14,7 +14,7 @@
 #include <linux/key-type.h>
 #include <linux/keyctl.h>
 #include <linux/inet.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifs_spnego.h"
 #include "debug.h"
 #include "proc.h"

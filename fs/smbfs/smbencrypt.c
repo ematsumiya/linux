@@ -21,7 +21,7 @@
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifsproto.h"
 #include "../smbfs_common/md4.h"

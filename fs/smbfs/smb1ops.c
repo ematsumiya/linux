@@ -8,7 +8,7 @@
 #include <linux/pagemap.h>
 #include <linux/vfs.h>
 #include <uapi/linux/magic.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "debug.h"
 #include "cifspdu.h"

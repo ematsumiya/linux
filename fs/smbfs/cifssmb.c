@@ -24,7 +24,7 @@
 #include <linux/task_io_accounting_ops.h>
 #include <linux/uaccess.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsacl.h"
 #include "cifsproto.h"
 #include "cifs_unicode.h"

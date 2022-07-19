@@ -14,7 +14,7 @@
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "debug.h"
 #include "smbfs.h"

@@ -12,7 +12,7 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "proc.h"
 #include "cifs_unicode.h"

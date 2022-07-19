@@ -7,7 +7,7 @@
  *
  */
 #include "fscache.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifsproto.h"

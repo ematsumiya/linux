@@ -12,7 +12,7 @@
 #include <linux/swap.h>
 #include <linux/fscache.h>
 
-#include "cifsglob.h"
+#include "defs.h"
 
 /*
  * Coherency data attached to CIFS volume within the cache

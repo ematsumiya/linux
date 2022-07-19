@@ -28,7 +28,7 @@
 #include "smbfs.h"
 #include "cifspdu.h"
 #define DECLARE_GLOBALS_HERE
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "debug.h"
 #include "cifs_fs_sb.h"

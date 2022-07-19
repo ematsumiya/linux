@@ -10,7 +10,7 @@
 #include <uapi/linux/cifs/cifs_netlink.h>
 
 #include "cifs_swn.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "fscache.h"
 #include "debug.h"

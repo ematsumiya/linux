@@ -16,7 +16,7 @@
 #include <linux/vfs.h>
 #include <linux/fs.h>
 #include <linux/inet.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "smbfs.h"
 #include "dns_resolve.h"

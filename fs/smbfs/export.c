@@ -28,7 +28,7 @@
 
 #include <linux/fs.h>
 #include <linux/exportfs.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "smbfs.h"
 

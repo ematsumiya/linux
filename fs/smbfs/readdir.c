@@ -13,7 +13,7 @@
 #include <linux/slab.h>
 #include <linux/stat.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "cifs_unicode.h"
 #include "debug.h"

@@ -15,7 +15,7 @@
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "smbfs.h"
 #include "fs_context.h"

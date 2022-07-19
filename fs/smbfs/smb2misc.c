@@ -8,7 +8,7 @@
  *
  */
 #include <linux/ctype.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "smb2proto.h"
 #include "debug.h"

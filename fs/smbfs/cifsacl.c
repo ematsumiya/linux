@@ -15,7 +15,7 @@
 #include <linux/key-type.h>
 #include <keys/user-type.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsacl.h"
 #include "cifsproto.h"
 #include "debug.h"

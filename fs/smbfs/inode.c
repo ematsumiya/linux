@@ -16,7 +16,7 @@
 #include <asm/div64.h>
 #include "smbfs.h"
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "smb2proto.h"
 #include "debug.h"

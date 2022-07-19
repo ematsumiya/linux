@@ -3,7 +3,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/oid_registry.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifsproto.h"
 #include "cifs_spnego_negtokeninit.asn1.h"

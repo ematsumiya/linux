@@ -22,7 +22,7 @@
 #include <linux/mempool.h>
 #include <linux/sched/signal.h>
 #include "cifspdu.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "debug.h"
 #include "proc.h"

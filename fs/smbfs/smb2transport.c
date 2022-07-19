@@ -19,7 +19,7 @@
 #include <linux/mempool.h>
 #include <linux/highmem.h>
 #include <crypto/aead.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "smb2proto.h"
 #include "debug.h"

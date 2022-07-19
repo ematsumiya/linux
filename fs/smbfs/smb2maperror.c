@@ -8,7 +8,7 @@
  *
  */
 #include <linux/errno.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"

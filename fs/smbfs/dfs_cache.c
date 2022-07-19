@@ -12,7 +12,7 @@
 #include <linux/nls.h>
 #include <linux/workqueue.h>
 #include <linux/uuid.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
 #include "cifsproto.h"

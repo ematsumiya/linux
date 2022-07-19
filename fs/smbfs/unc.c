@@ -11,7 +11,7 @@
 #include <linux/slab.h>
 #include <linux/inet.h>
 #include <linux/ctype.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 
 /* extract the host portion of the UNC string */

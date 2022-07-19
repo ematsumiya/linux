@@ -9,7 +9,7 @@
 #include <uapi/linux/cifs/cifs_netlink.h>
 
 #include "netlink.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifs_swn.h"
 

@@ -23,7 +23,7 @@
 #include <linux/uuid.h>
 #include <linux/pagemap.h>
 #include <linux/xattr.h>
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsacl.h"
 #include "cifsproto.h"
 #include "smb2proto.h"

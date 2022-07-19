@@ -11,7 +11,7 @@
 #include <linux/nls.h>
 #include <linux/list.h>
 #include <linux/uuid.h>
-#include "cifsglob.h"
+#include "defs.h"
 
 #define DFS_CACHE_TGT_LIST_INIT(var) { .tl_numtgts = 0, .tl_list = LIST_HEAD_INIT((var).tl_list), }
 

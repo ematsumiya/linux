@@ -15,7 +15,7 @@
 #include <linux/slab.h>
 #include <linux/dns_resolver.h>
 #include "dns_resolve.h"
-#include "cifsglob.h"
+#include "defs.h"
 #include "cifsproto.h"
 #include "debug.h"
 
