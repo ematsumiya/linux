@@ -1225,17 +1225,10 @@ OldOpenRetry:
 	if (rc) {
 		smbfs_dbg("Error in Open, rc=%d\n", rc);
 	} else {
-	/* BB verify if wct == 15 */
+		/* BB verify if wct == 15 */
+		/* BB get OplockLevel from action fiel */
 
-/*		*pOplock = pSMBr->OplockLevel; */ /* BB take from action field*/
-
-		*netfid = pSMBr->Fid;   /* cifs fid stays in le */
-		/* Let caller know file was created so we can set the mode. */
-		/* Do we care about the CreateAction in any other cases? */
-	/* BB FIXME BB */
-/*		if (cpu_to_le32(FILE_CREATE) == pSMBr->CreateAction)
-			*pOplock |= CIFS_CREATE_ACTION; */
-	/* BB FIXME END */
+		*netfid = pSMBr->Fid; /* cifs fid stays in LE */
 
 		if (pfile_info) {
 			pfile_info->CreationTime = 0; /* BB convert CreateTime*/

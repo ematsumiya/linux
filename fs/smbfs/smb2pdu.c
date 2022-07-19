@@ -121,19 +121,6 @@ smb2_hdr_assemble(struct smb2_hdr *shdr, __le16 smb2_cmd,
 	if (tcon->ses)
 		shdr->SessionId = cpu_to_le64(tcon->ses->Suid);
 
-	/*
-	 * If we would set SMB2_FLAGS_DFS_OPERATIONS on open we also would have
-	 * to pass the path on the Open SMB prefixed by \\server\share.
-	 * Not sure when we would need to do the augmented path (if ever) and
-	 * setting this flag breaks the SMB2 open operation since it is
-	 * illegal to send an empty path name (without \\server\share prefix)
-	 * when the DFS flag is set in the SMB open header. We could
-	 * consider setting the flag on all operations other than open
-	 * but it is safer to net set it for now.
-	 */
-/*	if (tcon->share_flags & SHI1005_FLAGS_DFS)
-		shdr->Flags |= SMB2_FLAGS_DFS_OPERATIONS; */
-
 	if (server && server->sign && !smb3_encryption_required(tcon))
 		shdr->Flags |= SMB2_FLAGS_SIGNED;
 out:

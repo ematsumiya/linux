@@ -365,7 +365,7 @@ cifs_alloc_inode(struct super_block *sb)
 	cifs_inode = alloc_inode_sb(sb, cifs_inode_cachep, GFP_KERNEL);
 	if (!cifs_inode)
 		return NULL;
-	cifs_inode->cifsAttrs = 0x20;	/* default */
+	cifs_inode->cifsAttrs = 0x20; /* default */
 	cifs_inode->time = 0;
 	/*
 	 * Until the file is open and we have gotten oplock info back from the
@@ -383,11 +383,6 @@ cifs_alloc_inode(struct super_block *sb)
 	spin_lock_init(&cifs_inode->open_file_lock);
 	generate_random_uuid(cifs_inode->lease_key);
 
-	/*
-	 * Can not set i_flags here - they get immediately overwritten to zero
-	 * by the VFS.
-	 */
-	/* cifs_inode->netfs.inode.i_flags = S_NOATIME | S_NOCMTIME; */
 	INIT_LIST_HEAD(&cifs_inode->openFileList);
 	INIT_LIST_HEAD(&cifs_inode->llist);
 	INIT_LIST_HEAD(&cifs_inode->deferred_closes);
@@ -711,8 +706,8 @@ static void cifs_umount_begin(struct super_block *sb)
 		tcon->status = TID_EXITING;
 	spin_unlock(&cifs_tcp_ses_lock);
 
-	/* cancel_brl_requests(tcon); */ /* BB mark all brl mids as exiting */
-	/* cancel_notify_requests(tcon); */
+	/* BB mark all brl mids as exiting */
+	/* BB cancel tcon notify requestss */
 	if (tcon->ses && tcon->ses->server) {
 		smbfs_dbg("wake up tasks now - umount begin not complete\n");
 		wake_up_all(&tcon->ses->server->request_q);
@@ -756,12 +751,7 @@ static const struct super_operations cifs_super_ops = {
 	.free_inode = cifs_free_inode,
 	.drop_inode	= cifs_drop_inode,
 	.evict_inode	= cifs_evict_inode,
-/*	.show_path	= cifs_show_path, */ /* Would we ever need show path? */
 	.show_devname   = cifs_show_devname,
-/*	.delete_inode	= cifs_delete_inode,  */  /* Do not need above
-	function unless later we add lazy close of inodes or unless the
-	kernel forgets to call us with the same number of releases (closes)
-	as opens */
 	.show_options = cifs_show_options,
 	.umount_begin   = cifs_umount_begin,
 #ifdef CONFIG_SMBFS_STATS_EXTRA

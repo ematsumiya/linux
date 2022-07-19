@@ -841,11 +841,6 @@ static void parse_dacl(struct cifs_acl *pdacl, char *end_of_acl,
 				}
 			}
 
-
-/*			memcpy((void *)(&(cifscred->aces[i])),
-				(void *)ppace[i],
-				sizeof(struct cifs_ace)); */
-
 			acl_base = (char *)ppace[i];
 			acl_size = le16_to_cpu(ppace[i]->size);
 		}
@@ -1208,7 +1203,6 @@ static int parse_sec_desc(struct cifs_sb_info *cifs_sb,
 		 pntsd->revision, pntsd->type, le32_to_cpu(pntsd->osidoffset),
 		 le32_to_cpu(pntsd->gsidoffset),
 		 le32_to_cpu(pntsd->sacloffset), dacloffset);
-/*	smbfs_dump_mem("owner_sid: ", owner_sid_ptr, 64); */
 	rc = parse_sid(owner_sid_ptr, end_of_acl);
 	if (rc) {
 		smbfs_dbg("Error %d parsing Owner SID\n", rc);

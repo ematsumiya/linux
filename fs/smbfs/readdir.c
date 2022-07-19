@@ -341,31 +341,7 @@ cifs_std_info_to_fattr(struct cifs_fattr *fattr, FIND_FILE_STANDARD_INFO *info,
 /*
 int get_symlink_reparse_path(char *full_path, struct cifs_sb_info *cifs_sb,
 			     unsigned int xid)
-{
-	__u16 fid;
-	int len;
-	int oplock = 0;
-	int rc;
-	struct cifs_tcon *ptcon = cifs_sb_tcon(cifs_sb);
-	char *tmpbuffer;
-
-	rc = CIFSSMBOpen(xid, ptcon, full_path, FILE_OPEN, GENERIC_READ,
-			OPEN_REPARSE_POINT, &fid, &oplock, NULL,
-			cifs_sb->local_nls,
-			cifs_remap(cifs_sb);
-	if (!rc) {
-		tmpbuffer = kmalloc(maxpath);
-		rc = CIFSSMBQueryReparseLinkInfo(xid, ptcon, full_path,
-				tmpbuffer,
-				maxpath -1,
-				fid,
-				cifs_sb->local_nls);
-		if (CIFSSMBClose(xid, ptcon, fid)) {
-			smbfs_dbg("Error closing temporary reparsepoint open\n");
-		}
-	}
-}
- */
+*/
 
 static int
 _initiate_cifs_search(const unsigned int xid, struct file *file,
@@ -413,7 +389,6 @@ _initiate_cifs_search(const unsigned int xid, struct file *file,
 ffirst_retry:
 	/* test for Unix extensions */
 	/* but now check for them on the share/mount not on the SMB session */
-	/* if (cap_unix(tcon->ses) { */
 	if (tcon->unix_ext)
 		cifsFile->srch_inf.info_level = SMB_FIND_FILE_UNIX;
 	else if (tcon->posix_extensions)
@@ -437,9 +412,7 @@ ffirst_retry:
 
 	if (rc == 0)
 		cifsFile->invalidHandle = false;
-	/* BB add following call to handle readdir on new NTFS symlink errors
-	else if STATUS_STOPPED_ON_SYMLINK
-		call get_symlink_reparse_path and retry with new path */
+	/* BB call get_symlink_reparse_path and retry with new path */
 	else if ((rc == -EOPNOTSUPP) &&
 		(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SERVER_INUM)) {
 		cifs_sb->mnt_cifs_flags &= ~CIFS_MOUNT_SERVER_INUM;

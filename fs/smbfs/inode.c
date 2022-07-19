@@ -621,8 +621,8 @@ smb311_posix_info_to_fattr(struct cifs_fattr *fattr, struct smb311_posix_qinfo *
 
 	fattr->cf_nlink = le32_to_cpu(info->HardLinks);
 	fattr->cf_mode = (umode_t) le32_to_cpu(info->Mode);
-	/* The srv fs device id is overridden on network mount so setting rdev isn't needed here */
-	/* fattr->cf_rdev = le32_to_cpu(info->DeviceId); */
+	/* the srv fs device id is overridden on network mount so setting
+	 * rdev isn't needed here */
 
 	if (symlink) {
 		fattr->cf_mode |= S_IFLNK;
@@ -634,7 +634,10 @@ smb311_posix_info_to_fattr(struct cifs_fattr *fattr, struct smb311_posix_qinfo *
 		fattr->cf_mode |= S_IFREG;
 		fattr->cf_dtype = DT_REG;
 	}
-	/* else if reparse point ... TODO: add support for FIFO and blk dev; special file types */
+	/*
+	 * XXX: else if reparse point...
+	 * TODO: add support for FIFO and blk dev; special file types
+	 */
 
 	fattr->cf_uid = cifs_sb->ctx->linux_uid; /* TODO: map uid and gid from SID */
 	fattr->cf_gid = cifs_sb->ctx->linux_gid;

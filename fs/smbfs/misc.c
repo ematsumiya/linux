@@ -55,8 +55,6 @@ void
 _free_xid(unsigned int xid)
 {
 	spin_lock(&GlobalMid_Lock);
-	/* if (GlobalTotalActiveXid == 0)
-		BUG(); */
 	GlobalTotalActiveXid--;
 	spin_unlock(&GlobalMid_Lock);
 }
@@ -197,13 +195,14 @@ cifs_small_buf_get(void)
 {
 	struct smb_hdr *ret_buf = NULL;
 
-/* We could use negotiated size instead of max_msgsize -
-   but it may be more efficient to always alloc same size
-   albeit slightly larger than necessary and maxbuffersize
-   defaults to this and can not be bigger */
+	/*
+	 * We could use negotiated size instead of max_msgsize -
+	 * but it may be more efficient to always alloc same size
+	 * albeit slightly larger than necessary and maxbuffersize
+	 * defaults to this and can not be bigger
+	 */
 	ret_buf = mempool_alloc(cifs_sm_req_poolp, GFP_NOFS);
 	/* No need to clear memory here, cleared in header assemble */
-	/*	memset(ret_buf, 0, sizeof(struct smb_hdr) + 27);*/
 	atomic_inc(&smBufAllocCount);
 #ifdef CONFIG_SMBFS_STATS_EXTRA
 	atomic_inc(&totSmBufAllocCount);

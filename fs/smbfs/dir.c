@@ -106,7 +106,7 @@ build_path_from_dentry_optional_prefix(struct dentry *direntry, void *page,
 	s = dentry_path_raw(direntry, page, PATH_MAX);
 	if (IS_ERR(s))
 		return s;
-	if (!s[1])	// for root we want "", not "/"
+	if (!s[1]) /* for root we want "", not "/" */
 		s++;
 	if (s < (char *)page + pplen + dfsplen)
 		return ERR_PTR(-ENAMETOOLONG);
@@ -344,15 +344,13 @@ cifs_do_create(struct inode *inode, struct dentry *direntry, unsigned int xid,
 		}
 		CIFSSMBUnixSetFileInfo(xid, tcon, &args, fid->netfid,
 				       current->tgid);
-	} else {
-		/*
-		 * BB implement mode setting via Windows security
-		 * descriptors e.g.
-		 */
-		/* CIFSSMBWinSetPerms(xid,tcon,path,mode,-1,-1,nls);*/
-
-		/* Could set r/o dos attribute if mode & 0222 == 0 */
 	}
+	/*
+	 * BB implement mode setting via Windows security
+	 * descriptors e.g.
+	 */
+
+	/* Could set r/o dos attribute if mode & 0222 == 0 */
 
 cifs_create_get_file_info:
 	/* server might mask mode so we have to query for it */
@@ -777,19 +775,9 @@ cifs_d_revalidate(struct dentry *direntry, unsigned int flags)
 	return 1;
 }
 
-/* static int cifs_d_delete(struct dentry *direntry)
-{
-	int rc = 0;
-
-	smbfs_dbg("In cifs d_delete, name = %pd\n", direntry);
-
-	return rc;
-}     */
-
 const struct dentry_operations cifs_dentry_ops = {
 	.d_revalidate = cifs_d_revalidate,
 	.d_automount = cifs_dfs_d_automount,
-/* d_delete:       cifs_d_delete,      */ /* not needed except for debugging */
 };
 
 static int cifs_ci_hash(const struct dentry *dentry, struct qstr *q)

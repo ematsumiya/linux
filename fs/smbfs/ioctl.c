@@ -170,7 +170,6 @@ static int cifs_shutdown(struct super_block *sb, unsigned long arg)
 		return 0;
 
 	smbfs_log("shut down requested (%d)", flags);
-/*	trace_cifs_shutdown(sb, flags);*/
 
 	/*
 	 * see:
@@ -358,7 +357,6 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			if (pSMBFile == NULL)
 				break;
 			tcon = tlink_tcon(pSMBFile->tlink);
-			/* caps = le64_to_cpu(tcon->fsUnixInfo.Capability); */
 
 			if (get_user(ExtAttrBits, (int __user *)arg)) {
 				rc = -EFAULT;
