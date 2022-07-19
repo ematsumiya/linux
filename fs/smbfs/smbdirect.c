@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) 2017, Microsoft Corporation.
+ *   Copyright (c) 2017, Microsoft Corporation.
  *
  *   Author(s): Long Li <longli@microsoft.com>
  */

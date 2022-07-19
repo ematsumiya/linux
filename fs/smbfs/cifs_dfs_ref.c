@@ -4,7 +4,7 @@
  *   traversal via DFS junction point
  *
  *   Copyright (c) 2007 Igor Mammedov
- *   Copyright (C) International Business Machines Corp., 2008
+ *   Copyright (c) International Business Machines Corp., 2008
  *   Author(s): Igor Mammedov (niallain@gmail.com)
  *		Steve French (sfrench@us.ibm.com)
  */

@@ -3,7 +3,7 @@
  *
  *   Functions which do error mapping of SMB2 status codes to POSIX errors
  *
- *   Copyright (C) International Business Machines Corp., 2009
+ *   Copyright (c) International Business Machines Corp., 2009
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */

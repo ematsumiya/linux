@@ -3,8 +3,8 @@
  *
  *   Directory search handling
  *
- *   Copyright (C) International Business Machines Corp., 2004, 2008
- *   Copyright (C) Red Hat, Inc., 2011
+ *   Copyright (c) International Business Machines Corp., 2004, 2008
+ *   Copyright (c) Red Hat, Inc., 2011
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  *
- *   Copyright (C) International Business Machines Corp., 2009, 2013
+ *   Copyright (c) International Business Machines Corp., 2009, 2013
  *                 Etersoft, 2012
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *              Pavel Shilovsky (pshilovsky@samba.org) 2012

@@ -3,10 +3,10 @@
    Unix SMB/Netbios implementation.
    Version 1.9.
    NT error code constants
-   Copyright (C) Andrew Tridgell              1992-2000
-   Copyright (C) John H Terpstra              1996-2000
-   Copyright (C) Luke Kenneth Casson Leighton 1996-2000
-   Copyright (C) Paul Ashton                  1998-2000
+   Copyright (c) Andrew Tridgell              1992-2000
+   Copyright (c) John H Terpstra              1996-2000
+   Copyright (c) Luke Kenneth Casson Leighton 1996-2000
+   Copyright (c) Paul Ashton                  1998-2000
 
 */
 

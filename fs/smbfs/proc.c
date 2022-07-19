@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) SUSE LLC, 2022
+ *   Copyright (c) SUSE LLC, 2022
  *   Author: Enzo Matsumiya <ematsumiya@suse.de>
  *
  *   SMBFS procfs functions.

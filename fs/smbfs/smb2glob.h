@@ -3,7 +3,7 @@
  *
  *   Definitions for various global variables and structures
  *
- *   Copyright (C) International Business Machines  Corp., 2002, 2011
+ *   Copyright (c) International Business Machines  Corp., 2002, 2011
  *                 Etersoft, 2012
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *              Jeremy Allison (jra@samba.org)

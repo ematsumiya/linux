@@ -5,7 +5,7 @@
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  *   Error mapping routines from Samba libsmb/errormap.c
- *   Copyright (C) Andrew Tridgell 2001
+ *   Copyright (c) Andrew Tridgell 2001
  */
 
 #include <linux/net.h>

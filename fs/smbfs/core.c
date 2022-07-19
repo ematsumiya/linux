@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
- *   Copyright (C) International Business Machines Corp., 2002,2008
+ *   Copyright (c) International Business Machines Corp., 2002,2008
  *   Copyright (c) SUSE LLC, 2022
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *		Enzo Matsumiya <ematsumiya@suse.de>

@@ -3,7 +3,7 @@
  *
  *   vfs operations that deal with dentries
  *
- *   Copyright (C) International Business Machines Corp., 2002,2009
+ *   Copyright (c) International Business Machines Corp., 2002,2009
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */

@@ -3,7 +3,7 @@
  *
  *   vfs operations that deal with io control
  *
- *   Copyright (C) International Business Machines Corp., 2005,2013
+ *   Copyright (c) International Business Machines Corp., 2005,2013
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
  */

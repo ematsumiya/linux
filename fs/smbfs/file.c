@@ -3,7 +3,7 @@
  *
  *   vfs operations that deal with files
  *
- *   Copyright (C) International Business Machines Corp., 2002,2010
+ *   Copyright (c) International Business Machines Corp., 2002,2010
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *              Jeremy Allison (jra@samba.org)
  *

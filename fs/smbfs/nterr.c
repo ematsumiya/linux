@@ -3,7 +3,7 @@
  *  Unix SMB/Netbios implementation.
  *  Version 1.9.
  *  RPC Pipe client / server routines
- *  Copyright (C) Luke Kenneth Casson Leighton 1997-2001.
+ *  Copyright (c) Luke Kenneth Casson Leighton 1997-2001.
  */
 
 /* NT error codes - see nterr.h */
