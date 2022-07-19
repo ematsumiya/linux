@@ -3,7 +3,7 @@
  * Protocol Data Unit definitions for RFC 1001/1002 support
  *
  * Copyright (c) International Business Machines  Corp., 2004
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 
 /* NB: unlike smb/cifs packets, the RFC1002 structures are big endian */

@@ -7,7 +7,7 @@
    Copyright (c) Luke Kenneth Casson Leighton 1996-2000
    Modified by Jeremy Allison 1995.
    Copyright (c) Andrew Bartlett <abartlet@samba.org> 2002-2003
-   Modified by Steve French (sfrench@us.ibm.com) 2002-2003
+   Modified by Steve French <sfrench@us.ibm.com> 2002-2003
 
 */
 

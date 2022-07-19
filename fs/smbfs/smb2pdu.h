@@ -2,8 +2,8 @@
 /*
  * Copyright (c) International Business Machines  Corp., 2009, 2013
  *                 Etersoft, 2012
- * Author(s): Steve French (sfrench@us.ibm.com)
- *              Pavel Shilovsky (pshilovsky@samba.org) 2012
+ * Author(s): Steve French <sfrench@us.ibm.com>
+ *              Pavel Shilovsky <pshilovsky@samba.org> 2012
 */
 
 #ifndef _SMB2PDU_H

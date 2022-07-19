@@ -4,7 +4,7 @@
  * Definitions are from MS-ERREF
  *
  * Copyright (c) International Business Machines  Corp., 2009,2011
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 
 /*

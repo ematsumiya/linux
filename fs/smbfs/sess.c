@@ -3,7 +3,7 @@
  * SMB/CIFS session setup handling routines
  *
  * Copyright (c) International Business Machines Corp., 2006, 2009
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 
 #include "cifspdu.h"

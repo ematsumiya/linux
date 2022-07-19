@@ -4,7 +4,7 @@
  *
  * Copyright (c) International Business Machines Corp., 2004, 2008
  * Copyright (c) Red Hat, Inc., 2011
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 #include <linux/fs.h>
 #include <linux/pagemap.h>

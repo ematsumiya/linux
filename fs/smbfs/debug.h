@@ -3,7 +3,7 @@
  * Copyright (c) International Business Machines  Corp., 2000,2002
  * Copyright (c) SUSE LLC, 2022
  *
- * Modified by Steve French (sfrench@us.ibm.com)
+ * Modified by Steve French <sfrench@us.ibm.com>
  * Modified by Enzo Matsumiya <ematsumiya@suse.de>
  *
  * SMBFS debugging.

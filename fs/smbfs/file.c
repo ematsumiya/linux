@@ -3,8 +3,8 @@
  * vfs operations that deal with files
  *
  * Copyright (c) International Business Machines Corp., 2002,2010
- * Author(s): Steve French (sfrench@us.ibm.com)
- *              Jeremy Allison (jra@samba.org)
+ * Author(s): Steve French <sfrench@us.ibm.com>
+ *              Jeremy Allison <jra@samba.org>
 */
 #include <linux/fs.h>
 #include <linux/backing-dev.h>

@@ -4,7 +4,7 @@
  * for more detailed information
  *
  * Copyright (c) International Business Machines Corp., 2005,2013
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 
 #include <linux/fs.h>

@@ -2,8 +2,8 @@
 /*
  * Copyright (c) International Business Machines Corp., 2002, 2011
  *                 Etersoft, 2012
- * Author(s): Pavel Shilovsky (pshilovsky@samba.org),
- *              Steve French (sfrench@us.ibm.com)
+ * Author(s): Pavel Shilovsky <pshilovsky@samba.org>,
+ *              Steve French <sfrench@us.ibm.com>
 */
 #include <linux/fs.h>
 #include <linux/stat.h>

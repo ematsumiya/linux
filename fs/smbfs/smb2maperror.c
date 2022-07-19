@@ -3,7 +3,7 @@
  * Functions which do error mapping of SMB2 status codes to POSIX errors
  *
  * Copyright (c) International Business Machines Corp., 2009
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
 */
 #include <linux/errno.h>
 #include "defs.h"

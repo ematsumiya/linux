@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 /*
  * Copyright (c) International Business Machines Corp., 2007,2008
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
  *
  * Contains the routines for mapping CIFS/NTFS ACLs
 */

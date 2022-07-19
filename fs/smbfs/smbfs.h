@@ -2,7 +2,7 @@
 /*
  * Copyright (c) International Business Machines  Corp., 2002, 2007
  * Copyright (c) SUSE LLC, 2022
- * Author(s): Steve French (sfrench@us.ibm.com)
+ * Author(s): Steve French <sfrench@us.ibm.com>
  *		Enzo Matsumiya <ematsumiya@suse.de>
  */
 #ifndef _SMBFS_H

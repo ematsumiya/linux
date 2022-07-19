@@ -3,8 +3,8 @@
  * SPNEGO upcall management for CIFS
  *
  * Copyright (c) 2007 Red Hat, Inc.
- * Author(s): Jeff Layton (jlayton@redhat.com)
- *              Steve French (sfrench@us.ibm.com)
+ * Author(s): Jeff Layton <jlayton@redhat.com>
+ *              Steve French <sfrench@us.ibm.com>
 */
 
 #ifndef _CIFS_SPNEGO_H
