@@ -815,7 +815,7 @@ map_smb_to_linux_error(char *buf, bool logErr)
 	__u8 smberrclass;
 	__u16 smberrcode;
 
-	/* BB if NT Status codes - map NT BB */
+	/* TODO: if NT Status codes - map NT */
 
 	/* old style smb error codes */
 	if (smb->Status.CifsError == 0)
@@ -928,7 +928,7 @@ struct timespec64
 cifs_NTtimeToUnix(__le64 ntutc)
 {
 	struct timespec64 ts;
-	/* BB what about the timezone? BB */
+	/* TODO: what about the timezone? */
 
 	/* Subtract the NTFS time offset, then convert to 1s intervals. */
 	s64 t = le64_to_cpu(ntutc) - NTFS_TIME_OFFSET;

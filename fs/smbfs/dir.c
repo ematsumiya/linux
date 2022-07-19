@@ -30,7 +30,7 @@ extern bool lookup_cache;
 static void
 renew_parental_timestamps(struct dentry *direntry)
 {
-	/* BB check if there is a way to get the kernel to do this or if we
+	/* TODO: check if there is a way to get the kernel to do this or if we
 	   really need this */
 	do {
 		cifs_set_time(direntry, jiffies);
@@ -117,7 +117,7 @@ build_path_from_dentry_optional_prefix(struct dentry *direntry, void *page,
 		*s = '/';
 	}
 	if (dirsep != '/') {
-		/* BB test paths to Windows with '/' in the midst of prepath */
+		/* TODO: test paths to Windows with '/' in the midst of prepath */
 		char *p;
 
 		for (p = s; *p; p++)
@@ -282,7 +282,7 @@ cifs_do_create(struct inode *inode, struct dentry *direntry, unsigned int xid,
 		smbfs_dbg("Create flag not set in create function\n");
 
 	/*
-	 * BB add processing to set equivalent of mode - e.g. via CreateX with
+	 * TODO: add processing to set equivalent of mode - e.g. via CreateX with
 	 * ACLs
 	 */
 
@@ -346,7 +346,7 @@ cifs_do_create(struct inode *inode, struct dentry *direntry, unsigned int xid,
 				       current->tgid);
 	}
 	/*
-	 * BB implement mode setting via Windows security
+	 * TODO: implement mode setting via Windows security
 	 * descriptors e.g.
 	 */
 
@@ -528,7 +528,7 @@ int cifs_create(struct user_namespace *mnt_userns, struct inode *inode,
 	int rc;
 	unsigned int xid = get_xid();
 	/*
-	 * BB below access is probably too much for mknod to request
+	 * TODO: below access is probably too much for mknod to request
 	 *    but we have to do query and setpathinfo so requesting
 	 *    less could fail (unless we want to request getatr and setatr
 	 *    permissions (only).  At least for POSIX we do not have to

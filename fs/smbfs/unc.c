@@ -22,7 +22,7 @@ char *extract_hostname(const char *unc)
 	unsigned int len;
 
 	/* skip double chars at beginning of string */
-	/* BB: check validity of these bytes? */
+	/* TODO: check validity of these bytes? */
 	if (strlen(unc) < 3)
 		return ERR_PTR(-EINVAL);
 	for (src = unc; *src && *src == '\\'; src++)

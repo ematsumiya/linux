@@ -701,7 +701,7 @@ cifs_symlink(struct user_namespace *mnt_userns, struct inode *inode,
 	smbfs_dbg("Full path: %s\n", full_path);
 	smbfs_dbg("symname is %s\n", symname);
 
-	/* BB what if DFS and this volume is on different share? BB */
+	/* TODO: what if DFS and this volume is on different share? */
 	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_MF_SYMLINKS)
 		rc = create_mf_symlink(xid, pTcon, cifs_sb, full_path, symname);
 	else if (pTcon->unix_ext)

@@ -335,7 +335,7 @@ cifs_std_info_to_fattr(struct cifs_fattr *fattr, FIND_FILE_STANDARD_INFO *info,
 	cifs_fill_common_info(fattr, cifs_sb);
 }
 
-/* BB eventually need to add the following helper function to
+/* TODO: eventually need to add the following helper function to
       resolve NT_STATUS_STOPPED_ON_SYMLINK return code when
       we try to do FindFirst on (NTFS) directory symlinks */
 /*
@@ -398,7 +398,7 @@ ffirst_retry:
 		cifsFile->srch_inf.info_level = SMB_FIND_FILE_INFO_STANDARD;
 	} else if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SERVER_INUM) {
 		cifsFile->srch_inf.info_level = SMB_FIND_FILE_ID_FULL_DIR_INFO;
-	} else /* not srvinos - BB fixme add check for backlevel? */ {
+	} else /* not srvinos - FIXME: add check for backlevel? */ {
 		cifsFile->srch_inf.info_level = SMB_FIND_FILE_DIRECTORY_INFO;
 	}
 
@@ -412,7 +412,7 @@ ffirst_retry:
 
 	if (rc == 0)
 		cifsFile->invalidHandle = false;
-	/* BB call get_symlink_reparse_path and retry with new path */
+	/* TODO: call get_symlink_reparse_path and retry with new path */
 	else if ((rc == -EOPNOTSUPP) &&
 		(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SERVER_INUM)) {
 		cifs_sb->mnt_cifs_flags &= ~CIFS_MOUNT_SERVER_INUM;
@@ -791,7 +791,7 @@ find_cifs_entry(const unsigned int xid, struct cifs_tcon *tcon, loff_t pos,
 						cfile->srch_inf.info_level);
 		}
 		if ((cur_ent == NULL) && (i < pos_in_buf)) {
-			/* BB fixme - check if we should flag this error */
+			/* TODO: fixme - check if we should flag this error */
 			smbfs_log("reached end of buf searching for pos in buf %d index to find %lld rc %d\n",
 				 pos_in_buf, index_to_find, rc);
 		}

@@ -1249,7 +1249,7 @@ struct cifs_tcon {
 #endif
 	struct list_head pending_opens;	/* list of incomplete opens */
 	struct cached_fid crfid; /* Cached root fid */
-	/* BB add field for back pointer to sb struct(s)? */
+	/* TODO: add field for back pointer to sb struct(s)? */
 #ifdef CONFIG_SMBFS_DFS_UPCALL
 	struct list_head ulist; /* cache update list */
 #endif
@@ -1397,7 +1397,7 @@ struct cifsFileInfo {
 	__u32 pid;		/* process id who opened file */
 	struct cifs_fid fid;	/* file id from remote */
 	struct list_head rlist; /* reconnect list */
-	/* BB add lock scope info here if needed */ ;
+	/* TODO: add lock scope info here if needed */ ;
 	/* lock scope id (0 if none) */
 	struct dentry *dentry;
 	struct tcon_link *tlink;
@@ -1548,7 +1548,7 @@ struct cifsInodeInfo {
 	 * for this semaphore to avoid deadlocks.
 	 */
 	struct rw_semaphore lock_sem;	/* protect the fields above */
-	/* BB add in lists for dirty pages i.e. write caching info for oplock */
+	/* TODO: add in lists for dirty pages i.e. write caching info for oplock */
 	struct list_head openFileList;
 	spinlock_t	open_file_lock;	/* protects openFileList */
 	__u32 cifsAttrs; /* e.g. DOS archive bit, sparse, compressed, system */

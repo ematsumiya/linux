@@ -2743,11 +2743,15 @@ static int
 ip_rfc1001_connect(struct TCP_Server_Info *server)
 {
 	int rc = 0;
+	
 	/*
-	 * some servers require RFC1001 sessinit before sending
-	 * negprot - BB check reconnection in case where second
+	 * Some servers require RFC1001 sessinit before sending
+	 * negprot
+	 *
+	 * TODO: check reconnection in case where second
 	 * sessinit is sent but no second negprot
 	 */
+
 	struct rfc1002_session_packet *ses_init_buf;
 	struct smb_hdr *smb_buf;
 	ses_init_buf = kzalloc(sizeof(struct rfc1002_session_packet),
@@ -2849,7 +2853,7 @@ generic_ip_connect(struct TCP_Server_Info *server)
 			return rc;
 		}
 
-		/* BB other socket options to set KEEPALIVE, NODELAY? */
+		/* TODO: other socket options to set KEEPALIVE, NODELAY? */
 		smbfs_dbg("Socket created\n");
 		server->ssocket = socket;
 		socket->sk->sk_allocation = GFP_NOFS;
@@ -3373,7 +3377,7 @@ cifs_setup_volume_info(struct smb3_fs_context *ctx, const char *mntopts, const c
 		kfree(ctx->username);
 		ctx->username = NULL;
 	} else if (ctx->username) {
-		/* BB fixme parse for domain name here */
+		/* TODO: fixme parse for domain name here */
 		smbfs_dbg("Username: %s\n", ctx->username);
 	} else {
 		smbfs_log("No username specified\n");

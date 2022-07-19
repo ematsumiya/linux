@@ -288,7 +288,7 @@ static int smbfs_debug_data_proc_show(struct seq_file *m, void *v)
 	cifs_swn_dump(m);
 #endif /* CONFIG_SMBFS_SWN_UPCALL */
 
-	/* BB add code to dump additional info such as TCP session info now */
+	/* TODO: add code to dump additional info such as TCP session info now */
 	return 0;
 }
 

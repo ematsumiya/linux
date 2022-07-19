@@ -7,9 +7,6 @@
  *
  *   SMBFS client
  */
-
-/* Note that BB means BUGBUG (ie something to fix eventually) */
-
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/mount.h>
@@ -706,8 +703,8 @@ static void cifs_umount_begin(struct super_block *sb)
 		tcon->status = TID_EXITING;
 	spin_unlock(&cifs_tcp_ses_lock);
 
-	/* BB mark all brl mids as exiting */
-	/* BB cancel tcon notify requestss */
+	/* TODO: mark all brl mids as exiting */
+	/* TODO: cancel tcon notify requestss */
 	if (tcon->ses && tcon->ses->server) {
 		smbfs_dbg("wake up tasks now - umount begin not complete\n");
 		wake_up_all(&tcon->ses->server->request_q);
@@ -724,7 +721,7 @@ static void cifs_umount_begin(struct super_block *sb)
 #ifdef CONFIG_SMBFS_STATS_EXTRA
 static int cifs_show_stats(struct seq_file *s, struct dentry *root)
 {
-	/* BB FIXME */
+	/* FIXME */
 	return 0;
 }
 #endif
@@ -879,7 +876,7 @@ cifs_smb3_do_mount(struct file_system_type *fs_type,
 	mnt_data.cifs_sb = cifs_sb;
 	mnt_data.flags = flags;
 
-	/* BB should we make this contingent on mount parm? */
+	/* TODO: should we make this contingent on mount parm? */
 	flags |= SB_NODIRATIME | SB_NOATIME;
 
 	sb = sget(fs_type, cifs_match_super, cifs_set_super, flags, &mnt_data);

@@ -374,11 +374,11 @@
 #define CIFS_COPY_OP 1
 #define CIFS_RENAME_OP 2
 
-#define GETU16(var)  (*((__u16 *)var))	/* BB check for endian issues */
-#define GETU32(var)  (*((__u32 *)var))	/* BB check for endian issues */
+#define GETU16(var)  (*((__u16 *)var))	/* TODO: check for endian issues */
+#define GETU32(var)  (*((__u32 *)var))	/* TODO: check for endian issues */
 
 struct smb_hdr {
-	__be32 smb_buf_length;	/* BB length is only two (rarely three) bytes,
+	__be32 smb_buf_length;	/* TODO: length is only two (rarely three) bytes,
 		with one or two byte "type" preceding it that will be
 		zero - we could mask the type byte off */
 	__u8 Protocol[4];
@@ -599,9 +599,9 @@ typedef union smb_com_session_setup_andx {
 		__le16 SecurityBlobLength;
 		__u16 ByteCount;
 		unsigned char SecurityBlob[1];	/* followed by */
-/*      unsigned char  * NativeOS;      */
-/*	unsigned char  * NativeLanMan;  */
-/*      unsigned char  * PrimaryDomain; */
+		/* unsigned char  *NativeOS;      */
+		/* unsigned char  *NativeLanMan;  */
+		/* unsigned char  *PrimaryDomain; */
 	} __attribute__((packed)) resp;	/* NTLM response
 					   (with or without extended sec) */
 
@@ -617,7 +617,8 @@ typedef union smb_com_session_setup_andx {
 		__le16 PasswordLength;
 		__u32 Reserved; /* encrypt key len and offset */
 		__le16 ByteCount;
-		unsigned char AccountPassword[1];	/* followed by */
+		unsigned char AccountPassword[1];
+		/* followed by */
 		/* STRING AccountName */
 		/* STRING PrimaryDomain */
 		/* STRING NativeOS */
@@ -631,9 +632,10 @@ typedef union smb_com_session_setup_andx {
 		__le16 AndXOffset;
 		__le16 Action;	/* see below */
 		__u16 ByteCount;
-		unsigned char NativeOS[1];	/* followed by */
-/*	unsigned char * NativeLanMan; */
-/*      unsigned char * PrimaryDomain; */
+		unsigned char NativeOS[1];
+		/* followed by */
+		/* unsigned char *NativeLanMan; */
+		/* unsigned char *PrimaryDomain; */
 	} __attribute__((packed)) old_resp; /* pre-NTLM (LANMAN2.1) response */
 } __attribute__((packed)) SESSION_SETUP_ANDX;
 
@@ -648,7 +650,6 @@ typedef union smb_com_session_setup_andx {
 struct ntlmssp2_name {
 	__le16 type;
 	__le16 length;
-/*	char   name[length]; */
 } __attribute__((packed));
 
 struct ntlmv2_resp {
@@ -692,8 +693,9 @@ typedef struct smb_com_tconx_req {
 	__le16 Flags;		/* see below */
 	__le16 PasswordLength;
 	__le16 ByteCount;
-	unsigned char Password[1];	/* followed by */
-/* STRING Path    *//* \\server\share name */
+	unsigned char Password[1];
+	/* followed by */
+	/* STRING Path    *//* \\server\share name */
 	/* STRING Service */
 } __attribute__((packed)) TCONX_REQ;
 
@@ -874,7 +876,7 @@ typedef struct smb_com_open_req {	/* also handles create */
 #define CIFS_CREATE_ACTION 0x20000 /* file created */
 
 typedef struct smb_com_open_rsp {
-	struct smb_hdr hdr;	/* wct = 34 BB */
+	struct smb_hdr hdr;	/* wct = 34 */
 	__u8 AndXCommand;
 	__u8 AndXReserved;
 	__le16 AndXOffset;
@@ -974,7 +976,7 @@ typedef struct smb_com_writex_req {
 	__le16 DataLengthLow;
 	__le16 DataOffset;
 	__le16 ByteCount;
-	__u8 Pad;		/* BB check for whether padded to DWORD
+	__u8 Pad;		/* TODO: check for whether padded to DWORD
 				   boundary and optimum performance here */
 	char Data[];
 } __attribute__((packed)) WRITEX_REQ;
@@ -994,7 +996,7 @@ typedef struct smb_com_write_req {
 	__le16 DataOffset;
 	__le32 OffsetHigh;
 	__le16 ByteCount;
-	__u8 Pad;		/* BB check for whether padded to DWORD
+	__u8 Pad;		/* TODO: check for whether padded to DWORD
 				   boundary and optimum performance here */
 	char Data[];
 } __attribute__((packed)) WRITE_REQ;
@@ -1097,7 +1099,7 @@ typedef struct cifs_posix_lock {
 	__le32  pid;
 	__le64	start;
 	__le64	length;
-	/* BB what about additional owner info to identify network client */
+	/* TODO: what about additional owner info to identify network client */
 } __attribute__((packed)) CIFS_POSIX_LOCK;
 
 typedef struct smb_com_lock_rsp {
@@ -1432,7 +1434,7 @@ typedef struct smb_com_transaction_change_notify_req {
 /*	__u8 Data[1];*/
 } __attribute__((packed)) TRANSACT_CHANGE_NOTIFY_REQ;
 
-/* BB eventually change to use generic ntransact rsp struct
+/* TODO: eventually change to use generic ntransact rsp struct
       and validation routine */
 typedef struct smb_com_transaction_change_notify_rsp {
 	struct smb_hdr hdr;	/* wct = 18 */
@@ -1626,7 +1628,7 @@ struct smb_t2_rsp {
 #define SMB_POSIX_UNLINK                0x20a
 #define SMB_SET_FILE_UNIX_INFO2         0x20b
 #define SMB_SET_FILE_BASIC_INFO2        0x3ec
-#define SMB_SET_FILE_RENAME_INFORMATION 0x3f2 /* BB check if qpathinfo too */
+#define SMB_SET_FILE_RENAME_INFORMATION 0x3f2 /* TODO: check if qpathinfo too */
 #define SMB_FILE_ALL_INFO2              0x3fa
 #define SMB_SET_FILE_ALLOCATION_INFO2   0x3fb
 #define SMB_SET_FILE_END_OF_FILE_INFO2  0x3fc
@@ -1928,8 +1930,6 @@ typedef struct whoami_rsp_data { /* Query level 0x202 */
 	__u32 number_of_sids; /* may be zero */
 	__u32 length_of_sid_array; /* in bytes - may be zero */
 	__u32 pad; /* reserved - MBZ */
-	/* __u64 gid_array[0]; */  /* may be empty */
-	/* __u8 * psid_list */  /* may be empty */
 } __attribute__((packed)) WHOAMI_RSP_DATA;
 
 /* SETFSInfo Levels */
@@ -2153,12 +2153,6 @@ typedef struct {
 #define CIFS_UNIX_PROXY_CAP             0x00000400 /* Proxy cap: 0xACE ioctl and
 						      QFS PROXY call */
 #ifdef CONFIG_SMBFS_POSIX
-/* presumably don't need the 0x20 POSIX_PATH_OPS_CAP since we never send
-   LockingX instead of posix locking call on unix sess (and we do not expect
-   LockingX to use different (ie Windows) semantics than posix locking on
-   the same session (if WINE needs to do this later, we can add this cap
-   back in later */
-/* #define CIFS_UNIX_CAP_MASK              0x000000fb */
 #define CIFS_UNIX_CAP_MASK              0x000003db
 #else
 #define CIFS_UNIX_CAP_MASK              0x00000013
@@ -2171,7 +2165,7 @@ typedef struct {
 	/* For undefined recommended transfer size return -1 in that field */
 	__le32 OptimalTransferSize;  /* bsize on some os, iosize on other os */
 	__le32 BlockSize;
-    /* The next three fields are in terms of the block size.
+	/* The next three fields are in terms of the block size.
 	(above). If block size is unknown, 4096 would be a
 	reasonable block size for a server to report.
 	Note that returning the blocks/blocksavail removes need
@@ -2181,7 +2175,7 @@ typedef struct {
 	__le64 TotalBlocks;
 	__le64 BlocksAvail;       /* bfree */
 	__le64 UserBlocksAvail;   /* bavail */
-    /* For undefined Node fields or FSID return -1 */
+	/* For undefined Node fields or FSID return -1 */
 	__le64 TotalFileNodes;
 	__le64 FreeFileNodes;
 	__le64 FileSysIdentifier;   /* fsid */
@@ -2379,11 +2373,11 @@ struct file_alt_name_info {
 } __attribute__((packed));      /* level 0x0108 */
 
 struct file_stream_info {
-	__le32 number_of_streams;  /* BB check sizes and verify location */
+	__le32 number_of_streams;  /* TODO: check sizes and verify location */
 	/* followed by info on streams themselves
-		u64 size;
-		u64 allocation_size
-		stream info */
+	u64 size;
+	u64 allocation_size
+	stream info */
 };      /* level 0x109 */
 
 struct file_compression_info {
@@ -2408,22 +2402,8 @@ struct cifs_posix_acl { /* access conrol list  (ACL) */
 	__le16	access_entry_count;  /* access ACL - count of entries */
 	__le16	default_entry_count; /* default ACL - count of entries */
 	struct cifs_posix_ace ace_array[];
-	/* followed by
-	struct cifs_posix_ace default_ace_arraay[] */
+	/* followed by default_ace_arraay[] */
 } __attribute__((packed));  /* level 0x204 */
-
-/* types of access control entries already defined in posix_acl.h */
-/* #define CIFS_POSIX_ACL_USER_OBJ	 0x01
-#define CIFS_POSIX_ACL_USER      0x02
-#define CIFS_POSIX_ACL_GROUP_OBJ 0x04
-#define CIFS_POSIX_ACL_GROUP     0x08
-#define CIFS_POSIX_ACL_MASK      0x10
-#define CIFS_POSIX_ACL_OTHER     0x20 */
-
-/* types of perms */
-/* #define CIFS_POSIX_ACL_EXECUTE   0x01
-#define CIFS_POSIX_ACL_WRITE     0x02
-#define CIFS_POSIX_ACL_READ	     0x04 */
 
 /* end of POSIX ACL definitions */
 
@@ -2634,9 +2614,9 @@ struct data_blob {
 	From existing Lanman and NTLM dialects:
 	--------------------------------------
 	NEGOTIATE
-	SESSION_SETUP_ANDX (BB which?)
-	TREE_CONNECT_ANDX (BB which wct?)
-	TREE_DISCONNECT (BB add volume timestamp on response)
+	SESSION_SETUP_ANDX (XXX: which?)
+	TREE_CONNECT_ANDX (XXX: which wct?)
+	TREE_DISCONNECT (TODO: add volume timestamp on response)
 	LOGOFF_ANDX
 	DELETE (note delete open file behavior)
 	DELETE_DIRECTORY
@@ -2648,12 +2628,12 @@ struct data_blob {
 	FIND_CLOSE2
 	TRANSACTION2 (18 cases)
 		SMB_SET_FILE_END_OF_FILE_INFO2 SMB_SET_PATH_END_OF_FILE_INFO2
-		(BB verify that never need to set allocation size)
-		SMB_SET_FILE_BASIC_INFO2 (setting times - BB can it be done via
-			 Unix ext?)
+		(TODO: verify that never need to set allocation size)
+		SMB_SET_FILE_BASIC_INFO2 (setting times)
+		(XXX: can it be done via UNIX ext?)
 
 	COPY (note support for copy across directories) - FUTURE, OPTIONAL
-	setting/getting OS/2 EAs - FUTURE (BB can this handle
+	setting/getting OS/2 EAs - FUTURE (XXX: can this handle
 	setting Linux xattrs perfectly)         - OPTIONAL
 	dnotify                                 - FUTURE, OPTIONAL
 	quota                                   - FUTURE, OPTIONAL
@@ -2667,16 +2647,16 @@ struct data_blob {
 	T2 SET_PATH_INFO (SMB_SET_FILE_UNIX_LINK) for symlinks
 	T2 SET_PATH_INFO (SMB_SET_FILE_BASIC_INFO2)
 	T2 QUERY_PATH_INFO (SMB_QUERY_FILE_UNIX_LINK)
-	T2 QUERY_PATH_INFO (SMB_QUERY_FILE_UNIX_BASIC)	BB check for missing
+	T2 QUERY_PATH_INFO (SMB_QUERY_FILE_UNIX_BASIC)	TODO: check for missing
 							inode fields
 				Actually a need QUERY_FILE_UNIX_INFO
 				since has inode num
-				BB what about a) blksize/blkbits/blocks
-							  b) i_version
-							  c) i_rdev
-							  d) notify mask?
-							  e) generation
-							  f) size_seqcount
+				TODO: check about a) blksize/blkbits/blocks
+						  b) i_version
+						  c) i_rdev
+						  d) notify mask?
+						  e) generation
+						  f) size_seqcount
 	T2 FIND_FIRST/FIND_NEXT FIND_FILE_UNIX
 	TRANS2_GET_DFS_REFERRAL		      - OPTIONAL but recommended
 	T2_QFS_INFO QueryDevice/AttributeInfo - OPTIONAL
@@ -2710,7 +2690,7 @@ struct xsymlink {
 } __attribute__((packed));
 
 typedef struct file_xattr_info {
-	/* BB do we need another field for flags? BB */
+	/* TODO: do we need another field for flags? */
 	__u32 xattr_name_len;
 	__u32 xattr_value_len;
 	char  xattr_name[];

@@ -67,14 +67,14 @@ static const __le16 smb2_rsp_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
 	/* SMB2_WRITE */ cpu_to_le16(17),
 	/* SMB2_LOCK */ cpu_to_le16(4),
 	/* SMB2_IOCTL */ cpu_to_le16(49),
-	/* BB CHECK this ... not listed in documentation */
+	/* TODO: verify this... not listed in documentation */
 	/* SMB2_CANCEL */ cpu_to_le16(0),
 	/* SMB2_ECHO */ cpu_to_le16(4),
 	/* SMB2_QUERY_DIRECTORY */ cpu_to_le16(9),
 	/* SMB2_CHANGE_NOTIFY */ cpu_to_le16(9),
 	/* SMB2_QUERY_INFO */ cpu_to_le16(9),
 	/* SMB2_SET_INFO */ cpu_to_le16(2),
-	/* BB FIXME can also be 44 for lease break */
+	/* FIXME: can also be 44 for lease break */
 	/* SMB2_OPLOCK_BREAK */ cpu_to_le16(24)
 };
 
@@ -285,7 +285,7 @@ static const bool has_smb2_data_area[NUMBER_OF_SMB2_COMMANDS] = {
 	/* SMB2_WRITE */ false,
 	/* SMB2_LOCK */	false,
 	/* SMB2_IOCTL */ true,
-	/* SMB2_CANCEL */ false, /* BB CHECK this not listed in documentation */
+	/* SMB2_CANCEL */ false, /* TODO: CHECK this not listed in documentation */
 	/* SMB2_ECHO */ false,
 	/* SMB2_QUERY_DIRECTORY */ true,
 	/* SMB2_CHANGE_NOTIFY */ true,

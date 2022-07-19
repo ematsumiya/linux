@@ -107,7 +107,7 @@ cifs_mark_open_files_invalid(struct cifs_tcon *tcon)
 	spin_unlock(&cifs_tcp_ses_lock);
 
 	/*
-	 * BB Add call to invalidate_inodes(sb) for all superblocks mounted
+	 * TODO: Add call to invalidate_inodes(sb) for all superblocks mounted
 	 * to this tcon.
 	 */
 }
@@ -295,7 +295,7 @@ small_smb_init(int smb_command, int wct, struct cifs_tcon *tcon,
 
 	*request_buf = cifs_small_buf_get();
 	if (*request_buf == NULL) {
-		/* BB should we add a retry in here if not a writepage? */
+		/* TODO: should we add a retry in here if not a writepage? */
 		return -ENOMEM;
 	}
 
@@ -328,7 +328,7 @@ small_smb_init_no_tc(const int smb_command, const int wct,
 
 	/* uid, tid can stay at zero as set in header assemble */
 
-	/* BB add support for turning on the signing when
+	/* TODO: add support for turning on the signing when
 	this function is used after 1st of session setup requests */
 
 	return rc;
@@ -341,7 +341,7 @@ __smb_init(int smb_command, int wct, struct cifs_tcon *tcon,
 {
 	*request_buf = cifs_buf_get();
 	if (*request_buf == NULL) {
-		/* BB should we add a retry in here if not a writepage? */
+		/* TODO: should we add a retry in here if not a writepage? */
 		return -ENOMEM;
 	}
     /* Although the original thought was we needed the response buf for  */
@@ -636,7 +636,7 @@ CIFSSMBTDis(const unsigned int xid, struct cifs_tcon *tcon)
 
 	smbfs_dbg("In tree disconnect\n");
 
-	/* BB: do we need to check this? These should never be NULL. */
+	/* TODO: do we need to check this? These should never be NULL. */
 	if ((tcon->ses == NULL) || (tcon->ses->server == NULL))
 		return -EIO;
 
@@ -738,7 +738,7 @@ CIFSSMBLogoff(const unsigned int xid, struct cifs_ses *ses)
 	smbfs_dbg("In SMBLogoff for session disconnect\n");
 
 	/*
-	 * BB: do we need to check validity of ses and server? They should
+	 * TODO: do we need to check validity of ses and server? They should
 	 * always be valid since we have an active reference. If not, that
 	 * should probably be a BUG()
 	 */
@@ -813,7 +813,7 @@ PsxDelete:
 
 	params = 6 + name_len;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	pSMB->MaxDataCount = 0; /* BB double check this with jra */
+	pSMB->MaxDataCount = 0; /* TODO: double check this with jra */
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
 	pSMB->Flags = 0;
@@ -1202,16 +1202,11 @@ OldOpenRetry:
 
 	if (create_options & CREATE_OPTION_SPECIAL)
 		pSMB->FileAttributes = cpu_to_le16(ATTR_SYSTEM);
-	else /* BB FIXME BB */
-		pSMB->FileAttributes = cpu_to_le16(0/*ATTR_NORMAL*/);
+	else /* FIXME */
+		pSMB->FileAttributes = cpu_to_le16(0 /* ATTR_NORMAL */);
 
 	if (create_options & CREATE_OPTION_READONLY)
 		pSMB->FileAttributes |= cpu_to_le16(ATTR_READONLY);
-
-	/* BB FIXME BB */
-/*	pSMB->CreateOptions = cpu_to_le32(create_options &
-						 CREATE_OPTIONS_MASK); */
-	/* BB FIXME END BB */
 
 	pSMB->Sattr = cpu_to_le16(ATTR_HIDDEN | ATTR_SYSTEM | ATTR_DIRECTORY);
 	pSMB->OpenFunction = cpu_to_le16(convert_disposition(openDisposition));
@@ -1225,16 +1220,16 @@ OldOpenRetry:
 	if (rc) {
 		smbfs_dbg("Error in Open, rc=%d\n", rc);
 	} else {
-		/* BB verify if wct == 15 */
-		/* BB get OplockLevel from action fiel */
+		/* TODO: verify if wct == 15 */
+		/* TODO: get OplockLevel from action fiel */
 
 		*netfid = pSMBr->Fid; /* cifs fid stays in LE */
 
 		if (pfile_info) {
-			pfile_info->CreationTime = 0; /* BB convert CreateTime*/
-			pfile_info->LastAccessTime = 0; /* BB fixme */
-			pfile_info->LastWriteTime = 0; /* BB fixme */
-			pfile_info->ChangeTime = 0;  /* BB fixme */
+			pfile_info->CreationTime = 0; /* TODO: convert CreateTime*/
+			pfile_info->LastAccessTime = 0; /* TODO: fixme */
+			pfile_info->LastWriteTime = 0; /* TODO: fixme */
+			pfile_info->ChangeTime = 0;  /* TODO: fixme */
 			pfile_info->Attributes =
 				cpu_to_le32(le16_to_cpu(pSMBr->FileAttributes));
 			/* the file_info buf is endian converted by caller */
@@ -1290,7 +1285,7 @@ openRetry:
 		name_len *= 2;
 		req->NameLength = cpu_to_le16(name_len);
 	} else {
-		/* BB improve check for buffer overruns BB */
+		/* TODO: improve check for buffer overruns */
 		/* no pad */
 		count = 0;
 		name_len = copy_path_name(req->fileName, path);
@@ -1328,7 +1323,7 @@ openRetry:
 	req->CreateDisposition = cpu_to_le32(disposition);
 	req->CreateOptions = cpu_to_le32(create_options & CREATE_OPTIONS_MASK);
 
-	/* BB Expirement with various impersonation levels and verify */
+	/* TODO: Expirement with various impersonation levels and verify */
 	req->ImpersonationLevel = cpu_to_le32(SECURITY_IMPERSONATION);
 	req->SecurityFlags = SECURITY_CONTEXT_TRACKING|SECURITY_EFFECTIVE_ONLY;
 
@@ -2394,7 +2389,7 @@ CIFSSMBLock(const unsigned int xid, struct cifs_tcon *tcon,
 
 	if ((numLock != 0) || (numUnlock != 0)) {
 		pSMB->Locks[0].Pid = cpu_to_le16(netpid);
-		/* BB where to store pid high? */
+		/* TODO: where to store pid high? */
 		pSMB->Locks[0].LengthLow = cpu_to_le32((u32)len);
 		pSMB->Locks[0].LengthHigh = cpu_to_le32((u32)(len>>32));
 		pSMB->Locks[0].OffsetLow = cpu_to_le32((u32)offset);
@@ -2459,7 +2454,7 @@ CIFSSMBPosixLock(const unsigned int xid, struct cifs_tcon *tcon,
 
 	count = sizeof(struct cifs_posix_lock);
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	pSMB->MaxDataCount = cpu_to_le16(1000); /* BB find max SMB from sess */
+	pSMB->MaxDataCount = cpu_to_le16(1000); /* TODO: find max SMB from sess */
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
 	if (pLockData)
@@ -2708,7 +2703,7 @@ int CIFSSMBRenameOpenFile(const unsigned int xid, struct cifs_tcon *pTcon,
 	data_offset = (char *)(pSMB) + offset + 4;
 	rename_info = (struct set_file_rename *) data_offset;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	pSMB->MaxDataCount = cpu_to_le16(1000); /* BB find max SMB from sess */
+	pSMB->MaxDataCount = cpu_to_le16(1000); /* TODO: find max SMB from sess */
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
 	pSMB->SubCommand = cpu_to_le16(TRANS2_SET_FILE_INFORMATION);
@@ -2876,7 +2871,7 @@ createSymLinkRetry:
 	}
 
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max on data count below from sess */
+	/* TODO: find exact max on data count below from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -2959,7 +2954,7 @@ createHardLinkRetry:
 	}
 
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max on data count below from sess*/
+	/* TODO: find exact max on data count below from sess*/
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -3122,7 +3117,7 @@ querySymLinkRetry:
 		/* decode response */
 
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
-		/* BB also check enough total bytes returned */
+		/* TODO: also check enough total bytes returned */
 		if (rc || get_bcc(&pSMBr->hdr) < 2)
 			rc = -EIO;
 		else {
@@ -3137,7 +3132,7 @@ querySymLinkRetry:
 			else
 				is_unicode = false;
 
-			/* BB FIXME investigate remapping reserved chars here */
+			/* FIXME investigate remapping reserved chars here */
 			*symlinkinfo = cifs_strndup_from_utf16(data_start,
 					count, is_unicode, nls_codepage);
 			if (!*symlinkinfo)
@@ -3186,7 +3181,7 @@ CIFSSMBQuerySymLink(const unsigned int xid, struct cifs_tcon *tcon,
 	pSMB->TotalParameterCount = 0 ;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le32(2);
-	/* BB find exact data count max from sess structure BB */
+	/* TODO: find exact data count max from sess structure */
 	pSMB->MaxDataCount = cpu_to_le32(CIFSMaxBufSize & 0xFFFFFF00);
 	pSMB->MaxSetupCount = 4;
 	pSMB->Reserved = 0;
@@ -3212,7 +3207,7 @@ CIFSSMBQuerySymLink(const unsigned int xid, struct cifs_tcon *tcon,
 	data_offset = le32_to_cpu(pSMBr->DataOffset);
 	data_count = le32_to_cpu(pSMBr->DataCount);
 	if (get_bcc(&pSMBr->hdr) < 2 || data_offset > 512) {
-		/* BB also check enough total bytes returned */
+		/* TODO: also check enough total bytes returned */
 		rc = -EIO;	/* bad smb */
 		goto qreparse_out;
 	}
@@ -3268,7 +3263,7 @@ CIFSSMBQuerySymLink(const unsigned int xid, struct cifs_tcon *tcon,
 	else
 		is_unicode = false;
 
-	/* BB FIXME investigate remapping reserved chars here */
+	/* FIXME investigate remapping reserved chars here */
 	*symlinkinfo = cifs_strndup_from_utf16(sub_start, sub_len, is_unicode,
 					       nls_codepage);
 	if (!*symlinkinfo)
@@ -3413,7 +3408,7 @@ static void convert_ace_to_cifs_ace(struct cifs_posix_ace *cifs_ace,
 {
 	cifs_ace->cifs_e_perm = le16_to_cpu(local_ace->e_perm);
 	cifs_ace->cifs_e_tag =  le16_to_cpu(local_ace->e_tag);
-	/* BB is there a better way to handle the large uid? */
+	/* TODO: is there a better way to handle the large uid? */
 	if (local_ace->e_id == cpu_to_le32(-1)) {
 	/* Probably no need to le convert -1 on any arch but can not hurt */
 		cifs_ace->cifs_uid = cpu_to_le64(-1);
@@ -3459,7 +3454,7 @@ static __u16 ACL_to_cifs_posix(char *parm_data, const char *pACL,
 	if (rc == 0) {
 		rc = (__u16)(count * sizeof(struct cifs_posix_ace));
 		rc += sizeof(struct cifs_posix_acl);
-		/* BB add check to make sure ACL does not overflow SMB */
+		/* TODO: add check to make sure ACL does not overflow SMB */
 	}
 	return rc;
 }
@@ -3502,7 +3497,7 @@ queryAclRetry:
 	params = 2 /* level */  + 4 /* rsrvd */  + name_len /* incl null */ ;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max data count below from sess structure BB */
+	/* TODO: find exact max data count below from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(4000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -3534,7 +3529,7 @@ queryAclRetry:
 		/* decode response */
 
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
-		/* BB also check enough total bytes returned */
+		/* TODO: also check enough total bytes returned */
 		if (rc || get_bcc(&pSMBr->hdr) < 2)
 			rc = -EIO;      /* bad smb */
 		else {
@@ -3583,7 +3578,7 @@ setAclRetry:
 	}
 	params = 6 + name_len;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB size from sess */
+	/* TODO: find max SMB size from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -3628,7 +3623,7 @@ setACLerrorExit:
 	return rc;
 }
 
-/* BB fix tabs in this function FIXME BB */
+/* TODO: fix tabs in this function FIXME */
 int
 CIFSGetExtAttr(const unsigned int xid, struct cifs_tcon *tcon,
 	       const int netfid, __u64 *pExtAttrBits, __u64 *pMask)
@@ -3652,7 +3647,7 @@ GetExtAttrRetry:
 	params = 2 /* level */ + 2 /* fid */;
 	pSMB->t2.TotalDataCount = 0;
 	pSMB->t2.MaxParameterCount = cpu_to_le16(4);
-	/* BB find exact max data count below from sess structure BB */
+	/* TODO: find exact max data count below from sess structure */
 	pSMB->t2.MaxDataCount = cpu_to_le16(4000);
 	pSMB->t2.MaxSetupCount = 0;
 	pSMB->t2.Reserved = 0;
@@ -3682,7 +3677,7 @@ GetExtAttrRetry:
 	} else {
 		/* decode response */
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
-		/* BB also check enough total bytes returned */
+		/* TODO: also check enough total bytes returned */
 		if (rc || get_bcc(&pSMBr->hdr) < 2)
 			/* If rc should we check for EOPNOSUPP and
 			   disable the srvino flag? or in caller? */
@@ -3691,7 +3686,7 @@ GetExtAttrRetry:
 			__u16 data_offset = le16_to_cpu(pSMBr->t2.DataOffset);
 			__u16 count = le16_to_cpu(pSMBr->t2.DataCount);
 			struct file_chattr_info *pfinfo;
-			/* BB Do we need a cast or hash here ? */
+			/* TODO: Do we need a cast or hash here ? */
 			if (count != 16) {
 				smbfs_dbg("Invalid size ret in GetExtAttr\n");
 				rc = -EIO;
@@ -3824,7 +3819,7 @@ CIFSSMBGetCIFSACL(const unsigned int xid, struct cifs_tcon *tcon, __u16 fid,
 		return rc;
 
 	pSMB->MaxParameterCount = cpu_to_le32(4);
-	/* BB TEST with big acls that might need to be e.g. larger than 16K */
+	/* TODO: TEST with big acls that might need to be e.g. larger than 16K */
 	pSMB->MaxSetupCount = 0;
 	pSMB->Fid = fid; /* file handle always le */
 	pSMB->AclFlags = cpu_to_le32(CIFS_ACL_OWNER | CIFS_ACL_GROUP |
@@ -3863,7 +3858,7 @@ CIFSSMBGetCIFSACL(const unsigned int xid, struct cifs_tcon *tcon, __u16 fid,
 			goto qsec_out;
 		}
 
-/* BB check that data area is minimum length and as big as acl_len */
+/* TODO: check that data area is minimum length and as big as acl_len */
 
 		acl_len = le32_to_cpu(*parm);
 		if (acl_len != *pbuflen) {
@@ -3997,7 +3992,7 @@ QInfRetry:
 		__u32 time = le32_to_cpu(pSMBr->last_write_time);
 
 		/* decode response */
-		/* BB FIXME - add time zone adjustment BB */
+		/* FIXME: add time zone adjustment */
 		memset(data, 0, sizeof(FILE_ALL_INFO));
 		ts.tv_nsec = 0;
 		ts.tv_sec = time;
@@ -4040,7 +4035,7 @@ QFileInfoRetry:
 	params = 2 /* level */ + 2 /* fid */;
 	pSMB->t2.TotalDataCount = 0;
 	pSMB->t2.MaxParameterCount = cpu_to_le16(4);
-	/* BB find exact max data count below from sess structure BB */
+	/* TODO: find exact max data count below from sess structure */
 	pSMB->t2.MaxDataCount = cpu_to_le16(CIFSMaxBufSize);
 	pSMB->t2.MaxSetupCount = 0;
 	pSMB->t2.Reserved = 0;
@@ -4070,7 +4065,7 @@ QFileInfoRetry:
 	} else {		/* decode response */
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
 
-		if (rc) /* BB add auto retry on EOPNOTSUPP? */
+		if (rc) /* TODO: add auto retry on EOPNOTSUPP? */
 			rc = -EIO;
 		else if (get_bcc(&pSMBr->hdr) < 40)
 			rc = -EIO;	/* bad smb */
@@ -4122,7 +4117,7 @@ QPathInfoRetry:
 	params = 2 /* level */ + 4 /* reserved */ + name_len /* includes NUL */;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(4000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -4154,7 +4149,7 @@ QPathInfoRetry:
 	} else {		/* decode response */
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
 
-		if (rc) /* BB add auto retry on EOPNOTSUPP? */
+		if (rc) /* TODO: add auto retry on EOPNOTSUPP? */
 			rc = -EIO;
 		else if (!legacy && get_bcc(&pSMBr->hdr) < 40)
 			rc = -EIO;	/* bad smb */
@@ -4206,7 +4201,7 @@ UnixQFileInfoRetry:
 	params = 2 /* level */ + 2 /* fid */;
 	pSMB->t2.TotalDataCount = 0;
 	pSMB->t2.MaxParameterCount = cpu_to_le16(4);
-	/* BB find exact max data count below from sess structure BB */
+	/* TODO: find exact max data count below from sess structure */
 	pSMB->t2.MaxDataCount = cpu_to_le16(CIFSMaxBufSize);
 	pSMB->t2.MaxSetupCount = 0;
 	pSMB->t2.Reserved = 0;
@@ -4289,7 +4284,7 @@ UnixQPathInfoRetry:
 	params = 2 /* level */ + 4 /* reserved */ + name_len /* includes NUL */;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(4000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -4423,7 +4418,7 @@ findFirstRetry:
 	pSMB->SearchFlags = cpu_to_le16(search_flags);
 	pSMB->InformationLevel = cpu_to_le16(psrch_inf->info_level);
 
-	/* BB what should we set StorageType to? Does it matter? BB */
+	/* TODO: what should we set StorageType to? Does it matter? */
 	pSMB->SearchStorageType = 0;
 	inc_rfc1001_len(pSMB, byte_count);
 	pSMB->ByteCount = cpu_to_le16(byte_count);
@@ -4432,19 +4427,19 @@ findFirstRetry:
 			 (struct smb_hdr *) pSMBr, &bytes_returned, 0);
 	cifs_stats_inc(&tcon->stats.cifs_stats.num_ffirst);
 
-	if (rc) {/* BB add logic to retry regular search if Unix search
+	if (rc) {/* TODO: add logic to retry regular search if Unix search
 			rejected unexpectedly by server */
-		/* BB Add code to handle unsupported level rc */
+		/* TODO: Add code to handle unsupported level rc */
 		smbfs_dbg("Error in FindFirst, rc=%d\n", rc);
 
 		cifs_buf_release(pSMB);
 
-		/* BB eventually could optimize out free and realloc of buf */
+		/* TODO: eventually could optimize out free and realloc of buf */
 		/*    for this case */
 		if (rc == -EAGAIN)
 			goto findFirstRetry;
 	} else { /* decode response */
-		/* BB remember to free buffer if error BB */
+		/* TODO: remember to free buffer if error */
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
 		if (rc == 0) {
 			unsigned int lnoff;
@@ -4572,7 +4567,7 @@ int CIFSFindNext(const unsigned int xid, struct cifs_tcon *tcon,
 		if (rc == 0) {
 			unsigned int lnoff;
 
-			/* BB fixme add lock for file (srch_info) struct here */
+			/* TODO: fixme add lock for file (srch_info) struct here */
 			if (pSMBr->hdr.Flags2 & SMBFLG2_UNICODE)
 				psrch_inf->unicode = true;
 			else
@@ -4607,12 +4602,12 @@ int CIFSFindNext(const unsigned int xid, struct cifs_tcon *tcon,
 				psrch_inf->last_entry =
 					psrch_inf->srch_entries_start + lnoff;
 
-			/* BB fixme add unlock here */
+			/* TODO: fixme add unlock here */
 		}
 
 	}
 
-	/* BB On error, should we leave previous search buf (and count and
+	/* TODO: On error, should we leave previous search buf (and count and
 	last entry fields) intact or free the previous one? */
 
 	/* Note: On -EAGAIN error only caller can retry on handle based calls
@@ -4691,7 +4686,7 @@ GetInodeNumberRetry:
 	params = 2 /* level */  + 4 /* rsrvd */  + name_len /* incl null */ ;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max data count below from sess structure BB */
+	/* TODO: find exact max data count below from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(4000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -4720,7 +4715,7 @@ GetInodeNumberRetry:
 	} else {
 		/* decode response */
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
-		/* BB also check enough total bytes returned */
+		/* TODO: also check enough total bytes returned */
 		if (rc || get_bcc(&pSMBr->hdr) < 2)
 			/* If rc should we check for EOPNOSUPP and
 			disable the srvino flag? or in caller? */
@@ -4729,7 +4724,7 @@ GetInodeNumberRetry:
 			__u16 data_offset = le16_to_cpu(pSMBr->t2.DataOffset);
 			__u16 count = le16_to_cpu(pSMBr->t2.DataCount);
 			struct file_internal_info *pfinfo;
-			/* BB Do we need a cast or hash here ? */
+			/* TODO: Do we need a cast or hash here ? */
 			if (count < 8) {
 				smbfs_dbg("Invalid size ret in QryIntrnlInf\n");
 				rc = -EIO;
@@ -4791,7 +4786,7 @@ getDFSRetry:
 				       remap);
 		name_len++;	/* trailing null */
 		name_len *= 2;
-	} else {	/* BB improve the check for buffer overruns BB */
+	} else {	/* TODO: improve the check for buffer overruns */
 		name_len = copy_path_name(pSMB->RequestFileName, search_name);
 	}
 
@@ -4805,7 +4800,7 @@ getDFSRetry:
 	pSMB->DataCount = 0;
 	pSMB->DataOffset = 0;
 	pSMB->MaxParameterCount = 0;
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(4000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -4832,7 +4827,7 @@ getDFSRetry:
 	}
 	rc = validate_t2((struct smb_t2_rsp *)pSMBr);
 
-	/* BB Also check if enough total bytes returned? */
+	/* TODO: Also check if enough total bytes returned? */
 	if (rc || get_bcc(&pSMBr->hdr) < 17) {
 		rc = -EIO;      /* bad smb */
 		goto GetDFSRefExit;
@@ -5053,7 +5048,7 @@ QFSAttributeRetry:
 	params = 2;	/* level */
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -5082,7 +5077,7 @@ QFSAttributeRetry:
 		rc = validate_t2((struct smb_t2_rsp *)pSMBr);
 
 		if (rc || get_bcc(&pSMBr->hdr) < 13) {
-			/* BB also check if enough bytes returned */
+			/* TODO: also check if enough bytes returned */
 			rc = -EIO;	/* bad smb */
 		} else {
 			__u16 data_offset = le16_to_cpu(pSMBr->t2.DataOffset);
@@ -5123,7 +5118,7 @@ QFSDeviceRetry:
 	params = 2;	/* level */
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -5196,7 +5191,7 @@ QFSUnixRetry:
 	pSMB->DataCount = 0;
 	pSMB->DataOffset = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(100);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -5255,7 +5250,7 @@ CIFSSMBSetFSUnixInfo(const unsigned int xid, struct cifs_tcon *tcon, __u64 cap)
 
 	smbfs_dbg("In SETFSUnixInfo\n");
 SETFSUnixRetry:
-	/* BB switch to small buf init to save memory */
+	/* TODO: switch to small buf init to save memory */
 	rc = smb_init_no_reconnect(SMB_COM_TRANSACTION2, 15, tcon,
 					(void **) &pSMB, (void **) &pSMBr);
 	if (rc)
@@ -5272,7 +5267,7 @@ SETFSUnixRetry:
 	offset = param_offset + params;
 
 	pSMB->MaxParameterCount = cpu_to_le16(4);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(100);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -5341,7 +5336,7 @@ QFSPosixRetry:
 	pSMB->DataCount = 0;
 	pSMB->DataOffset = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(100);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -5535,7 +5530,7 @@ CIFSSMBSetFileSize(const unsigned int xid, struct cifs_tcon *tcon,
 
 	count = sizeof(struct file_end_of_file_info);
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -5620,7 +5615,7 @@ CIFSSMBSetFileInfo(const unsigned int xid, struct cifs_tcon *tcon,
 
 	count = sizeof(FILE_BASIC_INFO);
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess */
+	/* TODO: find max SMB PDU from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -5684,7 +5679,7 @@ CIFSSMBSetFileDisposition(const unsigned int xid, struct cifs_tcon *tcon,
 
 	count = 1;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess */
+	/* TODO: find max SMB PDU from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -5777,7 +5772,7 @@ SetTimesRetry:
 	params = 6 + name_len;
 	count = sizeof(FILE_BASIC_INFO);
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess structure BB */
+	/* TODO: find max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -5905,7 +5900,7 @@ CIFSSMBUnixSetFileInfo(const unsigned int xid, struct cifs_tcon *tcon,
 	count = sizeof(FILE_UNIX_BASIC_INFO);
 
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess */
+	/* TODO: find max SMB PDU from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->SetupCount = 1;
 	pSMB->Reserved3 = 0;
@@ -5970,7 +5965,7 @@ setPermsRetry:
 	params = 6 + name_len;
 	count = sizeof(FILE_UNIX_BASIC_INFO);
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess structure BB */
+	/* TODO: find max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -6027,7 +6022,7 @@ CIFSSMBQAllEAs(const unsigned int xid, struct cifs_tcon *tcon,
 		char *EAData, size_t buf_size,
 		struct cifs_sb_info *cifs_sb)
 {
-		/* BB assumes one setup word */
+		/* TODO: assumes one setup word */
 	TRANSACTION2_QPI_REQ *pSMB = NULL;
 	TRANSACTION2_QPI_RSP *pSMBr = NULL;
 	int remap = cifs_remap(cifs_sb);
@@ -6062,7 +6057,7 @@ QAllEAsRetry:
 	params = 2 /* level */ + 4 /* reserved */ + list_len /* includes NUL */;
 	pSMB->TotalDataCount = 0;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find exact max SMB PDU from sess structure BB */
+	/* TODO: find exact max SMB PDU from sess structure */
 	pSMB->MaxDataCount = cpu_to_le16(CIFSMaxBufSize);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -6092,8 +6087,8 @@ QAllEAsRetry:
 	}
 
 
-	/* BB also check enough total bytes returned */
-	/* BB we need to improve the validity checking
+	/* TODO: also check enough total bytes returned */
+	/* TODO: we need to improve the validity checking
 	of these trans2 responses */
 
 	rc = validate_t2((struct smb_t2_rsp *)pSMBr);
@@ -6108,7 +6103,7 @@ QAllEAsRetry:
 	/* check that each element of each entry does not
 	   go beyond end of list */
 	/* validate_trans2_offsets() */
-	/* BB check if start of smb + data_offset > &bcc+ bcc */
+	/* TODO: check if start of smb + data_offset > &bcc+ bcc */
 
 	data_offset = le16_to_cpu(pSMBr->t2.DataOffset);
 	ea_response_data = (struct fealist *)
@@ -6251,7 +6246,7 @@ SetEARetry:
 
 	count = sizeof(*parm_data) + ea_value_len + name_len;
 	pSMB->MaxParameterCount = cpu_to_le16(2);
-	/* BB find max SMB PDU from sess */
+	/* TODO: find max SMB PDU from sess */
 	pSMB->MaxDataCount = cpu_to_le16(1000);
 	pSMB->MaxSetupCount = 0;
 	pSMB->Reserved = 0;
@@ -6284,8 +6279,11 @@ SetEARetry:
 	/* caller ensures that ea_value_len is less than 64K but
 	we need to ensure that it fits within the smb */
 
-	/*BB add length check to see if it would fit in
-	     negotiated SMB buffer size BB */
+	/*
+	 * TODO: add length check to see if it would fit in negotiated
+	 * SMB buffer size
+	 */
+
 	/* if (ea_value_len > buffer_size - 512 (enough for header)) */
 	if (ea_value_len)
 		memcpy(parm_data->list[0].name+name_len+1,

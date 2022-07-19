@@ -670,7 +670,7 @@ static inline void smbfs_handle_security_flags(unsigned int *flags)
 		smbfs_dbg("packet signing disabled\n");
 	}
 
-	/* BB should we turn on MAY flags for other MUST options? */
+	/* TODO: should we turn on MAY flags for other MUST options? */
 }
 #endif /* CONFIG_PROC_FS */
 #endif /* _SMBFS_PROC_H */

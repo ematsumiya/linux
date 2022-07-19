@@ -745,7 +745,7 @@ static void dump_ace(struct cifs_ace *pace, char *end_of_acl)
 				 i, le32_to_cpu(pace->sid.sub_auth[i]));
 		}
 
-		/* BB add length check to make sure that we do not have huge
+		/* TODO: add length check to make sure that we do not have huge
 			num auths and therefore go off the end */
 	}
 
@@ -763,7 +763,7 @@ static void parse_dacl(struct cifs_acl *pdacl, char *end_of_acl,
 	char *acl_base;
 	struct cifs_ace **ppace;
 
-	/* BB need to add parm so we can store the SID BB */
+	/* TODO: need to add parm so we can store the SID */
 
 	if (!pdacl) {
 		/* no DACL in the security descriptor, set
@@ -1148,7 +1148,7 @@ finalize_dacl:
 
 static int parse_sid(struct cifs_sid *psid, char *end_of_acl)
 {
-	/* BB need to add parm so we can store the SID BB */
+	/* TODO: need to add parm so we can store the SID */
 
 	/* validate that we do not go past end of ACL - sid must be at least 8
 	   bytes long (assuming no sub-auths - e.g. the null SID */
@@ -1168,7 +1168,7 @@ static int parse_sid(struct cifs_sid *psid, char *end_of_acl)
 				 i, le32_to_cpu(psid->sub_auth[i]));
 		}
 
-		/* BB add length check to make sure that we do not have huge
+		/* TODO: add length check to make sure that we do not have huge
 			num auths and therefore go off the end */
 		smbfs_dbg("RID 0x%x\n",
 			 le32_to_cpu(psid->sub_auth[psid->num_subauth-1]));
@@ -1229,7 +1229,7 @@ static int parse_sec_desc(struct cifs_sb_info *cifs_sb,
 		parse_dacl(dacl_ptr, end_of_acl, owner_sid_ptr,
 			   group_sid_ptr, fattr, get_mode_from_special_sid);
 	else
-		smbfs_dbg("no ACL\n"); /* BB grant all or default perms? */
+		smbfs_dbg("no ACL\n"); /* TODO: grant all or default perms? */
 
 	return rc;
 }

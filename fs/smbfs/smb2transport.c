@@ -660,8 +660,8 @@ smb2_verify_signature(struct smb_rqst *rqst, struct TCP_Server_Info *server)
 		return 0;
 
 	/*
-	 * BB what if signatures are supposed to be on for session but
-	 * server does not send one? BB
+	 * TODO: what if signatures are supposed to be on for session but
+	 * server does not send one?
 	 */
 
 	/* Do not need to verify session setups with signature "BSRSPYL " */

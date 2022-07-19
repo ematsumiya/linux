@@ -5,19 +5,6 @@
  *   Author(s): Steve French <stfrench@microsoft.com>
  *              David Howells <dhowells@redhat.com>
  */
-
-/*
-#include <linux/module.h>
-#include <linux/nsproxy.h>
-#include <linux/slab.h>
-#include <linux/magic.h>
-#include <linux/security.h>
-#include <net/net_namespace.h>
-#ifdef CONFIG_SMBFS_DFS_UPCALL
-#include "dfs_cache.h"
-#endif
-*/
-
 #include <linux/ctype.h>
 #include <linux/fs_context.h>
 #include <linux/fs_parser.h>
@@ -583,7 +570,7 @@ static int smb3_fs_context_parse_monolithic(struct fs_context *fc,
 	if (ret)
 		return ret;
 
-	/* BB Need to add support for sep= here TBD */
+	/* TODO: Need to add support for sep= here TBD */
 	while ((key = strsep(&options, ",")) != NULL) {
 		size_t len;
 		char *value;
@@ -1245,7 +1232,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		memset(ctx->target_rfc1001_name, 0x20,
 			RFC1001_NAME_LEN_WITH_NULL);
 		/*
-		 * BB are there cases in which a comma can be valid in this
+		 * TODO: are there cases in which a comma can be valid in this
 		 * workstation netbios name (and need special handling)?
 		 */
 
@@ -1456,7 +1443,6 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		ctx->rdma = true;
 		break;
 	}
-	/* case Opt_ignore: - is ignored as expected ... */
 
 	return 0;
 
@@ -1536,13 +1522,6 @@ int smb3_init_fs_context(struct fs_context *fc)
 
 	ctx->backupuid_specified = false; /* no backup intent for a user */
 	ctx->backupgid_specified = false; /* no backup intent for a group */
-
-/*
- *	short int override_uid = -1;
- *	short int override_gid = -1;
- *	char *nodename = strdup(utsname()->nodename);
- *	struct sockaddr *dstaddr = (struct sockaddr *)&vol->dstaddr;
- */
 
 	fc->fs_private = ctx;
 	fc->ops = &smb3_fs_context_ops;

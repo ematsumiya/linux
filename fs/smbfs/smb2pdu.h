@@ -319,7 +319,7 @@ struct compress_ioctl {
 
 /*
  *	PDU query infolevel structure definitions
- *	BB consider moving to a different header
+ *	TODO: consider moving to a different header
  */
 
 struct smb2_file_full_ea_info { /* encoding of response for level 15 */

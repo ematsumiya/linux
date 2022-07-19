@@ -1528,7 +1528,7 @@ cifs_rename_pending_delete(const char *full_path, struct dentry *dentry,
 		 * it for now. This means that some cifsXXX files may hang
 		 * around after they shouldn't.
 		 *
-		 * BB: remove this hack after more servers have the fix
+		 * TODO: remove this hack after more servers have the fix
 		 */
 		if (rc == -ENOENT)
 			rc = 0;
@@ -1820,7 +1820,7 @@ cifs_posix_mkdir(struct inode *inode, struct dentry *dentry, umode_t mode,
 		/* no return info, go query for it */
 		goto posix_mkdir_get_info;
 	/*
-	 * BB check (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SET_UID ) to see if
+	 * TODO: check (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SET_UID ) to see if
 	 * need to set uid/gid.
 	 */
 
@@ -1903,7 +1903,7 @@ int cifs_mkdir(struct user_namespace *mnt_userns, struct inode *inode,
 		goto mkdir_out;
 	}
 
-	/* BB add setting the equivalent of mode via CreateX w/ACLs */
+	/* TODO: add setting the equivalent of mode via CreateX w/ACLs */
 	rc = server->ops->mkdir(xid, inode, mode, tcon, full_path, cifs_sb);
 	if (rc) {
 		smbfs_dbg("cifs_mkdir returned 0x%x\n", rc);
@@ -2171,7 +2171,7 @@ cifs_rename2(struct user_namespace *mnt_userns, struct inode *source_dir,
 		}
 	}
 	/*
-	 * else ... BB we could add the same check for Windows by
+	 * TODO: we could add the same check for Windows by
 	 * checking the UniqueId via FILE_INTERNAL_INFO
 	 */
 
@@ -2690,7 +2690,7 @@ cifs_setattr_unix(struct dentry *direntry, struct iattr *attrs)
 	 * the safe way out and just do the flush on all setattr requests. If
 	 * the flush returns error, store it to report later and continue.
 	 *
-	 * BB: This should be smarter. Why bother flushing pages that
+	 * TODO: This should be smarter. Why bother flushing pages that
 	 * will be truncated anyway? Also, should we error out here if
 	 * the flush returns error?
 	 */
@@ -2838,7 +2838,7 @@ cifs_setattr_nounix(struct dentry *direntry, struct iattr *attrs)
 	 * this for ATTR_SIZE and ATTR_MTIME.  If the flush of the data
 	 * returns error, store it to report later and continue.
 	 *
-	 * BB: This should be smarter. Why bother flushing pages that
+	 * TODO: This should be smarter. Why bother flushing pages that
 	 * will be truncated anyway? Also, should we error out here if
 	 * the flush returns error? Do we need to check for ATTR_MTIME_SET flag?
 	 */
@@ -2953,7 +2953,7 @@ cifs_setattr_nounix(struct dentry *direntry, struct iattr *attrs)
 	if (attrs->ia_valid & (ATTR_MTIME|ATTR_ATIME|ATTR_CTIME) ||
 	    ((attrs->ia_valid & ATTR_MODE) && dosattr)) {
 		rc = cifs_set_file_info(inode, attrs, xid, full_path, dosattr);
-		/* BB: check for rc = -EOPNOTSUPP and switch to legacy mode */
+		/* TODO: check for rc = -EOPNOTSUPP and switch to legacy mode */
 
 		/* Even if error on time set, no sense failing the call if
 		the server would set the time to a reasonable value anyway,
@@ -3004,6 +3004,6 @@ cifs_setattr(struct user_namespace *mnt_userns, struct dentry *direntry,
 		retries++;
 	} while (is_retryable_error(rc) && retries < 2);
 
-	/* BB: add cifs_setattr_legacy for really old servers */
+	/* TODO: add cifs_setattr_legacy for really old servers */
 	return rc;
 }

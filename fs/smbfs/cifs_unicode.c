@@ -32,7 +32,7 @@ static bool
 convert_sfu_char(const __u16 src_char, char *target)
 {
 	/*
-	 * BB: Cannot handle remapping UNI_SLASH until all the calls to
+	 * TODO: Cannot handle remapping UNI_SLASH until all the calls to
 	 *     build_path_from_dentry are modified, as they use slash as
 	 *     separator.
 	 */

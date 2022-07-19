@@ -570,14 +570,14 @@ smb311_posix_query_path_info(const unsigned int xid, struct cifs_tcon *tcon,
 	*adjust_tz = false;
 	*reparse = false;
 
-	/* BB TODO: Make struct larger when add support for parsing owner SIDs */
+	/* TODO: TODO: Make struct larger when add support for parsing owner SIDs */
 	smb2_data = kzalloc(sizeof(struct smb311_posix_qinfo),
 			    GFP_KERNEL);
 	if (smb2_data == NULL)
 		return -ENOMEM;
 
 	/*
-	 * BB TODO: Add support for using the cached root handle.
+	 * TODO: TODO: Add support for using the cached root handle.
 	 * Create SMB2_query_posix_info worker function to do non-compounded query
 	 * when we already have an open file handle for this. For now this is fast enough
 	 * (always using the compounded version).
@@ -588,7 +588,7 @@ smb311_posix_query_path_info(const unsigned int xid, struct cifs_tcon *tcon,
 			      FILE_READ_ATTRIBUTES, FILE_OPEN, create_options,
 			      ACL_NO_MODE, smb2_data, SMB2_OP_POSIX_QUERY_INFO, cfile);
 	if (rc == -EOPNOTSUPP) {
-		/* BB TODO: When support for special files added to Samba re-verify this path */
+		/* TODO: TODO: When support for special files added to Samba re-verify this path */
 		*reparse = true;
 		create_options |= OPEN_REPARSE_POINT;
 

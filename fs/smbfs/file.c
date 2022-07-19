@@ -207,7 +207,7 @@ cifs_nt_open(const char *full_path, struct inode *inode, struct cifs_sb_info *ci
 
 	disposition = cifs_get_disposition(f_flags);
 
-	/* BB pass O_SYNC flag through on file attributes .. BB */
+	/* TODO: pass O_SYNC flag through on file attributes .. */
 
 	buf = kmalloc(sizeof(FILE_ALL_INFO), GFP_KERNEL);
 	if (!buf)
@@ -1011,7 +1011,7 @@ int cifs_closedir(struct inode *inode, struct file *file)
 	cifs_put_tlink(cfile->tlink);
 	kfree(file->private_data);
 	file->private_data = NULL;
-	/* BB can we lock the filestruct while this is going on? */
+	/* TODO: can we lock the filestruct while this is going on? */
 	free_xid(xid);
 	return rc;
 }
@@ -1543,7 +1543,7 @@ cifs_getlk(struct file *file, struct file_lock *flock, __u32 type,
 	if (!rc)
 		return rc;
 
-	/* BB we could chain these into one lock request BB */
+	/* TODO: we could chain these into one lock request */
 	rc = server->ops->mand_lock(xid, cfile, flock->fl_start, length, type,
 				    1, 0, false);
 	if (rc == 0) {
@@ -1882,7 +1882,7 @@ int cifs_lock(struct file *file, int cmd, struct file_lock *flock)
 	    ((cifs_sb->mnt_cifs_flags & CIFS_MOUNT_NOPOSIXBRL) == 0))
 		posix_lck = true;
 	/*
-	 * BB add code here to normalize offset and length to account for
+	 * TODO: add code here to normalize offset and length to account for
 	 * negative length which we can not accept over the wire.
 	 */
 	if (IS_GETLK(cmd)) {
@@ -2563,7 +2563,7 @@ cifs_writepage_locked(struct page *page, struct writeback_control *wbc)
 	unsigned int xid;
 
 	xid = get_xid();
-/* BB add check for wbc flags */
+/* TODO: add check for wbc flags */
 	get_page(page);
 	if (!PageUptodate(page))
 		smbfs_dbg("ppw - page not up to date\n");
@@ -2637,7 +2637,7 @@ static int cifs_write_end(struct file *file, struct address_space *mapping,
 		/* this is probably better than directly calling
 		   partialpage_write since in this function the file handle is
 		   known which we might as well	leverage */
-		/* BB check if anything else missing out of ppw
+		/* TODO: check if anything else missing out of ppw
 		   such as updating last write time */
 		page_data = kmap(page);
 		rc = cifs_write(cfile, pid, page_data + offset, copied, &pos);

@@ -520,7 +520,7 @@ static __u32 cifs_ssetup_hdr(struct cifs_ses *ses,
 
 	/* Now no need to set SMBFLG_CASELESS or obsolete CANONICAL PATH */
 
-	/* BB verify whether signing required on neg or just on auth frame
+	/* TODO: verify whether signing required on neg or just on auth frame
 	   (and NTLM case) */
 
 	capabilities = CAP_LARGE_FILES | CAP_NT_SMBS | CAP_LEVEL_II_OPLOCKS |
@@ -599,8 +599,10 @@ static void unicode_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 	char *bcc_ptr = *pbcc_area;
 	int bytes_ret = 0;
 
-	/* BB FIXME add check that strings total less
-	than 335 or will need to send them as arrays */
+	/*
+	 * FIXME: add check that strings total less than 335 or will need
+	 * to send them as arrays
+	 */
 
 	/* copy user */
 	if (ses->user_name == NULL) {
@@ -626,8 +628,7 @@ static void ascii_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 	char *bcc_ptr = *pbcc_area;
 	int len;
 
-	/* copy user */
-	/* BB what about null user mounts - check that we do this BB */
+	/* TODO: what about null user mounts? - check that we do this */
 	/* copy user */
 	if (ses->user_name != NULL) {
 		len = strscpy(bcc_ptr, ses->user_name, CIFS_MAX_USERNAME_LEN);
@@ -645,12 +646,13 @@ static void ascii_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 		if (WARN_ON_ONCE(len < 0))
 			len = CIFS_MAX_DOMAINNAME_LEN - 1;
 		bcc_ptr += len;
-	} /* else we will send a null domain name
-	     so the server will default to its own domain */
+	}
+	/* else we will send a null domain name
+	   so the server will default to its own domain */
 	*bcc_ptr = 0;
 	bcc_ptr++;
 
-	/* BB check for overflow here */
+	/* TODO: check for overflow here */
 
 	strcpy(bcc_ptr, "Linux version ");
 	bcc_ptr += strlen("Linux version ");
@@ -744,7 +746,7 @@ static void decode_ascii_ssetup(char **pbcc_area, __u16 bleft,
 
 	/* No domain field in LANMAN case. Domain is
 	   returned by old servers in the SMB negprot response */
-	/* BB For newer servers which do not support Unicode,
+	/* TODO: For newer servers which do not support Unicode,
 	   but thus do return domain here we could add parsing
 	   for it later, but it is not very important */
 	smbfs_dbg("ascii: bytes left %d\n", bleft);
@@ -802,7 +804,7 @@ int decode_ntlmssp_challenge(char *bcc_ptr, int blob_len,
 
 	memcpy(ses->ntlmssp->cryptkey, pblob->Challenge, CIFS_CRYPTO_KEY_SIZE);
 	/* In particular we can examine sign flags */
-	/* BB spec says that if AvId field of MsvAvTimestamp is populated then
+	/* TODO: spec says that if AvId field of MsvAvTimestamp is populated then
 		we must set the MIC field of the AUTHENTICATE_MESSAGE */
 
 	tioffset = le32_to_cpu(pblob->TargetInfoArray.BufferOffset);
@@ -883,7 +885,7 @@ static inline void cifs_security_buffer_from_str(SECURITY_BUFFER *pbuf,
 	}
 }
 
-/* BB Move to ntlmssp.c eventually */
+/* TODO: Move to ntlmssp.c eventually */
 
 int build_ntlmssp_negotiate_blob(unsigned char **pbuffer,
 				 u16 *buflen,
@@ -911,7 +913,7 @@ int build_ntlmssp_negotiate_blob(unsigned char **pbuffer,
 	memcpy(sec_blob->Signature, NTLMSSP_SIGNATURE, 8);
 	sec_blob->MessageType = NtLmNegotiate;
 
-	/* BB is NTLMV2 session security format easier to use here? */
+	/* TODO: is NTLMV2 session security format easier to use here? */
 	flags = NTLMSSP_NEGOTIATE_56 |	NTLMSSP_REQUEST_TARGET |
 		NTLMSSP_NEGOTIATE_128 | NTLMSSP_NEGOTIATE_UNICODE |
 		NTLMSSP_NEGOTIATE_NTLM | NTLMSSP_NEGOTIATE_EXTENDED_SEC |
@@ -973,7 +975,7 @@ int build_ntlmssp_smb3_negotiate_blob(unsigned char **pbuffer,
 	memcpy(sec_blob->Signature, NTLMSSP_SIGNATURE, 8);
 	sec_blob->MessageType = NtLmNegotiate;
 
-	/* BB is NTLMV2 session security format easier to use here? */
+	/* TODO: is NTLMV2 session security format easier to use here? */
 	flags = NTLMSSP_NEGOTIATE_56 |	NTLMSSP_REQUEST_TARGET |
 		NTLMSSP_NEGOTIATE_128 | NTLMSSP_NEGOTIATE_UNICODE |
 		NTLMSSP_NEGOTIATE_NTLM | NTLMSSP_NEGOTIATE_EXTENDED_SEC |
@@ -1339,7 +1341,7 @@ sess_auth_ntlmv2(struct sess_data *sess_data)
 	}
 
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
-		smbfs_dbg("Guest login\n"); /* BB mark SesInfo struct? */
+		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
 	ses->Suid = smb_buf->Uid;   /* UID left in wire format (le) */
 	smbfs_dbg("UID = %llu\n", ses->Suid);
@@ -1347,7 +1349,7 @@ sess_auth_ntlmv2(struct sess_data *sess_data)
 	bytes_remaining = get_bcc(smb_buf);
 	bcc_ptr = pByteArea(smb_buf);
 
-	/* BB check if Unicode and decode strings */
+	/* TODO: check if Unicode and decode strings */
 	if (bytes_remaining == 0) {
 		/* no string area to decode, do nothing */
 	} else if (smb_buf->Flags2 & SMBFLG2_UNICODE) {
@@ -1444,7 +1446,7 @@ sess_auth_kerberos(struct sess_data *sess_data)
 		unicode_oslm_strings(&bcc_ptr, sess_data->nls_cp);
 		unicode_domain_string(&bcc_ptr, ses, sess_data->nls_cp);
 	} else {
-		/* BB: is this right? */
+		/* TODO: is this right? */
 		ascii_ssetup_strings(&bcc_ptr, ses, sess_data->nls_cp);
 	}
 
@@ -1465,7 +1467,7 @@ sess_auth_kerberos(struct sess_data *sess_data)
 	}
 
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
-		smbfs_dbg("Guest login\n"); /* BB mark SesInfo struct? */
+		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
 	ses->Suid = smb_buf->Uid;   /* UID left in wire format (le) */
 	smbfs_dbg("UID = %llu\n", ses->Suid);
@@ -1483,7 +1485,7 @@ sess_auth_kerberos(struct sess_data *sess_data)
 	bcc_ptr += blob_len;
 	bytes_remaining -= blob_len;
 
-	/* BB check if Unicode and decode strings */
+	/* TODO: check if Unicode and decode strings */
 	if (bytes_remaining == 0) {
 		/* no string area to decode, do nothing */
 	} else if (smb_buf->Flags2 & SMBFLG2_UNICODE) {
@@ -1716,7 +1718,7 @@ sess_auth_rawntlmssp_authenticate(struct sess_data *sess_data)
 	}
 
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
-		smbfs_dbg("Guest login\n"); /* BB mark SesInfo struct? */
+		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
 	if (ses->Suid != smb_buf->Uid) {
 		ses->Suid = smb_buf->Uid;
@@ -1736,7 +1738,7 @@ sess_auth_rawntlmssp_authenticate(struct sess_data *sess_data)
 	bytes_remaining -= blob_len;
 
 
-	/* BB check if Unicode and decode strings */
+	/* TODO: check if Unicode and decode strings */
 	if (bytes_remaining == 0) {
 		/* no string area to decode, do nothing */
 	} else if (smb_buf->Flags2 & SMBFLG2_UNICODE) {

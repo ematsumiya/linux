@@ -376,7 +376,7 @@ smb2_negotiate(const unsigned int xid,
 	server->CurrentMid = 0;
 	spin_unlock(&GlobalMid_Lock);
 	rc = SMB2_negotiate(xid, ses, server);
-	/* BB we probably don't need to retry with modern servers */
+	/* TODO: we probably don't need to retry with modern servers */
 	if (rc == -EAGAIN)
 		rc = -EHOSTDOWN;
 	return rc;
@@ -903,7 +903,7 @@ int open_cached_dir(unsigned int xid, struct cifs_tcon *tcon,
 	dget(dentry);
 	kref_init(&tcon->crfid.refcount);
 
-	/* BB TBD check to see if oplock level check can be removed below */
+	/* TODO: TBD check to see if oplock level check can be removed below */
 	if (o_rsp->OplockLevel == SMB2_OPLOCK_LEVEL_LEASE) {
 		/*
 		 * See commit 2f94a3125b87. Increment the refcount when we
@@ -5248,7 +5248,7 @@ smb2_make_node(unsigned int xid, struct inode *inode,
 		goto out;
 
 	/*
-	 * BB Do not bother to decode buf since no local inode yet to put
+	 * TODO: Do not bother to decode buf since no local inode yet to put
 	 * timestamps in, but we can reuse it safely.
 	 */
 

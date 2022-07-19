@@ -68,7 +68,7 @@ static const int smb2_req_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
 	/* SMB2_CHANGE_NOTIFY */ 32,
 	/* SMB2_QUERY_INFO */ 41,
 	/* SMB2_SET_INFO */ 33,
-	/* SMB2_OPLOCK_BREAK */ 24 /* BB this is 36 for LEASE_BREAK variant */
+	/* SMB2_OPLOCK_BREAK */ 24 /* TODO: this is 36 for LEASE_BREAK variant */
 };
 
 int smb3_encryption_required(const struct cifs_tcon *tcon)
@@ -187,7 +187,7 @@ smb2_reconnect(__le16 smb2_command, struct cifs_tcon *tcon,
 		 */
 		switch (smb2_command) {
 		/*
-		 * BB Should we keep oplock break and add flush to exceptions?
+		 * TODO: Should we keep oplock break and add flush to exceptions?
 		 */
 		case SMB2_TREE_DISCONNECT:
 		case SMB2_CANCEL:
@@ -316,7 +316,7 @@ out:
 	 * or not without returning to caller to reset file handle.
 	 */
 	/*
-	 * BB Is flush done by server on drop of tcp session? Should we special
+	 * TODO: Is flush done by server on drop of tcp session? Should we special
 	 * case it and skip above?
 	 */
 	switch (smb2_command) {
@@ -367,13 +367,13 @@ static int __smb2_plain_req_init(__le16 smb2_command, struct cifs_tcon *tcon,
 				 struct TCP_Server_Info *server,
 				 void **request_buf, unsigned int *total_len)
 {
-	/* BB eventually switch this to SMB2 specific small buf size */
+	/* TODO: eventually switch this to SMB2 specific small buf size */
 	if (smb2_command == SMB2_SET_INFO)
 		*request_buf = cifs_buf_get();
 	else
 		*request_buf = cifs_small_buf_get();
 	if (*request_buf == NULL) {
-		/* BB should we add a retry in here if not a writepage? */
+		/* TODO: should we add a retry in here if not a writepage? */
 		return -ENOMEM;
 	}
 
@@ -1347,7 +1347,7 @@ SMB2_sess_sendreceive(struct SMB2_sess_data *sess_data)
 	rqst.rq_iov = sess_data->iov;
 	rqst.rq_nvec = 2;
 
-	/* BB add code to build os and lm fields */
+	/* TODO: add code to build os and lm fields */
 	rc = cifs_send_recv(sess_data->xid, sess_data->ses,
 			    sess_data->server,
 			    &rqst,
@@ -1509,7 +1509,7 @@ SMB2_sess_auth_rawntlmssp_negotiate(struct SMB2_sess_data *sess_data)
 		goto out_err;
 
 	if (use_spnego) {
-		/* BB eventually need to add this */
+		/* TODO: eventually need to add this */
 		smbfs_log("spnego not supported for SMB2 yet\n");
 		rc = -EOPNOTSUPP;
 		goto out;
@@ -1596,7 +1596,7 @@ SMB2_sess_auth_rawntlmssp_authenticate(struct SMB2_sess_data *sess_data)
 	}
 
 	if (use_spnego) {
-		/* BB eventually need to add this */
+		/* TODO: eventually need to add this */
 		smbfs_log("spnego not supported for SMB2 yet\n");
 		rc = -EOPNOTSUPP;
 		goto out;
@@ -4848,7 +4848,7 @@ int SMB2_query_directory_init(const unsigned int xid,
 		cpu_to_le16(sizeof(struct smb2_query_directory_req) - 1);
 	req->FileNameLength = cpu_to_le16(len);
 	/*
-	 * BB could be 30 bytes or so longer if we used SMB2 specific
+	 * TODO: could be 30 bytes or so longer if we used SMB2 specific
 	 * buffer lengths, but this is safe and close enough.
 	 */
 	output_size = min_t(unsigned int, output_size, server->maxBuf);

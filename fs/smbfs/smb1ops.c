@@ -555,7 +555,7 @@ cifs_query_path_info(const unsigned int xid, struct cifs_tcon *tcon,
 	rc = CIFSSMBQPathInfo(xid, tcon, full_path, data, 0 /* not legacy */,
 			      cifs_sb->local_nls, cifs_remap(cifs_sb));
 	/*
-	 * BB optimize code so we do not make the above call when server claims
+	 * TODO: optimize code so we do not make the above call when server claims
 	 * no NT SMB support and the above call failed at least once - set flag
 	 * in tcon or mount.
 	 */
@@ -1055,7 +1055,7 @@ cifs_make_node(unsigned int xid, struct inode *inode,
 		goto out;
 
 	/*
-	 * BB Do not bother to decode buf since no local inode yet to put
+	 * TODO: Do not bother to decode buf since no local inode yet to put
 	 * timestamps in, but we can reuse it safely.
 	 */
 
