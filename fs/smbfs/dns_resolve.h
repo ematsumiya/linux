@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1 */
+// SPDX-License-Identifier: LGPL-2.1
 /*
  *   DNS Resolver upcall management for CIFS DFS
  *   Handles host name to IP address resolution
