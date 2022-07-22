@@ -5,12 +5,12 @@
 #include <linux/oid_registry.h>
 #include "defs.h"
 #include "debug.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "cifs_spnego_negtokeninit.asn1.h"
 
 int
 decode_negTokenInit(unsigned char *security_blob, int length,
-		    struct TCP_Server_Info *server)
+		    struct smbfs_server_info *server)
 {
 	if (asn1_ber_decoder(&cifs_spnego_negtokeninit_decoder, server,
 			     security_blob, length) == 0)
@@ -40,7 +40,7 @@ int cifs_neg_token_init_mech_type(void *context, size_t hdrlen,
 				  unsigned char tag,
 				  const void *value, size_t vlen)
 {
-	struct TCP_Server_Info *server = context;
+	struct smbfs_server_info *server = context;
 	enum OID oid;
 
 	oid = look_up_OID(value, vlen);

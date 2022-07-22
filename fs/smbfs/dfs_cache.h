@@ -11,7 +11,9 @@
 #include <linux/nls.h>
 #include <linux/list.h>
 #include <linux/uuid.h>
+
 #include "defs.h"
+#include "dfs.h"
 
 #define DFS_CACHE_TGT_LIST_INIT(var) { .tl_numtgts = 0, .tl_list = LIST_HEAD_INIT((var).tl_list), }
 
@@ -30,21 +32,21 @@ int dfs_cache_init(void);
 void dfs_cache_destroy(void);
 extern const struct proc_ops dfscache_proc_ops;
 
-int dfs_cache_find(const unsigned int xid, struct cifs_ses *ses, const struct nls_table *cp,
-		   int remap, const char *path, struct dfs_info3_param *ref,
+int dfs_cache_find(const unsigned int xid, struct smbfs_ses *ses, const struct nls_table *cp,
+		   int remap, const char *path, struct smbfs_dfs_info *ref,
 		   struct dfs_cache_tgt_list *tgt_list);
-int dfs_cache_noreq_find(const char *path, struct dfs_info3_param *ref,
+int dfs_cache_noreq_find(const char *path, struct smbfs_dfs_info *ref,
 			 struct dfs_cache_tgt_list *tgt_list);
-int dfs_cache_update_tgthint(const unsigned int xid, struct cifs_ses *ses,
+int dfs_cache_update_tgthint(const unsigned int xid, struct smbfs_ses *ses,
 			     const struct nls_table *cp, int remap, const char *path,
 			     const struct dfs_cache_tgt_iterator *it);
 int dfs_cache_noreq_update_tgthint(const char *path, const struct dfs_cache_tgt_iterator *it);
 int dfs_cache_get_tgt_referral(const char *path, const struct dfs_cache_tgt_iterator *it,
-			       struct dfs_info3_param *ref);
+			       struct smbfs_dfs_info *ref);
 int dfs_cache_get_tgt_share(char *path, const struct dfs_cache_tgt_iterator *it, char **share,
 			    char **prefix);
 void dfs_cache_put_refsrv_sessions(const uuid_t *mount_id);
-void dfs_cache_add_refsrv_session(const uuid_t *mount_id, struct cifs_ses *ses);
+void dfs_cache_add_refsrv_session(const uuid_t *mount_id, struct smbfs_ses *ses);
 char *dfs_cache_canonical_path(const char *path, const struct nls_table *cp, int remap);
 int dfs_cache_remount_fs(struct cifs_sb_info *cifs_sb);
 

@@ -12,7 +12,7 @@
 #include <linux/inet.h>
 #include <linux/ctype.h>
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 
 /* extract the host portion of the UNC string */
 char *extract_hostname(const char *unc)

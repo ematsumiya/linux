@@ -17,7 +17,7 @@
 #include <linux/fs.h>
 #include <linux/inet.h>
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "smbfs.h"
 #include "dns_resolve.h"
 #include "debug.h"
@@ -134,7 +134,7 @@ cifs_build_devname(char *nodename, const char *prepath)
  */
 char *cifs_compose_mount_options(const char *sb_mountdata,
 				 const char *fullpath,
-				 const struct dfs_info3_param *ref,
+				 const struct smbfs_dfs_info *ref,
 				 char **devname)
 {
 	int rc;

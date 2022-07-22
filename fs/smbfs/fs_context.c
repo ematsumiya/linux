@@ -15,7 +15,7 @@
 #include "smbfs.h"
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "cifs_unicode.h"
 #include "debug.h"
 #include "cifs_fs_sb.h"
@@ -23,6 +23,13 @@
 #include "nterr.h"
 #include "rfc1002pdu.h"
 #include "fs_context.h"
+
+#define SMBFS_DEF_ACTIMEO	(1 * HZ) /* default attribute cache timeout
+					    (in jiffies) */
+#define SMBFS_MAX_ACTIMEO	(1 << 30) /* max attribute cache timeout
+					     (in jiffies) - 2^30 */
+#define SMBFS_MAX_HANDLE_TIMEOUT 960000 /* max persistent and resilient handle
+					   timeout (in milliseconds) */
 
 static DEFINE_MUTEX(cifs_mount_mutex);
 
@@ -190,7 +197,7 @@ cifs_parse_security_flavors(struct fs_context *fc, char *value, struct smb3_fs_c
 	 * With mount options, the last one should win. Reset any existing
 	 * settings back to default.
 	 */
-	ctx->sectype = Unspecified;
+	ctx->sectype = SMBFS_SECURITY_UNSPECIFIED;
 	ctx->sign = false;
 
 	switch (match_token(value, cifs_secflavor_tokens, args)) {
@@ -207,7 +214,7 @@ cifs_parse_security_flavors(struct fs_context *fc, char *value, struct smb3_fs_c
 		ctx->sign = true;
 		fallthrough;
 	case Opt_sec_ntlmssp:
-		ctx->sectype = RawNTLMSSP;
+		ctx->sectype = SMBFS_SECURITY_RAW_NTLMSSP;
 		break;
 	case Opt_sec_ntlmv2i:
 		ctx->sign = true;
@@ -752,8 +759,8 @@ static int smb3_verify_reconfigure_ctx(struct fs_context *fc,
 		cifs_errorf(fc, "can not change domainname during remount\n");
 		return -EINVAL;
 	}
-	if (strcmp(new_ctx->workstation_name, old_ctx->workstation_name)) {
-		cifs_errorf(fc, "can not change workstation_name during remount\n");
+	if (strcmp(new_ctx->client_name, old_ctx->client_name)) {
+		cifs_errorf(fc, "can not change client_name during remount\n");
 		return -EINVAL;
 	}
 	if (new_ctx->nodename &&
@@ -790,7 +797,7 @@ static int smb3_reconfigure(struct fs_context *fc)
 
 	/*
 	 * We can not change UNC/username/password/domainname/
-	 * workstation_name/nodename/iocharset
+	 * client_name/nodename/iocharset
 	 * during reconnect so ignore what we have in the new context and
 	 * just use what we already have in cifs_sb->ctx.
 	 */
@@ -1036,25 +1043,25 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		break;
 	case Opt_acregmax:
 		ctx->acregmax = HZ * result.uint_32;
-		if (ctx->acregmax > CIFS_MAX_ACTIMEO) {
+		if (ctx->acregmax > SMBFS_MAX_ACTIMEO) {
 			cifs_errorf(fc, "acregmax too large\n");
 			goto cifs_parse_mount_err;
 		}
 		break;
 	case Opt_acdirmax:
 		ctx->acdirmax = HZ * result.uint_32;
-		if (ctx->acdirmax > CIFS_MAX_ACTIMEO) {
+		if (ctx->acdirmax > SMBFS_MAX_ACTIMEO) {
 			cifs_errorf(fc, "acdirmax too large\n");
 			goto cifs_parse_mount_err;
 		}
 		break;
 	case Opt_actimeo:
-		if (HZ * result.uint_32 > CIFS_MAX_ACTIMEO) {
+		if (HZ * result.uint_32 > SMBFS_MAX_ACTIMEO) {
 			cifs_errorf(fc, "timeout too large\n");
 			goto cifs_parse_mount_err;
 		}
-		if ((ctx->acdirmax != CIFS_DEF_ACTIMEO) ||
-		    (ctx->acregmax != CIFS_DEF_ACTIMEO)) {
+		if ((ctx->acdirmax != SMBFS_DEF_ACTIMEO) ||
+		    (ctx->acregmax != SMBFS_DEF_ACTIMEO)) {
 			cifs_errorf(fc, "actimeo ignored since acregmax or acdirmax specified\n");
 			break;
 		}
@@ -1087,7 +1094,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		break;
 	case Opt_handletimeout:
 		ctx->handle_timeout = result.uint_32;
-		if (ctx->handle_timeout > SMB3_MAX_HANDLE_TIMEOUT) {
+		if (ctx->handle_timeout > SMBFS_MAX_HANDLE_TIMEOUT) {
 			cifs_errorf(fc, "Invalid handle cache timeout, longer than 16 minutes\n");
 			goto cifs_parse_mount_err;
 		}
@@ -1230,7 +1237,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 	case Opt_servern:
 		/* last byte, type, is 0x20 for servr type */
 		memset(ctx->target_rfc1001_name, 0x20,
-			RFC1001_NAME_LEN_WITH_NULL);
+			RFC1001_NAME_LEN_NUL);
 		/*
 		 * TODO: are there cases in which a comma can be valid in this
 		 * workstation netbios name (and need special handling)?
@@ -1377,7 +1384,7 @@ static int smb3_fs_context_parse_param(struct fs_context *fc,
 		/* we do not do the following in secFlags because seal
 		 * is a per tree connection (mount) not a per socket
 		 * or per-smb connection option in the protocol
-		 * vol->secFlg |= CIFSSEC_MUST_SEAL;
+		 * vol->secFlg |= SMBFS_SEC_MUST_SEAL;
 		 */
 		ctx->seal = 1;
 		break;
@@ -1460,7 +1467,7 @@ int smb3_init_fs_context(struct fs_context *fc)
 	if (unlikely(!ctx))
 		return -ENOMEM;
 
-	strscpy(ctx->workstation_name, nodename, sizeof(ctx->workstation_name));
+	strscpy(ctx->client_name, nodename, sizeof(ctx->client_name));
 
 	/*
 	 * does not have to be perfect mapping since field is
@@ -1504,8 +1511,8 @@ int smb3_init_fs_context(struct fs_context *fc)
 	/* default is to use strict cifs caching semantics */
 	ctx->strict_io = true;
 
-	ctx->acregmax = CIFS_DEF_ACTIMEO;
-	ctx->acdirmax = CIFS_DEF_ACTIMEO;
+	ctx->acregmax = SMBFS_DEF_ACTIMEO;
+	ctx->acdirmax = SMBFS_DEF_ACTIMEO;
 
 	/* Most clients set timeout to 0, allows server to use its default */
 	ctx->handle_timeout = 0; /* See MS-SMB2 spec section 2.2.14.2.12 */

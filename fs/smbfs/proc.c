@@ -11,12 +11,13 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
 #include "smbfs.h"
 #include "fs_context.h"
-
+#include "server_info.h"
+#include "defs.h"
 #include "proc.h"
 
 extern int log_level;
@@ -32,17 +33,17 @@ bool unix_extensions = true;
 /* toggles lookup cache */
 bool lookup_cache = true;
 /* security flags */
-unsigned int security_flags = CIFSSEC_DEF;
+unsigned int security_flags = SMBFS_SEC_DEF;
 
-void smbfs_print_stats(struct seq_file *m, struct cifs_tcon *tcon)
+void smbfs_print_stats(struct seq_file *m, struct smbfs_tcon *tcon)
 {
 	int i;
 	atomic_t *sent;
 	atomic_t *failed;
-	struct TCP_Server_Info *server = tcon->ses->server;
+	struct smbfs_server_info *server = tcon->ses->server;
 
-	SMBFS_PROC_PRINT("name: %s\n", tcon->treeName);
-	SMBFS_PROC_PRINT("SMBs sent: %d\n\n", atomic_read(&tcon->num_smbs_sent));
+	SMBFS_PROC_PRINT("name: %s\n", tcon->tree_name);
+	SMBFS_PROC_PRINT("SMBs sent: %d\n\n", atomic_read(&tcon->smbs_sent));
 
 	SMBFS_PROC_PRINT("Stats:\n");
 	if (is_smb1_server(server)) {
@@ -50,8 +51,8 @@ void smbfs_print_stats(struct seq_file *m, struct cifs_tcon *tcon)
 		return;
 	}
 
-	sent = tcon->stats.smb2_stats.smb2_com_sent;
-	failed = tcon->stats.smb2_stats.smb2_com_failed;
+	sent = tcon->stats.smb2.sent;
+	failed = tcon->stats.smb2.failed;
 
 	/*
 	 *  Can't display SMB2_NEGOTIATE, SESSION_SETUP, LOGOFF, CANCEL and ECHO
@@ -61,8 +62,8 @@ void smbfs_print_stats(struct seq_file *m, struct cifs_tcon *tcon)
 		   (long long)(tcon->bytes_read),
 		   (long long)(tcon->bytes_written));
 	SMBFS_PROC_PRINT("Open files: %d, total (local) %d open on server\n",
-		   atomic_read(&tcon->num_local_opens),
-		   atomic_read(&tcon->num_remote_opens));
+		   atomic_read(&tcon->local_opens),
+		   atomic_read(&tcon->remote_opens));
 	SMBFS_PROC_PRINT("TreeConnects: sent %d, failed %d\n",
 		   atomic_read(&sent[SMB2_TREE_CONNECT_HE]),
 		   atomic_read(&failed[SMB2_TREE_CONNECT_HE]));
@@ -112,89 +113,89 @@ void smbfs_print_stats(struct seq_file *m, struct cifs_tcon *tcon)
 
 	SMBFS_PROC_PRINT("  SMB CMD\tNumber\tTotal Time\tFastest\tSlowest\n");
 	SMBFS_PROC_PRINT("  -------\t------\t----------\t-------\t-------\n");
-	for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++)
+	for (i = 0; i < SMB2_MAX_CMDS; i++)
 		SMBFS_PROC_PRINT("  %d\t\t%d\t%llu\t\t%u\t%u\n", i,
 				 atomic_read(&server->num_cmds[i]),
 				 server->time_per_cmd[i],
 				 server->fastest_cmd[i],
 				 server->slowest_cmd[i]);
 	SMBFS_PROC_PRINT("\n");
-	for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++)
-		SMBFS_PROC_PRINT_IF(atomic_read(&server->smb2slowcmd[i]),
+	for (i = 0; i < SMB2_MAX_CMDS; i++)
+		SMBFS_PROC_PRINT_IF(atomic_read(&server->slow_cmds[i]),
 				    "%d slow responses from %s for command %d\n",
-				    atomic_read(&server->smb2slowcmd[i]),
+				    atomic_read(&server->slow_cmds[i]),
 				    server->hostname, i);
 	SMBFS_PROC_PRINT("\n");
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
 }
 
 static inline void smbfs_print_fileinfo(struct seq_file *m,
-					struct cifs_tcon *tcon,
-					struct cifsFileInfo *cfile)
+					struct smbfs_tcon *tcon,
+					struct smbfs_file_info *smb_f)
 {
 	SMBFS_PROC_PRINT("0x%x 0x%llx 0x%x %d %d %d 0x%pd", tcon->tid,
-			 cfile->fid.persistent_fid, cfile->f_flags, cfile->count,
-			 cfile->pid, from_kuid(&init_user_ns, cfile->uid),
-			 cfile->dentry);
+			 smb_f->fid.persistent_fid, smb_f->f_flags, smb_f->count,
+			 smb_f->pid, from_kuid(&init_user_ns, smb_f->uid),
+			 smb_f->dentry);
 #ifdef CONFIG_SMBFS_DEBUG_EXTRA
-	SMBFS_PROC_PRINT(" %llu", cfile->fid.mid);
+	SMBFS_PROC_PRINT(" %llu", smb_f->fid.mid);
 #endif /* CONFIG_SMBFS_DEBUG_EXTRA */
 	SMBFS_PROC_PRINT("\n");
 }
 
-static inline void smbfs_clear_stats_smb1(struct cifs_tcon *tcon)
+static inline void smbfs_clear_stats_smb1(struct smbfs_tcon *tcon)
 {
-	atomic_set(&tcon->stats.cifs_stats.num_writes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_reads, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_flushes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_oplock_brks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_opens, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_posixopens, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_posixmkdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_closes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_deletes, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_mkdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_rmdirs, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_renames, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_t2renames, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_ffirst, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_fnext, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_fclose, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_hardlinks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_symlinks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_locks, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_acl_get, 0);
-	atomic_set(&tcon->stats.cifs_stats.num_acl_set, 0);
+	atomic_set(&tcon->stats.smb1.writes, 0);
+	atomic_set(&tcon->stats.smb1.reads, 0);
+	atomic_set(&tcon->stats.smb1.flushes, 0);
+	atomic_set(&tcon->stats.smb1.oplock_brks, 0);
+	atomic_set(&tcon->stats.smb1.opens, 0);
+	atomic_set(&tcon->stats.smb1.posixopens, 0);
+	atomic_set(&tcon->stats.smb1.posixmkdirs, 0);
+	atomic_set(&tcon->stats.smb1.closes, 0);
+	atomic_set(&tcon->stats.smb1.deletes, 0);
+	atomic_set(&tcon->stats.smb1.mkdirs, 0);
+	atomic_set(&tcon->stats.smb1.rmdirs, 0);
+	atomic_set(&tcon->stats.smb1.renames, 0);
+	atomic_set(&tcon->stats.smb1.t2renames, 0);
+	atomic_set(&tcon->stats.smb1.ffirst, 0);
+	atomic_set(&tcon->stats.smb1.fnext, 0);
+	atomic_set(&tcon->stats.smb1.fclose, 0);
+	atomic_set(&tcon->stats.smb1.hardlinks, 0);
+	atomic_set(&tcon->stats.smb1.symlinks, 0);
+	atomic_set(&tcon->stats.smb1.locks, 0);
+	atomic_set(&tcon->stats.smb1.acl_get, 0);
+	atomic_set(&tcon->stats.smb1.acl_set, 0);
 }
 
-static inline void smbfs_clear_stats(struct cifs_tcon *tcon)
+static inline void smbfs_clear_stats(struct smbfs_tcon *tcon)
 {
 	int i;
 
-	atomic_set(&tcon->num_smbs_sent, 0);
+	atomic_set(&tcon->smbs_sent, 0);
 
-	spin_lock(&tcon->stat_lock);
+	spin_lock(&tcon->stats_lock);
 	tcon->bytes_read = 0;
 	tcon->bytes_written = 0;
-	spin_unlock(&tcon->stat_lock);
+	spin_unlock(&tcon->stats_lock);
 
 	if (is_smb1_server(tcon->ses->server)) {
 		smbfs_clear_stats_smb1(tcon);
 		return;
 	}
 
-	for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++) {
-		atomic_set(&tcon->stats.smb2_stats.smb2_com_sent[i], 0);
-		atomic_set(&tcon->stats.smb2_stats.smb2_com_failed[i], 0);
+	for (i = 0; i < SMB2_MAX_CMDS; i++) {
+		atomic_set(&tcon->stats.smb2.sent[i], 0);
+		atomic_set(&tcon->stats.smb2.failed[i], 0);
 	}
 }
 
 static int smbfs_open_files_proc_show(struct seq_file *m, void *v)
 {
-	struct TCP_Server_Info *server;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
-	struct cifsFileInfo *cfile;
+	struct smbfs_server_info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
+	struct smbfs_file_info *smb_f;
 
 	SMBFS_PROC_PRINT("# Version: 1\n");
 	SMBFS_PROC_PRINT("# Format:\n");
@@ -205,41 +206,41 @@ static int smbfs_open_files_proc_show(struct seq_file *m, void *v)
 #endif /* CONFIG_SMBFS_DEBUG_EXTRA */
 	SMBFS_PROC_PRINT("\n");
 
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
-		list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
-			list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
-				spin_lock(&tcon->open_file_lock);
-				list_for_each_entry(cfile, &tcon->openFileList, tlist)
-					smbfs_print_fileinfo(m, tcon, cfile);
-				spin_unlock(&tcon->open_file_lock);
-			} /* tcon_list */
-		} /* smb_ses_list */
-	} /* tcp_ses_list */
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(server, &g_servers_list, head) {
+		list_for_each_entry(ses, &server->sessions, head) {
+			list_for_each_entry(tcon, &ses->tcons, head) {
+				spin_lock(&tcon->open_files_lock);
+				list_for_each_entry(smb_f, &tcon->open_files, tcon_head)
+					smbfs_print_fileinfo(m, tcon, smb_f);
+				spin_unlock(&tcon->open_files_lock);
+			} /* tcons */
+		} /* sessions */
+	} /* g_servers_list */
+	spin_unlock(&g_servers_lock);
 	return 0;
 }
 
 static int smbfs_debug_data_proc_show(struct seq_file *m, void *v)
 {
-	struct TCP_Server_Info *server;
+	struct smbfs_server_info *server;
 	int srv_idx, sep = 0;
 
 	SMBFS_PROC_PRINT("Internal SMBFS data structures\n"
 			 "------------------------------\n");
 	smbfs_debug_data_features(m);
 
-	SMBFS_PROC_PRINT("CIFSMaxBufSize: %d\n", CIFSMaxBufSize);
-	SMBFS_PROC_PRINT("Active VFS requests: %d\n\n", GlobalTotalActiveXid);
+	SMBFS_PROC_PRINT("max_buf_size: %d\n", max_buf_size);
+	SMBFS_PROC_PRINT("Active VFS requests: %d\n\n", g_total_active_xid);
 
 	srv_idx = 0;
-	spin_lock(&cifs_tcp_ses_lock);
+	spin_lock(&g_servers_lock);
 	SMBFS_PROC_PRINT("servers:%s\n",
-			 list_empty(&cifs_tcp_ses_list) ? " none" : "");
+			 list_empty(&g_servers_list) ? " none" : "");
 
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+	list_for_each_entry(server, &g_servers_list, head) {
 		/* channel info will be printed as a part of sessions below */
-		if (CIFS_SERVER_IS_CHAN(server))
+		if (IS_CHANNEL(server))
 			continue;
 
 		SMBFS_PROC_PRINT("\t[server %d]\n"
@@ -255,17 +256,17 @@ static int smbfs_debug_data_proc_show(struct seq_file *m, void *v)
 #endif
 
 		SMBFS_PROC_PRINT("\tcompression: ");
-		SMBFS_PROC_PRINT_SEP_IF(server->compress_algorithm == SMB3_COMPRESS_LZNT1,
+		SMBFS_PROC_PRINT_SEP_IF(server->sec.compress_algo == SMB3_COMPRESS_LZNT1,
 				        sep, "COMPRESS_LZNT1");
-		else SMBFS_PROC_PRINT_SEP_IF(server->compress_algorithm == SMB3_COMPRESS_LZ77,
+		else SMBFS_PROC_PRINT_SEP_IF(server->sec.compress_algo == SMB3_COMPRESS_LZ77,
 					     sep, "COMPRESS_LZ77");
-		else SMBFS_PROC_PRINT_SEP_IF(server->compress_algorithm == SMB3_COMPRESS_LZ77_HUFF,
+		else SMBFS_PROC_PRINT_SEP_IF(server->sec.compress_algo == SMB3_COMPRESS_LZ77_HUFF,
 					     sep, "COMPRESS_LZ77_HUFF");
 		else SMBFS_PROC_PRINT("none");
 		SMBFS_PROC_PRINT("\n");
 
 		SMBFS_PROC_PRINT("\tfeatures: ");
-		SMBFS_PROC_PRINT_SEP_IF(server->sign, sep, "signed");
+		SMBFS_PROC_PRINT_SEP_IF(server->sec.signing_enabled, sep, "signed");
 		SMBFS_PROC_PRINT_SEP_IF(server->posix_ext_supported, sep, "POSIX");
 		SMBFS_PROC_PRINT_SEP_IF(server->nosharesock, sep, "nosharesock");
 		SMBFS_PROC_PRINT_SEP_IF(server->rdma, sep, "RDMA");
@@ -282,7 +283,7 @@ static int smbfs_debug_data_proc_show(struct seq_file *m, void *v)
 		smbfs_debug_data_mids(m, server, srv_idx);
 		SMBFS_PROC_PRINT("--\n");
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 
 #ifdef CONFIG_SMBFS_SWN_UPCALL
 	cifs_swn_dump(m);
@@ -298,9 +299,9 @@ static ssize_t smbfs_stats_proc_write(struct file *file,
 {
 	int rc;
 	bool bv;
-	struct TCP_Server_Info *server;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
+	struct smbfs_server_info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
 #ifdef CONFIG_SMBFS_STATS_EXTRA
 	int i;
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
@@ -310,36 +311,36 @@ static ssize_t smbfs_stats_proc_write(struct file *file,
 		return rc;
 
 #ifdef CONFIG_SMBFS_STATS_EXTRA
-	atomic_set(&totBufAllocCount, 0);
-	atomic_set(&totSmBufAllocCount, 0);
+	atomic_set(&g_total_buf_alloc_count, 0);
+	atomic_set(&g_total_smallbuf_alloc_count, 0);
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
-	atomic_set(&tcpSesReconnectCount, 0);
+	atomic_set(&g_server_reconnect_count, 0);
 	atomic_set(&tconInfoReconnectCount, 0);
 
-	spin_lock(&GlobalMid_Lock);
-	GlobalMaxActiveXid = 0;
-	GlobalCurrentXid = 0;
-	spin_unlock(&GlobalMid_Lock);
+	spin_lock(&g_mid_lock);
+	g_max_active_xid = 0;
+	g_current_xid = 0;
+	spin_unlock(&g_mid_lock);
 
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(server, &g_servers_list, head) {
 		server->max_in_flight = 0;
 
-		list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list)
-			list_for_each_entry(tcon, &ses->tcon_list, tcon_list)
+		list_for_each_entry(ses, &server->sessions, head)
+			list_for_each_entry(tcon, &ses->tcons, head)
 				smbfs_clear_stats(tcon);
 
 #ifdef CONFIG_SMBFS_STATS_EXTRA
-		for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++) {
+		for (i = 0; i < SMB2_MAX_CMDS; i++) {
 			atomic_set(&server->num_cmds[i], 0);
-			atomic_set(&server->smb2slowcmd[i], 0);
+			atomic_set(&server->slow_cmds[i], 0);
 			server->time_per_cmd[i] = 0;
 			server->slowest_cmd[i] = 0;
 			server->fastest_cmd[0] = 0;
 		}
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 
 	return count;
 }
@@ -347,46 +348,46 @@ static ssize_t smbfs_stats_proc_write(struct file *file,
 static int smbfs_stats_proc_show(struct seq_file *m, void *v)
 {
 	int srv_idx, ses_idx, share_idx;
-	struct TCP_Server_Info *server;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
+	struct smbfs_server_info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
 
 	SMBFS_PROC_PRINT("Resources in use\n"
 			 "----------------\n");
 	SMBFS_PROC_PRINT("SMBFS session: %d\n",
-			 sesInfoAllocCount.counter);
+			 g_ses_alloc_count.counter);
 	SMBFS_PROC_PRINT("Shares (unique mount targets): %d\n",
-			 tconInfoAllocCount.counter);
+			 g_tcon_alloc_count.counter);
 	SMBFS_PROC_PRINT("SMB request/response buffers: %d, pool size: %d\n",
-			 bufAllocCount.counter,
-			 cifs_min_rcv + tcpSesAllocCount.counter);
+			 g_buf_alloc_count.counter,
+			 cifs_min_rcv + g_server_alloc_count.counter);
 	SMBFS_PROC_PRINT("SMB small request/response buffers: %d, pool size: %d\n",
-			 smBufAllocCount.counter, cifs_min_small);
+			 g_smallbuf_alloc_count.counter, cifs_min_small);
 #ifdef CONFIG_SMBFS_STATS_EXTRA
 	SMBFS_PROC_PRINT("Total allocations: large %d, small %d\n",
-			 atomic_read(&totBufAllocCount),
-			 atomic_read(&totSmBufAllocCount));
+			 atomic_read(&g_total_buf_alloc_count),
+			 atomic_read(&g_total_smallbuf_alloc_count));
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
 
-	SMBFS_PROC_PRINT("Operations (MIDs): %d\n\n", atomic_read(&midCount));
+	SMBFS_PROC_PRINT("Operations (MIDs): %d\n\n", atomic_read(&g_mid_count));
 	SMBFS_PROC_PRINT("Sessions: %d\n"
 			 "Share reconnects: %d\n",
-			 tcpSesReconnectCount.counter,
+			 g_server_reconnect_count.counter,
 			 tconInfoReconnectCount.counter);
 	SMBFS_PROC_PRINT("Total VFS operations: %d, maximum at one time: %d\n",
-			 GlobalCurrentXid, GlobalMaxActiveXid);
+			 g_current_xid, g_max_active_xid);
 
 	srv_idx = ses_idx = share_idx = 0;
 
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(server, &g_servers_list, head) {
 		SMBFS_PROC_PRINT("Max requests in flight: %d\n\n",
 				 server->max_in_flight);
 
-		list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
-			list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
+		list_for_each_entry(ses, &server->sessions, head) {
+			list_for_each_entry(tcon, &ses->tcons, head) {
 				SMBFS_PROC_PRINT("[share %d]%s\n", share_idx,
-						 tcon->need_reconnect ?
+						 get_tcon_flag(tcon, NEED_RECONNECT) ?
 						 " (disconnected)" : "");
 				smbfs_print_stats(m, tcon);
 				share_idx++;
@@ -396,7 +397,7 @@ static int smbfs_stats_proc_show(struct seq_file *m, void *v)
 		SMBFS_PROC_PRINT("\n");
 		srv_idx++;
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 
 	return 0;
 }
@@ -515,7 +516,7 @@ static ssize_t smbfs_security_flags_proc_write(struct file *file,
 		if (rc || !isdigit(flags_string[0]))
 			goto invalid_flags;
 
-		security_flags = bv ? CIFSSEC_MAX : CIFSSEC_DEF;
+		security_flags = bv ? SMBFS_SEC_MAX : SMBFS_SEC_DEF;
 		return count;
 	}
 
@@ -529,9 +530,9 @@ static ssize_t smbfs_security_flags_proc_write(struct file *file,
 
 	smbfs_dbg("sec flags: 0x%x\n", flags);
 
-	if (flags & ~CIFSSEC_MASK) {
+	if (flags & ~SMBFS_SEC_MASK) {
 		smbfs_log("Unsupported security flags: 0x%x\n",
-			  flags & ~CIFSSEC_MASK);
+			  flags & ~SMBFS_SEC_MASK);
 		return -EINVAL;
 	}
 

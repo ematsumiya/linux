@@ -8,7 +8,7 @@
 
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "cifs_unicode.h"
 #include "debug.h"
 #include "ntlmssp.h"
@@ -24,12 +24,12 @@
 extern unsigned int security_flags;
 
 static int
-cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
-		     struct cifs_server_iface *iface);
+smbfs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct smbfs_ses *ses,
+		     struct smbfs_server_iface *iface);
 
 bool
-is_server_using_iface(struct TCP_Server_Info *server,
-		      struct cifs_server_iface *iface)
+is_server_using_iface(struct smbfs_server_info *server,
+		      struct smbfs_server_iface *iface)
 {
 	struct sockaddr_in *i4 = (struct sockaddr_in *)&iface->sockaddr;
 	struct sockaddr_in6 *i6 = (struct sockaddr_in6 *)&iface->sockaddr;
@@ -52,31 +52,31 @@ is_server_using_iface(struct TCP_Server_Info *server,
 	return true;
 }
 
-bool is_ses_using_iface(struct cifs_ses *ses, struct cifs_server_iface *iface)
+bool is_ses_using_iface(struct smbfs_ses *ses, struct smbfs_server_iface *iface)
 {
 	int i;
 
-	spin_lock(&ses->chan_lock);
-	for (i = 0; i < ses->chan_count; i++) {
-		if (ses->chans[i].iface == iface) {
-			spin_unlock(&ses->chan_lock);
+	spin_lock(&ses->channel_lock);
+	for (i = 0; i < ses->channel_count; i++) {
+		if (ses->channels[i].iface == iface) {
+			spin_unlock(&ses->channel_lock);
 			return true;
 		}
 	}
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 	return false;
 }
 
-/* channel helper functions. assumed that chan_lock is held by caller. */
+/* channel helper functions. assumed that channel_lock is held by caller. */
 
 unsigned int
-cifs_ses_get_chan_index(struct cifs_ses *ses,
-			struct TCP_Server_Info *server)
+smbfs_ses_get_chan_index(struct smbfs_ses *ses,
+			struct smbfs_server_info *server)
 {
 	unsigned int i;
 
-	for (i = 0; i < ses->chan_count; i++) {
-		if (ses->chans[i].server == server)
+	for (i = 0; i < ses->channel_count; i++) {
+		if (ses->channels[i].server == server)
 			return i;
 	}
 
@@ -89,107 +89,107 @@ cifs_ses_get_chan_index(struct cifs_ses *ses,
 }
 
 void
-cifs_chan_set_in_reconnect(struct cifs_ses *ses,
-			     struct TCP_Server_Info *server)
+smbfs_channel_set_in_reconnect(struct smbfs_ses *ses,
+			     struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	ses->chans[chan_index].in_reconnect = true;
+	ses->channels[chan_index].in_reconnect = true;
 }
 
 void
-cifs_chan_clear_in_reconnect(struct cifs_ses *ses,
-			     struct TCP_Server_Info *server)
+smbfs_channel_clear_in_reconnect(struct smbfs_ses *ses,
+			     struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	ses->chans[chan_index].in_reconnect = false;
+	ses->channels[chan_index].in_reconnect = false;
 }
 
 bool
-cifs_chan_in_reconnect(struct cifs_ses *ses,
-			  struct TCP_Server_Info *server)
+smbfs_channel_in_reconnect(struct smbfs_ses *ses,
+			  struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	return CIFS_CHAN_IN_RECONNECT(ses, chan_index);
+	return CHANNEL_IN_RECONNECT(ses, chan_index);
 }
 
 void
-cifs_chan_set_need_reconnect(struct cifs_ses *ses,
-			     struct TCP_Server_Info *server)
+smbfs_channel_set_need_reconnect(struct smbfs_ses *ses,
+			     struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	set_bit(chan_index, &ses->chans_need_reconnect);
-	smbfs_dbg("Set reconnect bitmask for chan %u; now 0x%lx\n",
-		 chan_index, ses->chans_need_reconnect);
+	set_bit(chan_index, &ses->channels_need_reconnect);
+	smbfs_dbg("Set reconnect bitmask for chan %u; now 0x%llx\n",
+		 chan_index, ses->channels_need_reconnect);
 }
 
 void
-cifs_chan_clear_need_reconnect(struct cifs_ses *ses,
-			       struct TCP_Server_Info *server)
+smbfs_channel_clear_need_reconnect(struct smbfs_ses *ses,
+			       struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	clear_bit(chan_index, &ses->chans_need_reconnect);
-	smbfs_dbg("Cleared reconnect bitmask for chan %u; now 0x%lx\n",
-		 chan_index, ses->chans_need_reconnect);
+	clear_bit(chan_index, &ses->channels_need_reconnect);
+	smbfs_dbg("Cleared reconnect bitmask for chan %u; now 0x%llx\n",
+		  chan_index, ses->channels_need_reconnect);
 }
 
 bool
-cifs_chan_needs_reconnect(struct cifs_ses *ses,
-			  struct TCP_Server_Info *server)
+smbfs_channel_needs_reconnect(struct smbfs_ses *ses,
+			  struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	return CIFS_CHAN_NEEDS_RECONNECT(ses, chan_index);
+	return CHANNEL_NEEDS_RECONNECT(ses, chan_index);
 }
 
 bool
-cifs_chan_is_iface_active(struct cifs_ses *ses,
-			  struct TCP_Server_Info *server)
+smbfs_channel_is_iface_active(struct smbfs_ses *ses,
+			  struct smbfs_server_info *server)
 {
-	unsigned int chan_index = cifs_ses_get_chan_index(ses, server);
+	unsigned int chan_index = smbfs_ses_get_chan_index(ses, server);
 
-	return ses->chans[chan_index].iface &&
-		ses->chans[chan_index].iface->is_active;
+	return ses->channels[chan_index].iface &&
+		ses->channels[chan_index].iface->is_active;
 }
 
 /* returns number of channels added */
-int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses)
+int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct smbfs_ses *ses)
 {
-	int old_chan_count, new_chan_count;
+	int old_channel_count, new_channel_count;
 	int left;
 	int rc = 0;
 	int tries = 0;
-	struct cifs_server_iface *iface = NULL, *niface = NULL;
+	struct smbfs_server_iface *iface = NULL, *niface = NULL;
 
-	spin_lock(&ses->chan_lock);
+	spin_lock(&ses->channel_lock);
 
-	new_chan_count = old_chan_count = ses->chan_count;
-	left = ses->chan_max - ses->chan_count;
+	new_channel_count = old_channel_count = ses->channel_count;
+	left = ses->max_channels - ses->channel_count;
 
 	if (left <= 0) {
-		spin_unlock(&ses->chan_lock);
-		smbfs_dbg("ses already at max_channels (%zu), nothing to open\n",
-			  ses->chan_max);
+		spin_unlock(&ses->channel_lock);
+		smbfs_dbg("ses already at max_channels (%u), nothing to open\n",
+			  ses->max_channels);
 		return 0;
 	}
 
 	if (ses->server->dialect < SMB30_PROT_ID) {
-		spin_unlock(&ses->chan_lock);
+		spin_unlock(&ses->channel_lock);
 		smbfs_log("multichannel is not supported on this protocol version, use 3.0 or above\n");
 		return 0;
 	}
 
 	if (!(ses->server->capabilities & SMB2_GLOBAL_CAP_MULTI_CHANNEL)) {
-		ses->chan_max = 1;
-		spin_unlock(&ses->chan_lock);
+		ses->max_channels = 1;
+		spin_unlock(&ses->channel_lock);
 		smbfs_log("server %s does not support multichannel\n", ses->server->hostname);
 		return 0;
 	}
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 
 	/*
 	 * Keep connecting to same, fastest, iface for all channels as
@@ -197,14 +197,14 @@ int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses)
 	 * creation fails.
 	 */
 	spin_lock(&ses->iface_lock);
-	iface = list_first_entry(&ses->iface_list, struct cifs_server_iface,
-				 iface_head);
+	iface = list_first_entry(&ses->ifaces, struct smbfs_server_iface,
+				 head);
 	spin_unlock(&ses->iface_lock);
 
 	while (left > 0) {
 
 		tries++;
-		if (tries > 3*ses->chan_max) {
+		if (tries > 3*ses->max_channels) {
 			smbfs_dbg("too many channel open attempts (%d channels left to open)\n",
 				 left);
 			break;
@@ -216,8 +216,8 @@ int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses)
 			break;
 		}
 
-		list_for_each_entry_safe_from(iface, niface, &ses->iface_list,
-				    iface_head) {
+		list_for_each_entry_safe_from(iface, niface, &ses->ifaces,
+				    head) {
 			/* skip ifaces that are unusable */
 			if (!iface->is_active ||
 			    (is_ses_using_iface(ses, iface) &&
@@ -229,7 +229,7 @@ int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses)
 			kref_get(&iface->refcount);
 
 			spin_unlock(&ses->iface_lock);
-			rc = cifs_ses_add_channel(cifs_sb, ses, iface);
+			rc = smbfs_ses_add_channel(cifs_sb, ses, iface);
 			spin_lock(&ses->iface_lock);
 
 			if (rc) {
@@ -247,44 +247,44 @@ int cifs_try_adding_channels(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses)
 		spin_unlock(&ses->iface_lock);
 
 		left--;
-		new_chan_count++;
+		new_channel_count++;
 	}
 
-	return new_chan_count - old_chan_count;
+	return new_channel_count - old_channel_count;
 }
 
 /*
  * update the iface for the channel if necessary.
  * will return 0 when iface is updated, 1 if removed, 2 otherwise
- * Must be called with chan_lock held.
+ * Must be called with channel_lock held.
  */
 int
-cifs_chan_update_iface(struct cifs_ses *ses, struct TCP_Server_Info *server)
+smbfs_channel_update_iface(struct smbfs_ses *ses, struct smbfs_server_info *server)
 {
 	unsigned int chan_index;
-	struct cifs_server_iface *iface = NULL;
-	struct cifs_server_iface *old_iface = NULL;
+	struct smbfs_server_iface *iface = NULL;
+	struct smbfs_server_iface *old_iface = NULL;
 	int rc = 0;
 
-	spin_lock(&ses->chan_lock);
-	chan_index = cifs_ses_get_chan_index(ses, server);
+	spin_lock(&ses->channel_lock);
+	chan_index = smbfs_ses_get_chan_index(ses, server);
 	if (!chan_index) {
-		spin_unlock(&ses->chan_lock);
+		spin_unlock(&ses->channel_lock);
 		return 0;
 	}
 
-	if (ses->chans[chan_index].iface) {
-		old_iface = ses->chans[chan_index].iface;
+	if (ses->channels[chan_index].iface) {
+		old_iface = ses->channels[chan_index].iface;
 		if (old_iface->is_active) {
-			spin_unlock(&ses->chan_lock);
+			spin_unlock(&ses->channel_lock);
 			return 1;
 		}
 	}
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 
 	spin_lock(&ses->iface_lock);
 	/* then look for a new one */
-	list_for_each_entry(iface, &ses->iface_list, iface_head) {
+	list_for_each_entry(iface, &ses->ifaces, head) {
 		if (!iface->is_active ||
 		    (is_ses_using_iface(ses, iface) &&
 		     !iface->rss_capable)) {
@@ -293,7 +293,7 @@ cifs_chan_update_iface(struct cifs_ses *ses, struct TCP_Server_Info *server)
 		kref_get(&iface->refcount);
 	}
 
-	if (!list_entry_is_head(iface, &ses->iface_list, iface_head)) {
+	if (!list_entry_is_head(iface, &ses->ifaces, head)) {
 		rc = 1;
 		iface = NULL;
 		smbfs_dbg("unable to find a suitable iface\n");
@@ -315,51 +315,51 @@ cifs_chan_update_iface(struct cifs_ses *ses, struct TCP_Server_Info *server)
 	}
 	spin_unlock(&ses->iface_lock);
 
-	spin_lock(&ses->chan_lock);
-	chan_index = cifs_ses_get_chan_index(ses, server);
-	ses->chans[chan_index].iface = iface;
+	spin_lock(&ses->channel_lock);
+	chan_index = smbfs_ses_get_chan_index(ses, server);
+	ses->channels[chan_index].iface = iface;
 
 	/* No iface is found. if secondary chan, drop connection */
-	if (!iface && CIFS_SERVER_IS_CHAN(server))
-		ses->chans[chan_index].server = NULL;
+	if (!iface && IS_CHANNEL(server))
+		ses->channels[chan_index].server = NULL;
 
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 
-	if (!iface && CIFS_SERVER_IS_CHAN(server))
-		cifs_put_tcp_session(server, false);
+	if (!iface && IS_CHANNEL(server))
+		smbfs_put_server(server, false);
 
 	return rc;
 }
 
 /*
  * If server is a channel of ses, return the corresponding enclosing
- * cifs_chan otherwise return NULL.
+ * smbfs_channel otherwise return NULL.
  */
-struct cifs_chan *
-cifs_ses_find_chan(struct cifs_ses *ses, struct TCP_Server_Info *server)
+struct smbfs_channel *
+smbfs_ses_find_chan(struct smbfs_ses *ses, struct smbfs_server_info *server)
 {
 	int i;
 
-	spin_lock(&ses->chan_lock);
-	for (i = 0; i < ses->chan_count; i++) {
-		if (ses->chans[i].server == server) {
-			spin_unlock(&ses->chan_lock);
-			return &ses->chans[i];
+	spin_lock(&ses->channel_lock);
+	for (i = 0; i < ses->channel_count; i++) {
+		if (ses->channels[i].server == server) {
+			spin_unlock(&ses->channel_lock);
+			return &ses->channels[i];
 		}
 	}
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 	return NULL;
 }
 
 static int
-cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
-		     struct cifs_server_iface *iface)
+smbfs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct smbfs_ses *ses,
+		     struct smbfs_server_iface *iface)
 {
-	struct TCP_Server_Info *chan_server;
-	struct cifs_chan *chan;
+	struct smbfs_server_info *chan_server;
+	struct smbfs_channel *chan;
 	struct smb3_fs_context ctx = {NULL};
 	static const char unc_fmt[] = "\\%s\\foo";
-	char unc[sizeof(unc_fmt)+SERVER_NAME_LEN_WITH_NULL] = {0};
+	char unc[sizeof(unc_fmt)+RFC1001_NAME_LEN_NUL] = {0};
 	struct sockaddr_in *ipv4 = (struct sockaddr_in *)&iface->sockaddr;
 	struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)&iface->sockaddr;
 	int rc;
@@ -390,8 +390,8 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	ctx.nosharesock = true;
 
 	/* Auth */
-	ctx.domainauto = ses->domainAuto;
-	ctx.domainname = ses->domainName;
+	ctx.domainauto = ses->domain_auto;
+	ctx.domainname = ses->domain_name;
 
 	/* no hostname for extra channels */
 	ctx.server_hostname = "";
@@ -399,7 +399,7 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	ctx.username = ses->user_name;
 	ctx.password = ses->password;
 	ctx.sectype = ses->sectype;
-	ctx.sign = ses->sign;
+	ctx.sign = ses->signing_required;
 
 	/* UNC and paths */
 	/* XXX: Use ses->server->hostname? */
@@ -408,7 +408,7 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	ctx.prepath = "";
 
 	/* Reuse same version as master connection */
-	ctx.vals = ses->server->vals;
+	ctx.vals = ses->server->settings;
 	ctx.ops = ses->server->ops;
 
 	ctx.noblocksnd = ses->server->noblocksnd;
@@ -432,27 +432,27 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	       SMB2_CLIENT_GUID_SIZE);
 	ctx.use_client_guid = true;
 
-	chan_server = cifs_get_tcp_session(&ctx, ses->server);
+	chan_server = smbfs_get_server(&ctx, ses->server);
 
-	spin_lock(&ses->chan_lock);
-	chan = &ses->chans[ses->chan_count];
+	spin_lock(&ses->channel_lock);
+	chan = &ses->channels[ses->channel_count];
 	chan->server = chan_server;
 	if (IS_ERR(chan->server)) {
 		rc = PTR_ERR(chan->server);
 		chan->server = NULL;
-		spin_unlock(&ses->chan_lock);
+		spin_unlock(&ses->channel_lock);
 		goto out;
 	}
 	chan->iface = iface;
-	ses->chan_count++;
-	atomic_set(&ses->chan_seq, 0);
+	ses->channel_count++;
+	atomic_set(&ses->channel_seq, 0);
 
 	/* Mark this channel as needing connect/setup */
-	cifs_chan_set_need_reconnect(ses, chan->server);
+	smbfs_channel_set_need_reconnect(ses, chan->server);
 
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 
-	mutex_lock(&ses->session_mutex);
+	mutex_lock(&ses->lock);
 	/*
 	 * We need to allocate the server crypto now as we will need
 	 * to sign packets before we generate the channel signing key
@@ -461,7 +461,7 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	rc = smb311_crypto_shash_allocate(chan->server);
 	if (rc) {
 		smbfs_log("%s: crypto alloc failed\n", __func__);
-		mutex_unlock(&ses->session_mutex);
+		mutex_unlock(&ses->lock);
 		goto out;
 	}
 
@@ -469,7 +469,7 @@ cifs_ses_add_channel(struct cifs_sb_info *cifs_sb, struct cifs_ses *ses,
 	if (!rc)
 		rc = cifs_setup_session(xid, ses, chan->server, cifs_sb->local_nls);
 
-	mutex_unlock(&ses->session_mutex);
+	mutex_unlock(&ses->lock);
 
 out:
 	if (rc && chan->server) {
@@ -481,25 +481,25 @@ out:
 		cancel_delayed_work_sync(&chan->server->resolve);
 		cancel_delayed_work_sync(&chan->server->reconnect);
 
-		spin_lock(&ses->chan_lock);
-		/* we rely on all bits beyond chan_count to be clear */
-		cifs_chan_clear_need_reconnect(ses, chan->server);
-		ses->chan_count--;
+		spin_lock(&ses->channel_lock);
+		/* we rely on all bits beyond channel_count to be clear */
+		smbfs_channel_clear_need_reconnect(ses, chan->server);
+		ses->channel_count--;
 		/*
-		 * chan_count should never reach 0 as at least the primary
+		 * channel_count should never reach 0 as at least the primary
 		 * channel is always allocated
 		 */
-		WARN_ON(ses->chan_count < 1);
-		spin_unlock(&ses->chan_lock);
+		WARN_ON(ses->channel_count < 1);
+		spin_unlock(&ses->channel_lock);
 
-		cifs_put_tcp_session(chan->server, 0);
+		smbfs_put_server(chan->server, 0);
 	}
 
 	return rc;
 }
 
-static __u32 cifs_ssetup_hdr(struct cifs_ses *ses,
-			     struct TCP_Server_Info *server,
+static __u32 cifs_ssetup_hdr(struct smbfs_ses *ses,
+			     struct smbfs_server_info *server,
 			     SESSION_SETUP_ANDX *pSMB)
 {
 	__u32 capabilities = 0;
@@ -511,9 +511,9 @@ static __u32 cifs_ssetup_hdr(struct cifs_ses *ses,
 	/* Note that header is initialized to zero in header_assemble */
 	pSMB->req.AndXCommand = 0xFF;
 	pSMB->req.MaxBufferSize = cpu_to_le16(min_t(u32,
-					CIFSMaxBufSize + MAX_CIFS_HDR_SIZE - 4,
+					max_buf_size + MAX_CIFS_HDR_SIZE - 4,
 					USHRT_MAX));
-	pSMB->req.MaxMpxCount = cpu_to_le16(server->maxReq);
+	pSMB->req.MaxMpxCount = cpu_to_le16(server->max_reqs);
 	pSMB->req.VcNumber = cpu_to_le16(1);
 
 	/* Now no need to set SMBFLG_CASELESS or obsolete CANONICAL PATH */
@@ -524,7 +524,7 @@ static __u32 cifs_ssetup_hdr(struct cifs_ses *ses,
 	capabilities = CAP_LARGE_FILES | CAP_NT_SMBS | CAP_LEVEL_II_OPLOCKS |
 			CAP_LARGE_WRITE_X | CAP_LARGE_READ_X;
 
-	if (server->sign)
+	if (server->sec.signing_enabled)
 		pSMB->req.hdr.Flags2 |= SMBFLG2_SECURITY_SIGNATURE;
 
 	if (ses->capabilities & CAP_UNICODE) {
@@ -568,21 +568,21 @@ unicode_oslm_strings(char **pbcc_area, const struct nls_table *nls_cp)
 	*pbcc_area = bcc_ptr;
 }
 
-static void unicode_domain_string(char **pbcc_area, struct cifs_ses *ses,
+static void unicode_domain_string(char **pbcc_area, struct smbfs_ses *ses,
 				   const struct nls_table *nls_cp)
 {
 	char *bcc_ptr = *pbcc_area;
 	int bytes_ret = 0;
 
 	/* copy domain */
-	if (ses->domainName == NULL) {
+	if (ses->domain_name == NULL) {
 		/* Sending null domain better than using a bogus domain name (as
 		we did briefly in 2.6.18) since server will use its default */
 		*bcc_ptr = 0;
 		*(bcc_ptr+1) = 0;
 		bytes_ret = 0;
 	} else
-		bytes_ret = cifs_strtoUTF16((__le16 *) bcc_ptr, ses->domainName,
+		bytes_ret = cifs_strtoUTF16((__le16 *) bcc_ptr, ses->domain_name,
 					    CIFS_MAX_DOMAINNAME_LEN, nls_cp);
 	bcc_ptr += 2 * bytes_ret;
 	bcc_ptr += 2;  /* account for null terminator */
@@ -591,7 +591,7 @@ static void unicode_domain_string(char **pbcc_area, struct cifs_ses *ses,
 }
 
 
-static void unicode_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
+static void unicode_ssetup_strings(char **pbcc_area, struct smbfs_ses *ses,
 				   const struct nls_table *nls_cp)
 {
 	char *bcc_ptr = *pbcc_area;
@@ -620,7 +620,7 @@ static void unicode_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 	*pbcc_area = bcc_ptr;
 }
 
-static void ascii_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
+static void ascii_ssetup_strings(char **pbcc_area, struct smbfs_ses *ses,
 				 const struct nls_table *nls_cp)
 {
 	char *bcc_ptr = *pbcc_area;
@@ -639,8 +639,8 @@ static void ascii_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 	bcc_ptr++; /* account for null termination */
 
 	/* copy domain */
-	if (ses->domainName != NULL) {
-		len = strscpy(bcc_ptr, ses->domainName, CIFS_MAX_DOMAINNAME_LEN);
+	if (ses->domain_name != NULL) {
+		len = strscpy(bcc_ptr, ses->domain_name, CIFS_MAX_DOMAINNAME_LEN);
 		if (WARN_ON_ONCE(len < 0))
 			len = CIFS_MAX_DOMAINNAME_LEN - 1;
 		bcc_ptr += len;
@@ -664,7 +664,7 @@ static void ascii_ssetup_strings(char **pbcc_area, struct cifs_ses *ses,
 }
 
 static void
-decode_unicode_ssetup(char **pbcc_area, int bleft, struct cifs_ses *ses,
+decode_unicode_ssetup(char **pbcc_area, int bleft, struct smbfs_ses *ses,
 		      const struct nls_table *nls_cp)
 {
 	int len;
@@ -690,15 +690,15 @@ decode_unicode_ssetup(char **pbcc_area, int bleft, struct cifs_ses *ses,
 	if (bleft <= 0)
 		return;
 
-	kfree(ses->serverDomain);
-	ses->serverDomain = cifs_strndup_from_utf16(data, bleft, true, nls_cp);
-	smbfs_dbg("serverDomain=%s\n", ses->serverDomain);
+	kfree(ses->server_domain);
+	ses->server_domain = cifs_strndup_from_utf16(data, bleft, true, nls_cp);
+	smbfs_dbg("server_domain=%s\n", ses->server_domain);
 
 	return;
 }
 
 static void decode_ascii_ssetup(char **pbcc_area, __u16 bleft,
-				struct cifs_ses *ses,
+				struct smbfs_ses *ses,
 				const struct nls_table *nls_cp)
 {
 	int len;
@@ -751,7 +751,7 @@ static void decode_ascii_ssetup(char **pbcc_area, __u16 bleft,
 }
 
 int decode_ntlmssp_challenge(char *bcc_ptr, int blob_len,
-				    struct cifs_ses *ses)
+				    struct smbfs_ses *ses)
 {
 	unsigned int tioffset; /* challenge message target info area */
 	unsigned int tilen; /* challenge message target info area length  */
@@ -776,31 +776,34 @@ int decode_ntlmssp_challenge(char *bcc_ptr, int blob_len,
 
 	server_flags = le32_to_cpu(pblob->NegotiateFlags);
 	smbfs_dbg("negotiate=0x%08x challenge=0x%08x\n",
-		 ses->ntlmssp->client_flags, server_flags);
+		  ses->ntlmssp->client_flags, server_flags);
 
 	if ((ses->ntlmssp->client_flags & (NTLMSSP_NEGOTIATE_SEAL | NTLMSSP_NEGOTIATE_SIGN)) &&
 	    (!(server_flags & NTLMSSP_NEGOTIATE_56) && !(server_flags & NTLMSSP_NEGOTIATE_128))) {
-		smbfs_log("%s: requested signing/encryption but server did not return either 56-bit or 128-bit session key size\n",
-			 __func__);
+		smbfs_log("%s: requested signing/encryption but server did not "
+			  "return either 56-bit or 128-bit session key size\n",
+			  __func__);
 		return -EINVAL;
 	}
-	if (!(server_flags & NTLMSSP_NEGOTIATE_NTLM) && !(server_flags & NTLMSSP_NEGOTIATE_EXTENDED_SEC)) {
-		smbfs_log("%s: server does not seem to support either NTLMv1 or NTLMv2\n", __func__);
+	if (!(server_flags & NTLMSSP_NEGOTIATE_NTLM) &&
+	    !(server_flags & NTLMSSP_NEGOTIATE_EXTENDED_SEC)) {
+		smbfs_log("%s: server does not seem to support either NTLMv1 "
+			  "or NTLMv2\n", __func__);
 		return -EINVAL;
 	}
-	if (ses->server->sign && !(server_flags & NTLMSSP_NEGOTIATE_SIGN)) {
-		smbfs_log("%s: forced packet signing but server does not seem to support it\n",
-			 __func__);
+	if (ses->server->sec.signing_enabled && !(server_flags & NTLMSSP_NEGOTIATE_SIGN)) {
+		smbfs_log("%s: forced packet signing but server does not seem "
+			  "to support it\n", __func__);
 		return -EOPNOTSUPP;
 	}
 	if ((ses->ntlmssp->client_flags & NTLMSSP_NEGOTIATE_KEY_XCH) &&
 	    !(server_flags & NTLMSSP_NEGOTIATE_KEY_XCH))
-		pr_warn_once("%s: authentication has been weakened as server does not support key exchange\n",
-			     __func__);
+		pr_warn_once("%s: authentication has been weakened as server "
+			     "does not support key exchange\n", __func__);
 
 	ses->ntlmssp->server_flags = server_flags;
 
-	memcpy(ses->ntlmssp->cryptkey, pblob->Challenge, CIFS_CRYPTO_KEY_SIZE);
+	memcpy(ses->ntlmssp->crypto_key, pblob->Challenge, CIFS_CRYPTO_KEY_SIZE);
 	/* In particular we can examine sign flags */
 	/* TODO: spec says that if AvId field of MsvAvTimestamp is populated then
 		we must set the MIC field of the AUTHENTICATE_MESSAGE */
@@ -808,30 +811,26 @@ int decode_ntlmssp_challenge(char *bcc_ptr, int blob_len,
 	tioffset = le32_to_cpu(pblob->TargetInfoArray.BufferOffset);
 	tilen = le16_to_cpu(pblob->TargetInfoArray.Length);
 	if (tioffset > blob_len || tioffset + tilen > blob_len) {
-		smbfs_log("tioffset + tilen too high %u + %u\n",
-			 tioffset, tilen);
+		smbfs_log("tioffset + tilen too high %u + %u\n", tioffset, tilen);
 		return -EINVAL;
 	}
 	if (tilen) {
-		ses->auth_key.response = kmemdup(bcc_ptr + tioffset, tilen,
-						 GFP_KERNEL);
-		if (!ses->auth_key.response) {
-			smbfs_log("Challenge target info alloc failure\n");
+		ses->auth_key.response = kmemdup(bcc_ptr + tioffset, tilen, GFP_KERNEL);
+		if (!ses->auth_key.response)
 			return -ENOMEM;
-		}
 		ses->auth_key.len = tilen;
 	}
 
 	return 0;
 }
 
-static int size_of_ntlmssp_blob(struct cifs_ses *ses, int base_size)
+static int size_of_ntlmssp_blob(struct smbfs_ses *ses, int base_size)
 {
 	int sz = base_size + ses->auth_key.len
 		- CIFS_SESS_KEY_SIZE + CIFS_CPHTXT_SIZE + 2;
 
-	if (ses->domainName)
-		sz += sizeof(__le16) * strnlen(ses->domainName, CIFS_MAX_DOMAINNAME_LEN);
+	if (ses->domain_name)
+		sz += sizeof(__le16) * strnlen(ses->domain_name, CIFS_MAX_DOMAINNAME_LEN);
 	else
 		sz += sizeof(__le16);
 
@@ -840,11 +839,12 @@ static int size_of_ntlmssp_blob(struct cifs_ses *ses, int base_size)
 	else
 		sz += sizeof(__le16);
 
-	if (ses->workstation_name[0])
-		sz += sizeof(__le16) * strnlen(ses->workstation_name,
-					       ntlmssp_workstation_name_size(ses));
-	else
+	if (ses->client_name[0]) {
+		size_t len = ntlmssp_client_name_size(ses, ses->server->dialect);
+		sz += sizeof(__le16) * strnlen(ses->client_name, len);
+	} else {
 		sz += sizeof(__le16);
+	}
 
 	return sz;
 }
@@ -887,8 +887,8 @@ static inline void cifs_security_buffer_from_str(SECURITY_BUFFER *pbuf,
 
 int build_ntlmssp_negotiate_blob(unsigned char **pbuffer,
 				 u16 *buflen,
-				 struct cifs_ses *ses,
-				 struct TCP_Server_Info *server,
+				 struct smbfs_ses *ses,
+				 struct smbfs_server_info *server,
 				 const struct nls_table *nls_cp)
 {
 	int rc = 0;
@@ -933,7 +933,7 @@ int build_ntlmssp_negotiate_blob(unsigned char **pbuffer,
 
 	cifs_security_buffer_from_str(&sec_blob->WorkstationName,
 				      NULL,
-				      CIFS_MAX_WORKSTATION_LEN,
+				      SMBFS_MAX_CLIENT_NAME_LEN,
 				      *pbuffer, &tmp,
 				      nls_cp);
 
@@ -949,8 +949,8 @@ setup_ntlm_neg_ret:
  */
 int build_ntlmssp_smb3_negotiate_blob(unsigned char **pbuffer,
 				 u16 *buflen,
-				 struct cifs_ses *ses,
-				 struct TCP_Server_Info *server,
+				 struct smbfs_ses *ses,
+				 struct smbfs_server_info *server,
 				 const struct nls_table *nls_cp)
 {
 	int rc = 0;
@@ -1000,7 +1000,7 @@ int build_ntlmssp_smb3_negotiate_blob(unsigned char **pbuffer,
 
 	cifs_security_buffer_from_str(&sec_blob->WorkstationName,
 				      NULL,
-				      CIFS_MAX_WORKSTATION_LEN,
+				      SMBFS_MAX_CLIENT_NAME_LEN,
 				      *pbuffer, &tmp,
 				      nls_cp);
 
@@ -1012,8 +1012,8 @@ setup_ntlm_smb3_neg_ret:
 
 int build_ntlmssp_auth_blob(unsigned char **pbuffer,
 					u16 *buflen,
-				   struct cifs_ses *ses,
-				   struct TCP_Server_Info *server,
+				   struct smbfs_ses *ses,
+				   struct smbfs_server_info *server,
 				   const struct nls_table *nls_cp)
 {
 	int rc;
@@ -1073,7 +1073,7 @@ int build_ntlmssp_auth_blob(unsigned char **pbuffer,
 	}
 
 	cifs_security_buffer_from_str(&sec_blob->DomainName,
-				      ses->domainName,
+				      ses->domain_name,
 				      CIFS_MAX_DOMAINNAME_LEN,
 				      *pbuffer, &tmp,
 				      nls_cp);
@@ -1085,15 +1085,15 @@ int build_ntlmssp_auth_blob(unsigned char **pbuffer,
 				      nls_cp);
 
 	cifs_security_buffer_from_str(&sec_blob->WorkstationName,
-				      ses->workstation_name,
-				      ntlmssp_workstation_name_size(ses),
+				      ses->client_name,
+				      ntlmssp_client_name_size(ses),
 				      *pbuffer, &tmp,
 				      nls_cp);
 
 	if ((ses->ntlmssp->server_flags & NTLMSSP_NEGOTIATE_KEY_XCH) &&
 	    (!ses->server->session_estab || ses->ntlmssp->sesskey_per_smbsess) &&
 	    !calc_seckey(ses)) {
-		memcpy(tmp, ses->ntlmssp->ciphertext, CIFS_CPHTXT_SIZE);
+		memcpy(tmp, ses->ntlmssp->cipher_text, CIFS_CPHTXT_SIZE);
 		sec_blob->SessionKey.BufferOffset = cpu_to_le32(tmp - *pbuffer);
 		sec_blob->SessionKey.Length = cpu_to_le16(CIFS_CPHTXT_SIZE);
 		sec_blob->SessionKey.MaximumLength =
@@ -1110,47 +1110,47 @@ setup_ntlmv2_ret:
 	return rc;
 }
 
-enum securityEnum
-cifs_select_sectype(struct TCP_Server_Info *server, enum securityEnum requested)
+smbfs_security_t
+cifs_select_sectype(struct smbfs_server_info *server, smbfs_security_t requested)
 {
-	switch (server->negflavor) {
-	case CIFS_NEGFLAVOR_EXTENDED:
+	switch (server->neg_flavor) {
+	case SMBFS_NEG_FLAVOR_EXTENDED:
 		switch (requested) {
-		case Kerberos:
-		case RawNTLMSSP:
+		case SMBFS_SECURITY_KERBEROS:
+		case SMBFS_SECURITY_RAW_NTLMSSP:
 			return requested;
-		case Unspecified:
+		case SMBFS_SECURITY_UNSPECIFIED:
 			if (server->sec_ntlmssp &&
-			    (security_flags & CIFSSEC_MAY_NTLMSSP))
-				return RawNTLMSSP;
+			    (security_flags & SMBFS_SEC_MAY_NTLMSSP))
+				return SMBFS_SECURITY_RAW_NTLMSSP;
 			if ((server->sec_kerberos || server->sec_mskerberos) &&
-			    (security_flags & CIFSSEC_MAY_KRB5))
-				return Kerberos;
+			    (security_flags & SMBFS_SEC_MAY_KRB5))
+				return SMBFS_SECURITY_KERBEROS;
 			fallthrough;
 		default:
-			return Unspecified;
+			return SMBFS_SECURITY_UNSPECIFIED;
 		}
-	case CIFS_NEGFLAVOR_UNENCAP:
+	case SMBFS_NEG_FLAVOR_UNENCAP:
 		switch (requested) {
-		case NTLMv2:
+		case SMBFS_SECURITY_NTLMv2:
 			return requested;
-		case Unspecified:
-			if (security_flags & CIFSSEC_MAY_NTLMV2)
-				return NTLMv2;
+		case SMBFS_SECURITY_UNSPECIFIED:
+			if (security_flags & SMBFS_SEC_MAY_NTLMV2)
+				return SMBFS_SECURITY_NTLMv2;
 			break;
 		default:
 			break;
 		}
 		fallthrough;
 	default:
-		return Unspecified;
+		return SMBFS_SECURITY_UNSPECIFIED;
 	}
 }
 
 struct sess_data {
 	unsigned int xid;
-	struct cifs_ses *ses;
-	struct TCP_Server_Info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_server_info *server;
 	struct nls_table *nls_cp;
 	void (*func)(struct sess_data *);
 	int result;
@@ -1170,7 +1170,7 @@ static int
 sess_alloc_buffer(struct sess_data *sess_data, int wct)
 {
 	int rc;
-	struct cifs_ses *ses = sess_data->ses;
+	struct smbfs_ses *ses = sess_data->ses;
 	struct smb_hdr *smb_buf;
 
 	rc = small_smb_init_no_tc(SMB_COM_SESSION_SETUP_ANDX, wct, ses,
@@ -1185,7 +1185,7 @@ sess_alloc_buffer(struct sess_data *sess_data, int wct)
 	 * This variable will be used to clear the buffer
 	 * allocated above in case of any error in the calling function.
 	 */
-	sess_data->buf0_type = CIFS_SMALL_BUFFER;
+	sess_data->buf0_type = SMBFS_SMALL_BUFFER;
 
 	/* 2000 big enough to fit max user, domain, NOS name etc. */
 	sess_data->iov[2].iov_base = kmalloc(2000, GFP_KERNEL);
@@ -1200,7 +1200,7 @@ out_free_smb_buf:
 	cifs_small_buf_release(smb_buf);
 	sess_data->iov[0].iov_base = NULL;
 	sess_data->iov[0].iov_len = 0;
-	sess_data->buf0_type = CIFS_NO_BUFFER;
+	sess_data->buf0_type = SMBFS_NO_BUFFER;
 	return rc;
 }
 
@@ -1209,35 +1209,35 @@ sess_free_buffer(struct sess_data *sess_data)
 {
 
 	free_rsp_buf(sess_data->buf0_type, sess_data->iov[0].iov_base);
-	sess_data->buf0_type = CIFS_NO_BUFFER;
+	sess_data->buf0_type = SMBFS_NO_BUFFER;
 	kfree(sess_data->iov[2].iov_base);
 }
 
 static int
 sess_establish_session(struct sess_data *sess_data)
 {
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 
-	cifs_server_lock(server);
+	server_lock(server);
 	if (!server->session_estab) {
-		if (server->sign) {
-			server->session_key.response =
+		if (server->sec.signing_enabled) {
+			server->sec.session_key.response =
 				kmemdup(ses->auth_key.response,
 				ses->auth_key.len, GFP_KERNEL);
-			if (!server->session_key.response) {
-				cifs_server_unlock(server);
+			if (!server->sec.session_key.response) {
+				server_unlock(server);
 				return -ENOMEM;
 			}
-			server->session_key.len =
+			server->sec.session_key.len =
 						ses->auth_key.len;
 		}
-		server->sequence_number = 0x2;
+		server->seqn = 0x2;
 		server->session_estab = true;
 	}
-	cifs_server_unlock(server);
+	server_unlock(server);
 
-	smbfs_dbg("CIFS session established successfully\n");
+	smbfs_dbg("SMBFS session established successfully\n");
 	return 0;
 }
 
@@ -1256,7 +1256,7 @@ sess_sendreceive(struct sess_data *sess_data)
 	rc = SendReceive2(sess_data->xid, sess_data->ses,
 			  sess_data->iov, 3 /* num_iovecs */,
 			  &sess_data->buf0_type,
-			  CIFS_LOG_ERROR, &rsp_iov);
+			  SMBFS_LOG_ERROR, &rsp_iov);
 	cifs_small_buf_release(sess_data->iov[0].iov_base);
 	memcpy(&sess_data->iov[0], &rsp_iov, sizeof(struct kvec));
 
@@ -1270,8 +1270,8 @@ sess_auth_ntlmv2(struct sess_data *sess_data)
 	struct smb_hdr *smb_buf;
 	SESSION_SETUP_ANDX *pSMB;
 	char *bcc_ptr;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 	__u32 capabilities;
 	__u16 bytes_remaining;
 
@@ -1341,8 +1341,8 @@ sess_auth_ntlmv2(struct sess_data *sess_data)
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
 		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
-	ses->Suid = smb_buf->Uid;   /* UID left in wire format (le) */
-	smbfs_dbg("UID = %llu\n", ses->Suid);
+	ses->id = smb_buf->Uid;   /* UID left in wire format (le) */
+	smbfs_dbg("UID = %llu\n", ses->id);
 
 	bytes_remaining = get_bcc(smb_buf);
 	bcc_ptr = pByteArea(smb_buf);
@@ -1380,8 +1380,8 @@ sess_auth_kerberos(struct sess_data *sess_data)
 	struct smb_hdr *smb_buf;
 	SESSION_SETUP_ANDX *pSMB;
 	char *bcc_ptr;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 	__u32 capabilities;
 	__u16 bytes_remaining;
 	struct key *spnego_key = NULL;
@@ -1467,8 +1467,8 @@ sess_auth_kerberos(struct sess_data *sess_data)
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
 		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
-	ses->Suid = smb_buf->Uid;   /* UID left in wire format (le) */
-	smbfs_dbg("UID = %llu\n", ses->Suid);
+	ses->id = smb_buf->Uid;   /* UID left in wire format (le) */
+	smbfs_dbg("UID = %llu\n", ses->id);
 
 	bytes_remaining = get_bcc(smb_buf);
 	bcc_ptr = pByteArea(smb_buf);
@@ -1521,8 +1521,8 @@ static int
 _sess_auth_rawntlmssp_assemble_req(struct sess_data *sess_data)
 {
 	SESSION_SETUP_ANDX *pSMB;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 	__u32 capabilities;
 	char *bcc_ptr;
 
@@ -1561,8 +1561,8 @@ sess_auth_rawntlmssp_negotiate(struct sess_data *sess_data)
 	int rc;
 	struct smb_hdr *smb_buf;
 	SESSION_SETUP_ANDX *pSMB;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 	__u16 bytes_remaining;
 	char *bcc_ptr;
 	unsigned char *ntlmsspblob = NULL;
@@ -1574,7 +1574,7 @@ sess_auth_rawntlmssp_negotiate(struct sess_data *sess_data)
 	 * if memory allocation is successful, caller of this function
 	 * frees it.
 	 */
-	ses->ntlmssp = kmalloc(sizeof(struct ntlmssp_auth), GFP_KERNEL);
+	ses->ntlmssp = kmalloc(sizeof(struct smbfs_ntlmssp_auth), GFP_KERNEL);
 	if (!ses->ntlmssp) {
 		rc = -ENOMEM;
 		goto out;
@@ -1609,7 +1609,7 @@ sess_auth_rawntlmssp_negotiate(struct sess_data *sess_data)
 	smb_buf = (struct smb_hdr *)sess_data->iov[0].iov_base;
 
 	/* If true, rc here is expected and not an error */
-	if (sess_data->buf0_type != CIFS_NO_BUFFER &&
+	if (sess_data->buf0_type != SMBFS_NO_BUFFER &&
 	    smb_buf->Status.CifsError ==
 			cpu_to_le32(NT_STATUS_MORE_PROCESSING_REQUIRED))
 		rc = 0;
@@ -1625,8 +1625,8 @@ sess_auth_rawntlmssp_negotiate(struct sess_data *sess_data)
 		goto out_free_ntlmsspblob;
 	}
 
-	ses->Suid = smb_buf->Uid;   /* UID left in wire format (le) */
-	smbfs_dbg("UID = %llu\n", ses->Suid);
+	ses->id = smb_buf->Uid;   /* UID left in wire format (le) */
+	smbfs_dbg("UID = %llu\n", ses->id);
 
 	bytes_remaining = get_bcc(smb_buf);
 	bcc_ptr = pByteArea(smb_buf);
@@ -1667,8 +1667,8 @@ sess_auth_rawntlmssp_authenticate(struct sess_data *sess_data)
 	int rc;
 	struct smb_hdr *smb_buf;
 	SESSION_SETUP_ANDX *pSMB;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 	__u16 bytes_remaining;
 	char *bcc_ptr;
 	unsigned char *ntlmsspblob = NULL;
@@ -1697,7 +1697,7 @@ sess_auth_rawntlmssp_authenticate(struct sess_data *sess_data)
 	 * the uid that it just gave us back on the response
 	 * (challenge)
 	 */
-	smb_buf->Uid = ses->Suid;
+	smb_buf->Uid = ses->id;
 
 	rc = _sess_auth_rawntlmssp_assemble_req(sess_data);
 	if (rc)
@@ -1718,9 +1718,9 @@ sess_auth_rawntlmssp_authenticate(struct sess_data *sess_data)
 	if (le16_to_cpu(pSMB->resp.Action) & GUEST_LOGIN)
 		smbfs_dbg("Guest login\n"); /* TODO: mark SesInfo struct? */
 
-	if (ses->Suid != smb_buf->Uid) {
-		ses->Suid = smb_buf->Uid;
-		smbfs_dbg("UID changed! new UID = %llu\n", ses->Suid);
+	if (ses->id != smb_buf->Uid) {
+		ses->id = smb_buf->Uid;
+		smbfs_dbg("UID changed! new UID = %llu\n", ses->id);
 	}
 
 	bytes_remaining = get_bcc(smb_buf);
@@ -1773,21 +1773,21 @@ out:
 static int select_sec(struct sess_data *sess_data)
 {
 	int type;
-	struct cifs_ses *ses = sess_data->ses;
-	struct TCP_Server_Info *server = sess_data->server;
+	struct smbfs_ses *ses = sess_data->ses;
+	struct smbfs_server_info *server = sess_data->server;
 
 	type = cifs_select_sectype(server, ses->sectype);
 	smbfs_dbg("sess setup type %d\n", type);
-	if (type == Unspecified) {
+	if (type == SMBFS_SECURITY_UNSPECIFIED) {
 		smbfs_log("Unable to select appropriate authentication method!\n");
 		return -EINVAL;
 	}
 
 	switch (type) {
-	case NTLMv2:
+	case SMBFS_SECURITY_NTLMv2:
 		sess_data->func = sess_auth_ntlmv2;
 		break;
-	case Kerberos:
+	case SMBFS_SECURITY_KERBEROS:
 #ifdef CONFIG_SMBFS_UPCALL
 		sess_data->func = sess_auth_kerberos;
 		break;
@@ -1795,7 +1795,7 @@ static int select_sec(struct sess_data *sess_data)
 		smbfs_log("Kerberos negotiated but upcall support disabled!\n");
 		return -ENOSYS;
 #endif /* CONFIG_SMBFS_UPCALL */
-	case RawNTLMSSP:
+	case SMBFS_SECURITY_RAW_NTLMSSP:
 		sess_data->func = sess_auth_rawntlmssp_negotiate;
 		break;
 	default:
@@ -1806,8 +1806,8 @@ static int select_sec(struct sess_data *sess_data)
 	return 0;
 }
 
-int CIFS_SessSetup(const unsigned int xid, struct cifs_ses *ses,
-		   struct TCP_Server_Info *server,
+int CIFS_SessSetup(const unsigned int xid, struct smbfs_ses *ses,
+		   struct smbfs_server_info *server,
 		   const struct nls_table *nls_cp)
 {
 	int rc = 0;
@@ -1825,7 +1825,7 @@ int CIFS_SessSetup(const unsigned int xid, struct cifs_ses *ses,
 	sess_data->xid = xid;
 	sess_data->ses = ses;
 	sess_data->server = server;
-	sess_data->buf0_type = CIFS_NO_BUFFER;
+	sess_data->buf0_type = SMBFS_NO_BUFFER;
 	sess_data->nls_cp = (struct nls_table *) nls_cp;
 
 	rc = select_sec(sess_data);

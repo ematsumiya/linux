@@ -15,7 +15,7 @@
 #include "defs.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifs_unicode.h"
 #include "smb2glob.h"
@@ -53,7 +53,7 @@ struct cache_entry {
 struct mount_group {
 	struct list_head list;
 	uuid_t id;
-	struct cifs_ses *sessions[CACHE_MAX_ENTRIES];
+	struct smbfs_ses *sessions[CACHE_MAX_ENTRIES];
 	int num_sessions;
 	spinlock_t lock;
 	struct list_head refresh_list;
@@ -92,13 +92,13 @@ static void get_ipc_unc(const char *ref_path, char *ipc, size_t ipclen)
 	scnprintf(ipc, ipclen, "\\\\%.*s\\IPC$", (int)len, host);
 }
 
-static struct cifs_ses *find_ipc_from_server_path(struct cifs_ses **ses, const char *path)
+static struct smbfs_ses *find_ipc_from_server_path(struct smbfs_ses **ses, const char *path)
 {
-	char unc[SERVER_NAME_LENGTH + sizeof("//x/IPC$")] = {0};
+	char unc[SMBFS_SERVER_NAME_LEN + sizeof("//x/IPC$")] = { 0 };
 
 	get_ipc_unc(path, unc, sizeof(unc));
 	for (; *ses; ses++) {
-		if (!strcasecmp(unc, (*ses)->tcon_ipc->treeName))
+		if (!strcasecmp(unc, (*ses)->tcon_ipc->tree_name))
 			return *ses;
 	}
 	return ERR_PTR(-ENOENT);
@@ -359,13 +359,13 @@ static inline void dump_ce(const struct cache_entry *ce)
 	dump_tgts(ce);
 }
 
-static inline void dump_refs(const struct dfs_info3_param *refs, int numrefs)
+static inline void dump_refs(const struct smbfs_dfs_info *refs, int numrefs)
 {
 	int i;
 
 	smbfs_dbg("DFS referrals returned by the server:\n");
 	for (i = 0; i < numrefs; i++) {
-		const struct dfs_info3_param *ref = &refs[i];
+		const struct smbfs_dfs_info *ref = &refs[i];
 
 		smbfs_dbg("flags:         0x%x\n"
 			  "path_consumed: %d\n"
@@ -487,7 +487,7 @@ static struct cache_dfs_tgt *alloc_target(const char *name, int path_consumed)
  * Copy DFS referral information to a cache entry and conditionally update
  * target hint.
  */
-static int copy_ref_data(const struct dfs_info3_param *refs, int numrefs,
+static int copy_ref_data(const struct smbfs_dfs_info *refs, int numrefs,
 			 struct cache_entry *ce, const char *tgthint)
 {
 	int i;
@@ -523,7 +523,7 @@ static int copy_ref_data(const struct dfs_info3_param *refs, int numrefs,
 }
 
 /* Allocate a new cache entry */
-static struct cache_entry *alloc_cache_entry(struct dfs_info3_param *refs, int numrefs)
+static struct cache_entry *alloc_cache_entry(struct smbfs_dfs_info *refs, int numrefs)
 {
 	struct cache_entry *ce;
 	int rc;
@@ -578,7 +578,7 @@ static void remove_oldest_entry_locked(void)
 }
 
 /* Add a new DFS cache entry */
-static int add_cache_entry_locked(struct dfs_info3_param *refs, int numrefs)
+static int add_cache_entry_locked(struct smbfs_dfs_info *refs, int numrefs)
 {
 	int rc;
 	struct cache_entry *ce;
@@ -728,7 +728,7 @@ void dfs_cache_destroy(void)
 }
 
 /* Update a cache entry with the new referral in @refs */
-static int update_cache_entry_locked(struct cache_entry *ce, const struct dfs_info3_param *refs,
+static int update_cache_entry_locked(struct cache_entry *ce, const struct smbfs_dfs_info *refs,
 				     int numrefs)
 {
 	int rc;
@@ -753,8 +753,8 @@ static int update_cache_entry_locked(struct cache_entry *ce, const struct dfs_in
 	return rc;
 }
 
-static int get_dfs_referral(const unsigned int xid, struct cifs_ses *ses, const char *path,
-			    struct dfs_info3_param **refs, int *numrefs)
+static int get_dfs_referral(const unsigned int xid, struct smbfs_ses *ses, const char *path,
+			    struct smbfs_dfs_info **refs, int *numrefs)
 {
 	int rc;
 	int i;
@@ -772,7 +772,7 @@ static int get_dfs_referral(const unsigned int xid, struct cifs_ses *ses, const 
 	rc =  ses->server->ops->get_dfs_refer(xid, ses, path, refs, numrefs, cache_cp,
 					      NO_MAP_UNI_RSVD);
 	if (!rc) {
-		struct dfs_info3_param *ref = *refs;
+		struct smbfs_dfs_info *ref = *refs;
 
 		for (i = 0; i < *numrefs; i++)
 			convert_delimiter(ref[i].path_name, '\\');
@@ -789,11 +789,11 @@ static int get_dfs_referral(const unsigned int xid, struct cifs_ses *ses, const 
  * For interlinks, cifs_mount() and expand_dfs_referral() are supposed to
  * handle them properly.
  */
-static int cache_refresh_path(const unsigned int xid, struct cifs_ses *ses, const char *path)
+static int cache_refresh_path(const unsigned int xid, struct smbfs_ses *ses, const char *path)
 {
 	int rc;
 	struct cache_entry *ce;
-	struct dfs_info3_param *refs = NULL;
+	struct smbfs_dfs_info *refs = NULL;
 	int numrefs = 0;
 	bool newent = false;
 
@@ -841,7 +841,7 @@ out_unlock:
  * Must be called with htable_rw_lock held.
  */
 static int setup_referral(const char *path, struct cache_entry *ce,
-			  struct dfs_info3_param *ref, const char *target)
+			  struct smbfs_dfs_info *ref, const char *target)
 {
 	int rc;
 
@@ -940,8 +940,8 @@ err_free_it:
  *
  * Return zero if the target was found, otherwise non-zero.
  */
-int dfs_cache_find(const unsigned int xid, struct cifs_ses *ses, const struct nls_table *cp,
-		   int remap, const char *path, struct dfs_info3_param *ref,
+int dfs_cache_find(const unsigned int xid, struct smbfs_ses *ses, const struct nls_table *cp,
+		   int remap, const char *path, struct smbfs_dfs_info *ref,
 		   struct dfs_cache_tgt_list *tgt_list)
 {
 	int rc;
@@ -995,7 +995,7 @@ out_free_path:
  * Return -ENOENT if the entry was not found.
  * Return non-zero for other errors.
  */
-int dfs_cache_noreq_find(const char *path, struct dfs_info3_param *ref,
+int dfs_cache_noreq_find(const char *path, struct smbfs_dfs_info *ref,
 			 struct dfs_cache_tgt_list *tgt_list)
 {
 	int rc;
@@ -1041,7 +1041,7 @@ out_unlock:
  *
  * Return zero if the target hint was updated successfully, otherwise non-zero.
  */
-int dfs_cache_update_tgthint(const unsigned int xid, struct cifs_ses *ses,
+int dfs_cache_update_tgthint(const unsigned int xid, struct smbfs_ses *ses,
 			     const struct nls_table *cp, int remap, const char *path,
 			     const struct dfs_cache_tgt_iterator *it)
 {
@@ -1153,7 +1153,7 @@ out_unlock:
  * Return zero if the DFS referral was set up correctly, otherwise non-zero.
  */
 int dfs_cache_get_tgt_referral(const char *path, const struct dfs_cache_tgt_iterator *it,
-			       struct dfs_info3_param *ref)
+			       struct smbfs_dfs_info *ref)
 {
 	int rc;
 	struct cache_entry *ce;
@@ -1186,7 +1186,7 @@ out_unlock:
  * @mount_id: mount group uuid to lookup.
  * @ses: reference counted SMB session of referral server.
  */
-void dfs_cache_add_refsrv_session(const uuid_t *mount_id, struct cifs_ses *ses)
+void dfs_cache_add_refsrv_session(const uuid_t *mount_id, struct smbfs_ses *ses)
 {
 	struct mount_group *mg;
 
@@ -1308,9 +1308,9 @@ int dfs_cache_get_tgt_share(char *path, const struct dfs_cache_tgt_iterator *it,
 	return 0;
 }
 
-static bool target_share_equal(struct TCP_Server_Info *server, const char *s1, const char *s2)
+static bool target_share_equal(struct smbfs_server_info *server, const char *s1, const char *s2)
 {
-	char unc[sizeof("\\\\") + SERVER_NAME_LENGTH] = {0};
+	char unc[sizeof("\\\\") + SMBFS_SERVER_NAME_LEN] = { 0 };
 	const char *host;
 	size_t hostlen;
 	char *ip = NULL;
@@ -1338,9 +1338,9 @@ static bool target_share_equal(struct TCP_Server_Info *server, const char *s1, c
 	if (!cifs_convert_address(&sa, ip, strlen(ip))) {
 		smbfs_log("%s: failed to convert address '%s', skip address matching\n", __func__, ip);
 	} else {
-		cifs_server_lock(server);
+		server_lock(server);
 		match = cifs_match_ipaddr((struct sockaddr *)&server->dstaddr, &sa);
-		cifs_server_unlock(server);
+		server_unlock(server);
 	}
 
 	kfree(ip);
@@ -1351,8 +1351,8 @@ static bool target_share_equal(struct TCP_Server_Info *server, const char *s1, c
  * Mark dfs tcon for reconnecting when the currently connected tcon does not match any of the new
  * target shares in @refs.
  */
-static void mark_for_reconnect_if_needed(struct cifs_tcon *tcon, struct dfs_cache_tgt_list *tl,
-					 const struct dfs_info3_param *refs, int numrefs)
+static void mark_for_reconnect_if_needed(struct smbfs_tcon *tcon, struct dfs_cache_tgt_list *tl,
+					 const struct smbfs_dfs_info *refs, int numrefs)
 {
 	struct dfs_cache_tgt_iterator *it;
 	int i;
@@ -1370,12 +1370,12 @@ static void mark_for_reconnect_if_needed(struct cifs_tcon *tcon, struct dfs_cach
 }
 
 /* Refresh dfs referral of tcon and mark it for reconnect if needed */
-static int __refresh_tcon(const char *path, struct cifs_ses **sessions, struct cifs_tcon *tcon,
+static int __refresh_tcon(const char *path, struct smbfs_ses **sessions, struct smbfs_tcon *tcon,
 			  bool force_refresh)
 {
-	struct cifs_ses *ses;
+	struct smbfs_ses *ses;
 	struct cache_entry *ce;
-	struct dfs_info3_param *refs = NULL;
+	struct smbfs_dfs_info *refs = NULL;
 	int numrefs = 0;
 	bool needs_refresh = false;
 	struct dfs_cache_tgt_list tl = DFS_CACHE_TGT_LIST_INIT(tl);
@@ -1428,9 +1428,9 @@ out:
 	return rc;
 }
 
-static int refresh_tcon(struct cifs_ses **sessions, struct cifs_tcon *tcon, bool force_refresh)
+static int refresh_tcon(struct smbfs_ses **sessions, struct smbfs_tcon *tcon, bool force_refresh)
 {
-	struct TCP_Server_Info *server = tcon->ses->server;
+	struct smbfs_server_info *server = tcon->ses->server;
 
 	mutex_lock(&server->refpath_lock);
 	if (server->origin_fullpath) {
@@ -1456,16 +1456,16 @@ static int refresh_tcon(struct cifs_ses **sessions, struct cifs_tcon *tcon, bool
  */
 int dfs_cache_remount_fs(struct cifs_sb_info *cifs_sb)
 {
-	struct cifs_tcon *tcon;
-	struct TCP_Server_Info *server;
+	struct smbfs_tcon *tcon;
+	struct smbfs_server_info *server;
 	struct mount_group *mg;
-	struct cifs_ses *sessions[CACHE_MAX_ENTRIES + 1] = {NULL};
+	struct smbfs_ses *sessions[CACHE_MAX_ENTRIES + 1] = {NULL};
 	int rc;
 
 	if (!cifs_sb || !cifs_sb->master_tlink)
 		return -EINVAL;
 
-	tcon = cifs_sb_master_tcon(cifs_sb);
+	tcon = smbfs_sb_master_tcon(cifs_sb);
 	server = tcon->ses->server;
 
 	if (!server->origin_fullpath) {
@@ -1512,33 +1512,33 @@ int dfs_cache_remount_fs(struct cifs_sb_info *cifs_sb)
  * Refresh all active dfs mounts regardless of whether they are in cache or not.
  * (cache can be cleared)
  */
-static void refresh_mounts(struct cifs_ses **sessions)
+static void refresh_mounts(struct smbfs_ses **sessions)
 {
-	struct TCP_Server_Info *server;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon, *ntcon;
+	struct smbfs_server_info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon, *ntcon;
 	struct list_head tcons;
 
 	INIT_LIST_HEAD(&tcons);
 
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(server, &g_servers_list, head) {
 		if (!server->is_dfs_conn)
 			continue;
 
-		list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
-			list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
-				if (!tcon->ipc && !tcon->need_reconnect) {
-					tcon->tc_count++;
+		list_for_each_entry(ses, &server->sessions, head) {
+			list_for_each_entry(tcon, &ses->tcons, head) {
+				if (!get_tcon_flag(tcon, IS_IPC) && !get_tcon_flag(tcon, NEED_RECONNECT)) {
+					tcon->count++;
 					list_add_tail(&tcon->ulist, &tcons);
 				}
 			}
 		}
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 
 	list_for_each_entry_safe(tcon, ntcon, &tcons, ulist) {
-		struct TCP_Server_Info *server = tcon->ses->server;
+		struct smbfs_server_info *server = tcon->ses->server;
 
 		list_del_init(&tcon->ulist);
 
@@ -1551,14 +1551,14 @@ static void refresh_mounts(struct cifs_ses **sessions)
 		}
 		mutex_unlock(&server->refpath_lock);
 
-		cifs_put_tcon(tcon);
+		smbfs_put_tcon(tcon);
 	}
 }
 
-static void refresh_cache(struct cifs_ses **sessions)
+static void refresh_cache(struct smbfs_ses **sessions)
 {
 	int i;
-	struct cifs_ses *ses;
+	struct smbfs_ses *ses;
 	unsigned int xid;
 	char *ref_paths[CACHE_MAX_ENTRIES];
 	int count = 0;
@@ -1590,7 +1590,7 @@ out_unlock:
 
 	for (i = 0; i < count; i++) {
 		char *path = ref_paths[i];
-		struct dfs_info3_param *refs = NULL;
+		struct smbfs_dfs_info *refs = NULL;
 		int numrefs = 0;
 		int rc = 0;
 
@@ -1631,7 +1631,7 @@ static void refresh_cache_worker(struct work_struct *work)
 {
 	struct list_head mglist;
 	struct mount_group *mg, *tmp_mg;
-	struct cifs_ses *sessions[CACHE_MAX_ENTRIES + 1] = {NULL};
+	struct smbfs_ses *sessions[CACHE_MAX_ENTRIES + 1] = {NULL};
 	int max_sessions = ARRAY_SIZE(sessions) - 1;
 	int i = 0, count;
 

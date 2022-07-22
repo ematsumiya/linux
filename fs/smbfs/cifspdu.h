@@ -84,7 +84,7 @@
 #define NT_TRANSACT_GET_USER_QUOTA    0x07
 #define NT_TRANSACT_SET_USER_QUOTA    0x08
 
-#define MAX_CIFS_SMALL_BUFFER_SIZE 448 /* big enough for most */
+#define MAX_SMBFS_SMALL_BUFFER_SIZE 448 /* big enough for most */
 /* future chained NTCreateXReadX bigger, but for time being NTCreateX biggest */
 /* among the requests (NTCreateX response is bigger with wct of 34) */
 #define MAX_CIFS_HDR_SIZE 0x58 /* 4 len + 32 hdr + (2*24 wct) + 2 bct + 2 pad */
@@ -373,7 +373,7 @@
 #define CIFS_RENAME_OP 2
 
 #define GETU16(var)  (*((__u16 *)var))	/* TODO: check for endian issues */
-#define GETU32(var)  (*((__u32 *)var))	/* TODO: check for endian issues */
+#define GETU32(var)  (*((unsigned int *)var))	/* TODO: check for endian issues */
 
 struct smb_hdr {
 	__be32 smb_buf_length;	/* TODO: length is only two (rarely three) bytes,
@@ -395,7 +395,7 @@ struct smb_hdr {
 	union {
 		struct {
 			__le32 SequenceNumber;  /* le */
-			__u32 Reserved; /* zero */
+			unsigned int Reserved; /* zero */
 		} __attribute__((packed)) Sequence;
 		__u8 SecuritySignature[8];	/* le */
 	} __attribute__((packed)) Signature;
@@ -553,9 +553,9 @@ typedef union smb_com_session_setup_andx {
 		__le16 MaxBufferSize;
 		__le16 MaxMpxCount;
 		__le16 VcNumber;
-		__u32 SessionKey;
+		unsigned int SessionKey;
 		__le16 SecurityBlobLength;
-		__u32 Reserved;
+		unsigned int Reserved;
 		__le32 Capabilities;	/* see below */
 		__le16 ByteCount;
 		unsigned char SecurityBlob[1];	/* followed by */
@@ -572,10 +572,10 @@ typedef union smb_com_session_setup_andx {
 		__le16 MaxBufferSize;
 		__le16 MaxMpxCount;
 		__le16 VcNumber;
-		__u32 SessionKey;
+		unsigned int SessionKey;
 		__le16 CaseInsensitivePasswordLength; /* ASCII password len */
 		__le16 CaseSensitivePasswordLength; /* Unicode password length*/
-		__u32 Reserved;	/* see below */
+		unsigned int Reserved;	/* see below */
 		__le32 Capabilities;
 		__le16 ByteCount;
 		unsigned char CaseInsensitivePassword[1];     /* followed by: */
@@ -610,9 +610,9 @@ typedef union smb_com_session_setup_andx {
 		__le16 MaxBufferSize;
 		__le16 MaxMpxCount;
 		__le16 VcNumber;
-		__u32 SessionKey;
+		unsigned int SessionKey;
 		__le16 PasswordLength;
-		__u32 Reserved; /* encrypt key len and offset */
+		unsigned int Reserved; /* encrypt key len and offset */
 		__le16 ByteCount;
 		unsigned char AccountPassword[1];
 		/* followed by */
@@ -658,10 +658,10 @@ struct ntlmv2_resp {
 	    } __attribute__((packed)) challenge;
 	} __attribute__((packed));
 	__le32 blob_signature;
-	__u32  reserved;
+	unsigned int  reserved;
 	__le64  time;
-	__u64  client_chal; /* random */
-	__u32  reserved2;
+	unsigned long  client_chal; /* random */
+	unsigned int  reserved2;
 	/* array of name entries could follow ending in minimum 4 byte struct */
 } __attribute__((packed));
 
@@ -794,7 +794,7 @@ typedef union smb_com_tree_disconnect {	/* as an altetnative can use flag on
 typedef struct smb_com_close_req {
 	struct smb_hdr hdr;	/* wct = 3 */
 	__u16 FileID;
-	__u32 LastWriteTime;	/* should be zero or -1 */
+	unsigned int LastWriteTime;	/* should be zero or -1 */
 	__u16 ByteCount;	/* 0 */
 } __attribute__((packed)) CLOSE_REQ;
 
@@ -849,7 +849,7 @@ typedef struct smb_com_open_req {	/* also handles create */
 	__u8 Reserved;		/* Must Be Zero */
 	__le16 NameLength;
 	__le32 OpenFlags;
-	__u32  RootDirectoryFid;
+	unsigned int  RootDirectoryFid;
 	__le32 DesiredAccess;
 	__le64 AllocationSize;
 	__le32 FileAttributes;
@@ -911,7 +911,7 @@ typedef struct smb_com_open_rsp_ext {
 	__le16 DeviceState;
 	__u8 DirectoryFlag;
 	__u8 VolumeGUID[16];
-	__u64 FileId; /* note no endian conversion - is opaque UniqueID */
+	unsigned long FileId; /* note no endian conversion - is opaque UniqueID */
 	__le32 MaximalAccessRights;
 	__le32 GuestMaximalAccessRights;
 	__u16 ByteCount;        /* bct = 0 */
@@ -950,7 +950,7 @@ typedef struct smb_com_openx_rsp {
 	__le16 FileType;
 	__le16 IPCState;
 	__le16 Action;
-	__u32  FileId;
+	unsigned int  FileId;
 	__u16  Reserved;
 	__u16  ByteCount;
 } __attribute__((packed)) OPENX_RSP;
@@ -965,7 +965,7 @@ typedef struct smb_com_writex_req {
 	__le16 AndXOffset;
 	__u16 Fid;
 	__le32 OffsetLow;
-	__u32 Reserved; /* Timeout */
+	unsigned int Reserved; /* Timeout */
 	__le16 WriteMode; /* 1 = write through */
 	__le16 Remaining;
 	__le16 Reserved2;
@@ -984,7 +984,7 @@ typedef struct smb_com_write_req {
 	__le16 AndXOffset;
 	__u16 Fid;
 	__le32 OffsetLow;
-	__u32 Reserved;
+	unsigned int Reserved;
 	__le16 WriteMode;
 	__le16 Remaining;
 	__le16 DataLengthHigh;
@@ -1050,7 +1050,7 @@ typedef struct smb_com_read_rsp {
 	__le16 DataLength;
 	__le16 DataOffset;
 	__le16 DataLengthHigh;
-	__u64 Reserved2;
+	unsigned long Reserved2;
 	__u16 ByteCount;
 	/* read response data immediately follows */
 } __attribute__((packed)) READ_RSP;
@@ -1284,7 +1284,7 @@ struct srv_copychunk {
 	__le64 SourceOffset;
 	__le64 DestinationOffset;
 	__le32 CopyLength;
-	__u32  Reserved;
+	unsigned int  Reserved;
 } __packed;
 
 typedef struct smb_com_transaction_ioctl_req {
@@ -1667,7 +1667,7 @@ typedef struct smb_com_transaction2_qpi_req {
 	__le16 ByteCount;
 	__u8 Pad;
 	__le16 InformationLevel;
-	__u32 Reserved4;
+	unsigned int Reserved4;
 	char FileName[1];
 } __attribute__((packed)) TRANSACTION2_QPI_REQ;
 
@@ -1700,7 +1700,7 @@ typedef struct smb_com_transaction2_spi_req {
 	__u8 Pad;
 	__u16 Pad1;
 	__le16 InformationLevel;
-	__u32 Reserved4;
+	unsigned int Reserved4;
 	char FileName[1];
 } __attribute__((packed)) TRANSACTION2_SPI_REQ;
 
@@ -1713,7 +1713,7 @@ typedef struct smb_com_transaction2_spi_rsp {
 
 struct set_file_rename {
 	__le32 overwrite;   /* 1 = overwrite dest */
-	__u32 root_fid;   /* zero */
+	unsigned int root_fid;   /* zero */
 	__le32 target_name_len;
 	char  target_name[];  /* Must be unicode */
 } __attribute__((packed));
@@ -1848,7 +1848,7 @@ typedef struct smb_com_transaction2_fnext_req {
 	__u16 SearchHandle;
 	__le16 SearchCount;
 	__le16 InformationLevel;
-	__u32 ResumeKey;
+	unsigned int ResumeKey;
 	__le16 SearchFlags;
 	char ResumeFileName[];
 } __attribute__((packed)) TRANSACTION2_FNEXT_REQ;
@@ -1918,14 +1918,14 @@ typedef struct smb_com_transaction_qfsi_rsp {
 } __attribute__((packed)) TRANSACTION2_QFSI_RSP;
 
 typedef struct whoami_rsp_data { /* Query level 0x202 */
-	__u32 flags; /* 0 = Authenticated user 1 = GUEST */
-	__u32 mask; /* which flags bits server understands ie 0x0001 */
-	__u64 unix_user_id;
-	__u64 unix_user_gid;
-	__u32 number_of_supplementary_gids; /* may be zero */
-	__u32 number_of_sids; /* may be zero */
-	__u32 length_of_sid_array; /* in bytes - may be zero */
-	__u32 pad; /* reserved - MBZ */
+	unsigned int flags; /* 0 = Authenticated user 1 = GUEST */
+	unsigned int mask; /* which flags bits server understands ie 0x0001 */
+	unsigned long unix_user_id;
+	unsigned long unix_user_gid;
+	unsigned int number_of_supplementary_gids; /* may be zero */
+	unsigned int number_of_sids; /* may be zero */
+	unsigned int length_of_sid_array; /* in bytes - may be zero */
+	unsigned int pad; /* reserved - MBZ */
 } __attribute__((packed)) WHOAMI_RSP_DATA;
 
 /* SETFSInfo Levels */
@@ -2262,7 +2262,7 @@ typedef struct { /* data block encoding of response to level 263 QPathInfo */
 	__le64 LastWriteTime;
 	__le64 ChangeTime;
 	__le32 Attributes;
-	__u32 Pad1;
+	unsigned int Pad1;
 	__le64 AllocationSize;
 	__le64 EndOfFile;	/* size ie offset to first free byte in file */
 	__le32 NumberOfLinks;	/* hard links */
@@ -2272,7 +2272,7 @@ typedef struct { /* data block encoding of response to level 263 QPathInfo */
 	__le64 IndexNumber;
 	__le32 EASize;
 	__le32 AccessFlags;
-	__u64 IndexNumber1;
+	unsigned long IndexNumber1;
 	__le64 CurrentByteOffset;
 	__le32 Mode;
 	__le32 AlignmentRequirement;
@@ -2342,7 +2342,7 @@ typedef struct {
 	__le16 LastWriteTime;
 	__le32 DataSize; /* File Size (EOF) */
 	__le32 AllocationSize;
-	__le16 Attributes; /* verify not u32 */
+	__le16 Attributes; /* verify not unsigned int */
 	__le32 EASize;
 } __attribute__((packed)) FILE_INFO_STANDARD;  /* level 1 SetPath/FileInfo */
 
@@ -2352,11 +2352,11 @@ typedef struct {
 	__le64 LastWriteTime;
 	__le64 ChangeTime;
 	__le32 Attributes;
-	__u32 Pad;
+	unsigned int Pad;
 } __attribute__((packed)) FILE_BASIC_INFO;	/* size info, level 0x101 */
 
 struct file_allocation_info {
-	__le64 AllocationSize; /* Note old Samba srvr rounds this up too much */
+	__le64 AllocationSize; /* Note old Samba server rounds this up too much */
 } __attribute__((packed));	/* size used on disk, for level 0x103 for set,
 				   0x105 for query */
 
@@ -2371,8 +2371,8 @@ struct file_alt_name_info {
 struct file_stream_info {
 	__le32 number_of_streams;  /* TODO: check sizes and verify location */
 	/* followed by info on streams themselves
-	u64 size;
-	u64 allocation_size
+	unsigned long size;
+	unsigned long allocation_size
 	stream info */
 };      /* level 0x109 */
 
@@ -2459,14 +2459,14 @@ struct file_attrib_tag {
 
 typedef struct {
 	__le32 NextEntryOffset;
-	__u32 ResumeKey; /* as with FileIndex - no need to convert */
+	unsigned int ResumeKey; /* as with FileIndex - no need to convert */
 	FILE_UNIX_BASIC_INFO basic;
 	char FileName[1];
 } __attribute__((packed)) FILE_UNIX_INFO; /* level 0x202 */
 
 typedef struct {
 	__le32 NextEntryOffset;
-	__u32 FileIndex;
+	unsigned int FileIndex;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;
@@ -2480,7 +2480,7 @@ typedef struct {
 
 typedef struct {
 	__le32 NextEntryOffset;
-	__u32 FileIndex;
+	unsigned int FileIndex;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;
@@ -2495,7 +2495,7 @@ typedef struct {
 
 typedef struct {
 	__le32 NextEntryOffset;
-	__u32 FileIndex;
+	unsigned int FileIndex;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;
@@ -2512,7 +2512,7 @@ typedef struct {
 
 typedef struct {
 	__le32 NextEntryOffset;
-	__u32 FileIndex;
+	unsigned int FileIndex;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;
@@ -2529,7 +2529,7 @@ typedef struct {
 } __attribute__((packed)) FILE_BOTH_DIRECTORY_INFO; /* level 0x104 FFrsp data */
 
 typedef struct {
-	__u32  ResumeKey;
+	unsigned int  ResumeKey;
 	__le16 CreationDate; /* SMB Date */
 	__le16 CreationTime; /* SMB Time */
 	__le16 LastAccessDate;
@@ -2538,7 +2538,7 @@ typedef struct {
 	__le16 LastWriteTime;
 	__le32 DataSize; /* File Size (EOF) */
 	__le32 AllocationSize;
-	__le16 Attributes; /* verify not u32 */
+	__le16 Attributes; /* verify not unsigned int */
 	__u8   FileNameLength;
 	char FileName[1];
 } __attribute__((packed)) FIND_FILE_STANDARD_INFO; /* level 0x1 FF resp data */
@@ -2687,8 +2687,8 @@ struct xsymlink {
 
 typedef struct file_xattr_info {
 	/* TODO: do we need another field for flags? */
-	__u32 xattr_name_len;
-	__u32 xattr_value_len;
+	unsigned int xattr_name_len;
+	unsigned int xattr_value_len;
 	char  xattr_name[];
 	/* followed by xattr_value[xattr_value_len], no pad */
 } __attribute__((packed)) FILE_XATTR_INFO; /* extended attribute info

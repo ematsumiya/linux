@@ -9,7 +9,7 @@
 #include "smbdirect.h"
 #include "debug.h"
 #include "proc.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "smb2proto.h"
 
 static struct smbd_response *get_empty_queue_buffer(
@@ -1320,7 +1320,7 @@ static void idle_connection_timer(struct work_struct *work)
  * Need to go through all the pending counters and make sure on one is using
  * the transport while it is destroyed
  */
-void smbd_destroy(struct TCP_Server_Info *server)
+void smbd_destroy(struct smbfs_server_info *server)
 {
 	struct smbd_connection *info = server->smbd_conn;
 	struct smbd_response *response;
@@ -1383,9 +1383,9 @@ void smbd_destroy(struct TCP_Server_Info *server)
 	log_rdma_event(INFO, "freeing mr list\n");
 	wake_up_interruptible_all(&info->wait_mr);
 	while (atomic_read(&info->mr_used_count)) {
-		cifs_server_unlock(server);
+		server_unlock(server);
 		msleep(1000);
-		cifs_server_lock(server);
+		server_lock(server);
 	}
 	destroy_mr_list(info);
 
@@ -1412,7 +1412,7 @@ void smbd_destroy(struct TCP_Server_Info *server)
  * Reconnect this SMBD connection, called from upper layer
  * return value: 0 on success, or actual error code
  */
-int smbd_reconnect(struct TCP_Server_Info *server)
+int smbd_reconnect(struct smbfs_server_info *server)
 {
 	log_rdma_event(INFO, "reconnecting rdma session\n");
 
@@ -1517,7 +1517,7 @@ out1:
 
 /* Create a SMBD connection, called by upper layer */
 static struct smbd_connection *_smbd_get_connection(
-	struct TCP_Server_Info *server, struct sockaddr *dstaddr, int port)
+	struct smbfs_server_info *server, struct sockaddr *dstaddr, int port)
 {
 	int rc;
 	struct smbd_connection *info;
@@ -1735,7 +1735,7 @@ create_id_failed:
 }
 
 struct smbd_connection *smbd_get_connection(
-	struct TCP_Server_Info *server, struct sockaddr *dstaddr)
+	struct smbfs_server_info *server, struct sockaddr *dstaddr)
 {
 	struct smbd_connection *ret;
 	int port = SMBD_PORT;
@@ -1983,7 +1983,7 @@ out:
  * rqst: the data to write
  * return value: 0 if successfully write, otherwise error code
  */
-int smbd_send(struct TCP_Server_Info *server,
+int smbd_send(struct smbfs_server_info *server,
 	int num_rqst, struct smb_rqst *rqst_array)
 {
 	struct smbd_connection *info = server->smbd_conn;

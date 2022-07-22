@@ -55,10 +55,8 @@
 #define SMB2_QUERY_INFO		cpu_to_le16(SMB2_QUERY_INFO_HE)
 #define SMB2_SET_INFO		cpu_to_le16(SMB2_SET_INFO_HE)
 #define SMB2_OPLOCK_BREAK	cpu_to_le16(SMB2_OPLOCK_BREAK_HE)
-
 #define SMB2_INTERNAL_CMD	cpu_to_le16(0xFFFF)
-
-#define NUMBER_OF_SMB2_COMMANDS	0x0013
+#define SMB2_MAX_CMDS		0x0013
 
 /*
  * Size of the session key (crypto key encrypted with the password

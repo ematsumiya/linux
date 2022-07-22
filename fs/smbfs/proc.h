@@ -14,13 +14,13 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "smbfs.h"
 #include "fs_context.h"
 #include "debug.h"
-
 #ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif /* CONFIG_SMBFS_DFS_UPCALL */
@@ -86,84 +86,84 @@ static int name ## _proc_show(struct seq_file *m, void *v)		\
 __SMBFS_PROC_OPS_DEFINE(name)
 #endif /* CONFIG_SMBFS_SMB_DIRECT */
 
-static inline const char *smbfs_tcp_status_str(enum statusEnum status)
+static inline const char *smbfs_server_status_str(smbfs_status_t status)
 {
 	switch (status) {
-	case CifsNew:
+	case SMBFS_STATUS_NEW:
 		return "new";
-	case CifsGood:
+	case SMBFS_STATUS_GOOD:
 		return "good";
-	case CifsExiting:
+	case SMBFS_STATUS_EXITING:
 		return "exiting";
-	case CifsNeedReconnect:
+	case SMBFS_STATUS_NEED_RECONNECT:
 		return "need reconnect";
-	case CifsNeedNegotiate:
+	case SMBFS_STATUS_NEED_NEGOTIATE:
 		return "need negotiate";
-	case CifsInNegotiate:
+	case SMBFS_STATUS_IN_NEGOTIATE:
 		return "in negotiate";
 	default:
 		return "unknown";
 	}
 }
 
-static inline void smbfs_dump_tcp_status(struct seq_file *m,
-					 struct TCP_Server_Info *server,
+static inline void smbfs_dump_server_status(struct seq_file *m,
+					 struct smbfs_server_info *server,
 					 char *prefix)
 {
 	SMBFS_PROC_PRINT("%sTCP status: %s (%d), "
 			 "instance: %d, local users to server: %d, sec_mode: 0x%x\n"
 			 "%sreqs: in flight: %d, in send: %d, in wait: %d\n",
-			 prefix, smbfs_tcp_status_str(server->tcpStatus),
-			 server->tcpStatus, server->reconnect_instance,
-			 server->srv_count, server->sec_mode,
+			 prefix, smbfs_server_status_str(server->status),
+			 server->status, server->reconnects,
+			 server->count, server->sec.mode,
 			 prefix, in_flight(server),
 			 atomic_read(&server->in_send),
-			 atomic_read(&server->num_waiters)
+			 atomic_read(&server->in_queue)
 	);
 	SMBFS_PROC_PRINT("\n");
 }
 
 static inline void smbfs_dump_channel(struct seq_file *m, int i,
-				      struct cifs_ses *ses, int srv_idx,
+				      struct smbfs_ses *ses, int srv_idx,
 				      int ses_idx)
 {
-	struct TCP_Server_Info *server = ses->chans[i].server;
+	struct smbfs_server_info *server = ses->channels[i].server;
 
 	SMBFS_PROC_PRINT("\t[server %d session %d ", srv_idx, ses_idx);
 	SMBFS_PROC_PRINT_IF(!i, "primary channel]");
 	else SMBFS_PROC_PRINT("channel %d]", i);
 
 	SMBFS_PROC_PRINT("%s%s\n",
-			 CIFS_CHAN_NEEDS_RECONNECT(ses, 0) ?
+			 CHANNEL_NEEDS_RECONNECT(ses, 0) ?
 			 " disconnected" : "",
-			 CIFS_CHAN_IN_RECONNECT(ses, 0) ?
+			 CHANNEL_IN_RECONNECT(ses, 0) ?
 			 " (reconnecting...)" : "");
 
 	SMBFS_PROC_PRINT("\t\tconnection ID: 0x%llx\n", server->conn_id);
 	SMBFS_PROC_PRINT("\t\tnumber of credits: %d\n", ses->server->credits);
 	SMBFS_PROC_PRINT("\t\tdialect: 0x%x\n", ses->server->dialect);
 
-	smbfs_dump_tcp_status(m, ses->server, "\t\t");
+	smbfs_dump_server_status(m, ses->server, "\t\t");
 }
 
-static inline void smbfs_dump_channels(struct seq_file *m, struct cifs_ses *ses,
+static inline void smbfs_dump_channels(struct seq_file *m, struct smbfs_ses *ses,
 				       int srv_idx, int ses_idx)
 {
 	int i;
 
-	spin_lock(&ses->chan_lock);
+	spin_lock(&ses->channel_lock);
 
-	if (ses->chan_count > 1) {
-		SMBFS_PROC_PRINT("\textra channels: %zu\n", ses->chan_count - 1);
+	if (ses->channel_count > 1) {
+		SMBFS_PROC_PRINT("\textra channels: %u\n", ses->channel_count - 1);
 
-		for (i = 1; i < ses->chan_count; i++)
+		for (i = 1; i < ses->channel_count; i++)
 			smbfs_dump_channel(m, i, ses, srv_idx, ses_idx);
 	}
 	SMBFS_PROC_PRINT("\n");
-	spin_unlock(&ses->chan_lock);
+	spin_unlock(&ses->channel_lock);
 }
 
-static void smbfs_dump_iface(struct seq_file *m, struct cifs_server_iface *iface,
+static void smbfs_dump_iface(struct seq_file *m, struct smbfs_server_iface *iface,
 			     bool connected)
 {
 	struct sockaddr_in *ipv4 = (struct sockaddr_in *)&iface->sockaddr;
@@ -187,7 +187,7 @@ static void smbfs_dump_iface(struct seq_file *m, struct cifs_server_iface *iface
 	SMBFS_PROC_PRINT("\n");
 }
 
-static inline void smbfs_dump_share_caps(struct seq_file *m, struct cifs_tcon *tcon)
+static inline void smbfs_dump_share_caps(struct seq_file *m, struct smbfs_tcon *tcon)
 {
 	int sep = 0;
 
@@ -217,16 +217,16 @@ skip_caps:
 	}
 
 	sep = 0;
-	SMBFS_PROC_PRINT_SEP_IF(tcon->ss_flags & SSINFO_FLAGS_ALIGNED_DEVICE,
+	SMBFS_PROC_PRINT_SEP_IF(tcon->sector_size_flags & SSINFO_FLAGS_ALIGNED_DEVICE,
 				sep, "aligned");
-	SMBFS_PROC_PRINT_SEP_IF(tcon->ss_flags & SSINFO_FLAGS_PARTITION_ALIGNED_ON_DEVICE,
+	SMBFS_PROC_PRINT_SEP_IF(tcon->sector_size_flags & SSINFO_FLAGS_PARTITION_ALIGNED_ON_DEVICE,
 				sep, "partition aligned");
-	SMBFS_PROC_PRINT_SEP_IF(tcon->ss_flags & SSINFO_FLAGS_NO_SEEK_PENALTY,
+	SMBFS_PROC_PRINT_SEP_IF(tcon->sector_size_flags & SSINFO_FLAGS_NO_SEEK_PENALTY,
 				sep, "SSD");
-	SMBFS_PROC_PRINT_SEP_IF(tcon->ss_flags & SSINFO_FLAGS_TRIM_ENABLED,
+	SMBFS_PROC_PRINT_SEP_IF(tcon->sector_size_flags & SSINFO_FLAGS_TRIM_ENABLED,
 				sep, "TRIM support");
 	SMBFS_PROC_PRINT_IF(!sep, " N/A");
-	SMBFS_PROC_PRINT(" (0x%x)\n", tcon->share_flags);
+	SMBFS_PROC_PRINT(" (0x%llx)\n", tcon->share_flags);
 skip_flags:
 	SMBFS_PROC_PRINT_IF(tcon->perf_sector_size,
 			    "\t\toptimal sector size: %d (0x%x)\n",
@@ -235,56 +235,56 @@ skip_flags:
 	SMBFS_PROC_PRINT("\t\tmaximal access: 0x%x\n", tcon->maximal_access);
 }
 
-static inline const char *smbfs_tid_status_str(enum tid_status_enum status)
+static inline const char *smbfs_tcon_status_str(smbfs_tcon_status_t status)
 {
 	switch (status) {
-	case TID_NEW:
+	case SMBFS_TCON_STATUS_NEW:
 		return "new";
-	case TID_GOOD:
+	case SMBFS_TCON_STATUS_GOOD:
 		return "good";
-	case TID_EXITING:
+	case SMBFS_TCON_STATUS_EXITING:
 		return "exiting";
-	case TID_NEED_RECON:
+	case SMBFS_TCON_STATUS_NEED_RECONNECT:
 		return "need reconnect";
-	case TID_NEED_TCON:
+	case SMBFS_TCON_STATUS_NEED_TCON:
 		return "need tcon";
-	case TID_IN_TCON:
+	case SMBFS_TCON_STATUS_IN_TCON:
 		return "in tcon";
-	case TID_IN_FILES_INVALIDATE:
+	case SMBFS_TCON_STATUS_IN_FILES_INVALIDATE:
 		return "in files invalidate";
 	default:
 		return "unknown";
 	}
 }
-static inline void smbfs_dump_tcon(struct seq_file *m, struct cifs_tcon *tcon)
+static inline void smbfs_dump_tcon(struct seq_file *m, struct smbfs_tcon *tcon)
 {
-	__u32 dev_info;
-	__u32 dev_type;
-	__u32 attrs;
-	__u32 max_path_component_len;
+	unsigned int dev_info;
+	unsigned int dev_type;
+	unsigned int attrs;
+	unsigned int max_path_component_len;
 
 	if (!tcon) {
 		SMBFS_PROC_PRINT("none\n");
 		return;
 	}
 
-	dev_info = le32_to_cpu(tcon->fsDevInfo.DeviceCharacteristics);
-	dev_type = le32_to_cpu(tcon->fsDevInfo.DeviceType);
-	attrs = le32_to_cpu(tcon->fsAttrInfo.Attributes);
+	dev_info = le32_to_cpu(tcon->fs_dev_info.DeviceCharacteristics);
+	dev_type = le32_to_cpu(tcon->fs_dev_info.DeviceType);
+	attrs = le32_to_cpu(tcon->fs_attr_info.Attributes);
 	max_path_component_len =
-		le32_to_cpu(tcon->fsAttrInfo.MaxPathNameComponentLength);
+		le32_to_cpu(tcon->fs_attr_info.MaxPathNameComponentLength);
 
 	SMBFS_PROC_PRINT("\t\t%s: %s%s\n",
-			 tcon->ipc ? "IPC" : "name", tcon->treeName,
-			 tcon->need_reconnect ? " (disconnected)" : "");
+			 get_tcon_flag(tcon, IS_IPC) ? "IPC" : "name", tcon->tree_name,
+			 get_tcon_flag(tcon, NEED_RECONNECT) ? " (disconnected)" : "");
 
-	SMBFS_PROC_PRINT_IF(tcon->nativeFileSystem, "\t\ttype: %s\n",
-			    tcon->nativeFileSystem);
+	SMBFS_PROC_PRINT_IF(tcon->native_fs, "\t\ttype: %s\n",
+			    tcon->native_fs);
 	SMBFS_PROC_PRINT("\t\ttid: 0x%x\n", tcon->tid);
 	SMBFS_PROC_PRINT("\t\tstatus: %s (%d)\n",
-			 smbfs_tid_status_str(tcon->status),
+			 smbfs_tcon_status_str(tcon->status),
 			 tcon->status);
-	SMBFS_PROC_PRINT("\t\tmounts: %d\n", tcon->tc_count);
+	SMBFS_PROC_PRINT("\t\tmounts: %d\n", tcon->count);
 	SMBFS_PROC_PRINT_IF(dev_info, "\t\tdevice info: 0x%x\n", dev_info);
 	SMBFS_PROC_PRINT_IF(dev_type, "\t\tdevice type: ");
 	/* XXX: should we check/print all types? */
@@ -302,56 +302,58 @@ static inline void smbfs_dump_tcon(struct seq_file *m, struct cifs_tcon *tcon)
 			    tcon->vol_serial_number);
 	else SMBFS_PROC_PRINT("N/A\n");
 
-	SMBFS_PROC_PRINT_IF((tcon->seal) ||
-			    (tcon->ses->session_flags & SMB2_SESSION_FLAG_ENCRYPT_DATA) ||
+	SMBFS_PROC_PRINT_IF((get_tcon_flag(tcon, USE_SEAL)) ||
+			    (tcon->ses->flags & SMB2_SESSION_FLAG_ENCRYPT_DATA) ||
 			    (tcon->share_flags & SHI1005_FLAGS_ENCRYPT_DATA),
 			    "\t\tencrypted: yes\n");
-	SMBFS_PROC_PRINT_IF(tcon->nocase, "\t\tnocase: yes\n");
+	SMBFS_PROC_PRINT_IF(get_tcon_flag(tcon, NOCASE), "\t\tnocase: yes\n");
 	SMBFS_PROC_PRINT("\t\t%s extensions: %s\n",
 			 /* cosmetic only */
 			 is_smb1_server(tcon->ses->server) ? "UNIX" : "POSIX",
-			 tcon->unix_ext ? "yes" : "no");
+			 get_tcon_flag(tcon, USE_UNIX_EXT) ? "yes" : "no");
 
 	smbfs_dump_share_caps(m, tcon);
 	
-	SMBFS_PROC_PRINT_IF(tcon->use_witness, "\t\twitness: yes\n");
-	SMBFS_PROC_PRINT_IF(tcon->broken_sparse_sup, "\t\tnosparse: yes\n");
+	SMBFS_PROC_PRINT_IF(get_tcon_flag(tcon, USE_WITNESS),
+			    "\t\twitness: yes\n");
+	SMBFS_PROC_PRINT_IF(get_tcon_flag(tcon, BROKEN_SPARSE_SUPP),
+			    "\t\tnosparse: yes\n");
 	SMBFS_PROC_PRINT("\n");
 }
 
-static inline void smbfs_print_stats_smb1(struct seq_file *m, struct cifs_tcon *tcon)
+static inline void smbfs_print_stats_smb1(struct seq_file *m, struct smbfs_tcon *tcon)
 {
 	SMBFS_PROC_PRINT("Oplocks breaks: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_oplock_brks));
+		   atomic_read(&tcon->stats.smb1.oplock_brks));
 	SMBFS_PROC_PRINT("Reads:%d, bytes: %llu\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_reads),
+		   atomic_read(&tcon->stats.smb1.reads),
 		   (long long)(tcon->bytes_read));
 	SMBFS_PROC_PRINT("Writes: %d, bytes: %llu\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_writes),
+		   atomic_read(&tcon->stats.smb1.writes),
 		   (long long)(tcon->bytes_written));
 	SMBFS_PROC_PRINT("Flushes: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_flushes));
+		   atomic_read(&tcon->stats.smb1.flushes));
 	SMBFS_PROC_PRINT("Locks: %d, hardlinks: %d, symlinks: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_locks),
-		   atomic_read(&tcon->stats.cifs_stats.num_hardlinks),
-		   atomic_read(&tcon->stats.cifs_stats.num_symlinks));
+		   atomic_read(&tcon->stats.smb1.locks),
+		   atomic_read(&tcon->stats.smb1.hardlinks),
+		   atomic_read(&tcon->stats.smb1.symlinks));
 	SMBFS_PROC_PRINT("Opens: %d, closes: %d, deletes: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_opens),
-		   atomic_read(&tcon->stats.cifs_stats.num_closes),
-		   atomic_read(&tcon->stats.cifs_stats.num_deletes));
+		   atomic_read(&tcon->stats.smb1.opens),
+		   atomic_read(&tcon->stats.smb1.closes),
+		   atomic_read(&tcon->stats.smb1.deletes));
 	SMBFS_PROC_PRINT("POSIX opens: %d, POSIX mkdirs: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_posixopens),
-		   atomic_read(&tcon->stats.cifs_stats.num_posixmkdirs));
+		   atomic_read(&tcon->stats.smb1.posixopens),
+		   atomic_read(&tcon->stats.smb1.posixmkdirs));
 	SMBFS_PROC_PRINT("mkdirs: %d, rmdirs: %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_mkdirs),
-		   atomic_read(&tcon->stats.cifs_stats.num_rmdirs));
+		   atomic_read(&tcon->stats.smb1.mkdirs),
+		   atomic_read(&tcon->stats.smb1.rmdirs));
 	SMBFS_PROC_PRINT("Renames: %d, T2 renames %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_renames),
-		   atomic_read(&tcon->stats.cifs_stats.num_t2renames));
+		   atomic_read(&tcon->stats.smb1.renames),
+		   atomic_read(&tcon->stats.smb1.t2renames));
 	SMBFS_PROC_PRINT("FindFirst: %d, FNext %d, FClose %d\n",
-		   atomic_read(&tcon->stats.cifs_stats.num_ffirst),
-		   atomic_read(&tcon->stats.cifs_stats.num_fnext),
-		   atomic_read(&tcon->stats.cifs_stats.num_fclose));
+		   atomic_read(&tcon->stats.smb1.ffirst),
+		   atomic_read(&tcon->stats.smb1.fnext),
+		   atomic_read(&tcon->stats.smb1.fclose));
 }
 
 static inline void smbfs_debug_data_features(struct seq_file *m)
@@ -401,7 +403,7 @@ static inline void smbfs_debug_data_features(struct seq_file *m)
 }
 
 static inline void smbfs_debug_data_rdma(struct seq_file *m,
-					 struct TCP_Server_Info *server)
+					 struct smbfs_server_info *server)
 {
 #ifdef CONFIG_SMBFS_SMB_DIRECT
 	if (!server->rdma)
@@ -517,18 +519,18 @@ static inline void smbfs_print_ses_caps(struct seq_file *m, unsigned int caps)
 	SMBFS_PROC_PRINT(" (0x%x)\n", caps);
 }
 
-static inline const char *smbfs_ses_status_str(enum ses_status_enum status)
+static inline const char *smbfs_ses_status_str(smbfs_ses_status_t status)
 {
 	switch (status) {
-	case SES_NEW:
+	case SMBFS_SES_STATUS_NEW:
 		return "new";
-	case SES_GOOD:
+	case SMBFS_SES_STATUS_GOOD:
 		return "good";
-	case SES_EXITING:
+	case SMBFS_SES_STATUS_EXITING:
 		return "exiting";
-	case SES_NEED_RECON:
+	case SMBFS_SES_STATUS_NEED_RECONNECT:
 		return "need reconnect";
-	case SES_IN_SETUP:
+	case SMBFS_SES_STATUS_IN_SETUP:
 		return "in setup";
 	default:
 		return "unknown";
@@ -536,53 +538,53 @@ static inline const char *smbfs_ses_status_str(enum ses_status_enum status)
 }
 
 static inline void smbfs_debug_data_sessions(struct seq_file *m,
-					     struct TCP_Server_Info *server,
+					     struct smbfs_server_info *server,
 					     int srv_idx)
 {
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
-	struct cifs_server_iface *iface;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
+	struct smbfs_server_iface *iface;
 	struct list_head *tcon_entry, *ses_entry;
 	int ses_idx = 0, share_idx = 0, iface_idx = 0;
 	int sep = 0;
 
-	list_for_each(ses_entry, &server->smb_ses_list) {
-		ses = list_entry(ses_entry, struct cifs_ses, smb_ses_list);
+	list_for_each(ses_entry, &server->sessions) {
+		ses = list_entry(ses_entry, struct smbfs_ses, head);
 
 		SMBFS_PROC_PRINT("\t\t[server %d session %d]\n"
 				 "\t\tIP address: %s\n",
 				 srv_idx, ses_idx, ses->ip_addr);
 		/* dump session ID helpful for use with network trace */
-		SMBFS_PROC_PRINT("\t\tsession ID: 0x%llx\n", ses->Suid);
+		SMBFS_PROC_PRINT("\t\tsession ID: 0x%llx\n", ses->id);
 		SMBFS_PROC_PRINT("\t\tsession status: %s (%d), use count: %d\n",
-				 smbfs_ses_status_str(ses->ses_status),
-				 ses->ses_status, ses->ses_count);
+				 smbfs_ses_status_str(ses->status),
+				 ses->status, ses->count);
 
 		SMBFS_PROC_PRINT("\t\tcapabilities: ");
 		smbfs_print_ses_caps(m, ses->capabilities);
 
-		if (!ses->serverDomain || !ses->serverOS || !ses->serverNOS) {
+		if (!ses->server_domain || !ses->serverOS || !ses->serverNOS) {
 			SMBFS_PROC_PRINT_SEP(sep, "\t\tguest: %s",
-					 (ses->session_flags & SMB2_SESSION_FLAG_IS_GUEST) ?
+					 (ses->flags & SMB2_SESSION_FLAG_IS_GUEST) ?
 					 "yes" : "no");
 			SMBFS_PROC_PRINT_SEP(sep, "%sanonymous: %s",
 					 sep ? "" : "\t\t",
-					 (ses->session_flags & SMB2_SESSION_FLAG_IS_NULL) ?
+					 (ses->flags & SMB2_SESSION_FLAG_IS_NULL) ?
 					 "yes" : "no");
 			SMBFS_PROC_PRINT("\n");
 		} else {
 			SMBFS_PROC_PRINT("\t\tdomain: %s\n"
 					 "\t\tOS: %s, NOS: %s\n",
-					 ses->serverDomain, ses->serverOS,
+					 ses->server_domain, ses->serverOS,
 					 ses->serverNOS);
 		}
 
 		sep = 0;
 		SMBFS_PROC_PRINT_SEP(sep, "\t\tsecurity: %s",
 			get_security_type_str(server->ops->select_sectype(server, ses->sectype)));
-		SMBFS_PROC_PRINT_SEP_IF(ses->session_flags & SMB2_SESSION_FLAG_ENCRYPT_DATA,
+		SMBFS_PROC_PRINT_SEP_IF(ses->flags & SMB2_SESSION_FLAG_ENCRYPT_DATA,
 				        sep, "encrypted");
-		SMBFS_PROC_PRINT_SEP_IF(ses->sign, sep, "signed");
+		SMBFS_PROC_PRINT_SEP_IF(ses->signing_required, sep, "signed");
 		SMBFS_PROC_PRINT("\n");
 
 		SMBFS_PROC_PRINT("\t\tuser: %d, cred user: %d\n",
@@ -597,8 +599,8 @@ static inline void smbfs_debug_data_sessions(struct seq_file *m,
 		smbfs_dump_tcon(m, ses->tcon_ipc);
 
 		share_idx = 0;
-		list_for_each(tcon_entry, &ses->tcon_list) {
-			tcon = list_entry(tcon_entry, struct cifs_tcon, tcon_list);
+		list_for_each(tcon_entry, &ses->tcons) {
+			tcon = list_entry(tcon_entry, struct smbfs_tcon, head);
 			SMBFS_PROC_PRINT("\t\t[server %d session %d share %d]\n",
 					 srv_idx, ses_idx, share_idx);
 			smbfs_dump_tcon(m, tcon);
@@ -608,7 +610,7 @@ static inline void smbfs_debug_data_sessions(struct seq_file *m,
 		iface_idx = 0;
 		spin_lock(&ses->iface_lock);
 		SMBFS_PROC_PRINT_IF(ses->iface_count, "\tserver interfaces:\n");
-		list_for_each_entry(iface, &ses->iface_list, iface_head) {
+		list_for_each_entry(iface, &ses->ifaces, head) {
 			SMBFS_PROC_PRINT("\t\t[server %d session %d iface %d]%s\n",
 					 srv_idx, ses_idx, iface_idx,
 					 !iface->is_active ? " (for cleanup)" : "");
@@ -622,25 +624,25 @@ static inline void smbfs_debug_data_sessions(struct seq_file *m,
 }
 
 static inline void smbfs_debug_data_mids(struct seq_file *m,
-					 struct TCP_Server_Info *server,
+					 struct smbfs_server_info *server,
 					 int srv_idx)
 {
-	struct mid_q_entry *mid_entry;
+	struct smbfs_mid_entry *mid_entry;
 
-	spin_lock(&GlobalMid_Lock);
-	if (list_empty(&server->pending_mid_q)) {
-		spin_unlock(&GlobalMid_Lock);
+	spin_lock(&g_mid_lock);
+	if (list_empty(&server->pending_mids)) {
+		spin_unlock(&g_mid_lock);
 		SMBFS_PROC_PRINT(" none\n");
 		return;
 	}
 
-	list_for_each_entry(mid_entry, &server->pending_mid_q, qhead)
+	list_for_each_entry(mid_entry, &server->pending_mids, head)
 		SMBFS_PROC_PRINT("\t\tserver: %d, mid: %llu, state: %d, "
 				 "cmd: %d, pid: %d, cbdata: 0x%p\n",
-				 srv_idx, mid_entry->mid, mid_entry->mid_state,
-				 le16_to_cpu(mid_entry->command),
+				 srv_idx, mid_entry->mid, mid_entry->state,
+				 le16_to_cpu(mid_entry->cmd),
 				 mid_entry->pid, mid_entry->callback_data);
-	spin_unlock(&GlobalMid_Lock);
+	spin_unlock(&g_mid_lock);
 	SMBFS_PROC_PRINT("\n");
 }
 
@@ -651,22 +653,22 @@ static inline void smbfs_debug_data_mids(struct seq_file *m,
  */
 static inline void smbfs_handle_security_flags(unsigned int *flags)
 {
-	unsigned int signflags = *flags & CIFSSEC_MUST_SIGN;
+	unsigned int signflags = *flags & SMBFS_SEC_MUST_SIGN;
 
-	if ((*flags & CIFSSEC_MUST_KRB5) == CIFSSEC_MUST_KRB5)
-		*flags = CIFSSEC_MUST_KRB5;
-	else if ((*flags & CIFSSEC_MUST_NTLMSSP) == CIFSSEC_MUST_NTLMSSP)
-		*flags = CIFSSEC_MUST_NTLMSSP;
-	else if ((*flags & CIFSSEC_MUST_NTLMV2) == CIFSSEC_MUST_NTLMV2)
-		*flags = CIFSSEC_MUST_NTLMV2;
+	if ((*flags & SMBFS_SEC_MUST_KRB5) == SMBFS_SEC_MUST_KRB5)
+		*flags = SMBFS_SEC_MUST_KRB5;
+	else if ((*flags & SMBFS_SEC_MUST_NTLMSSP) == SMBFS_SEC_MUST_NTLMSSP)
+		*flags = SMBFS_SEC_MUST_NTLMSSP;
+	else if ((*flags & SMBFS_SEC_MUST_NTLMV2) == SMBFS_SEC_MUST_NTLMV2)
+		*flags = SMBFS_SEC_MUST_NTLMV2;
 
 	*flags |= signflags;
 
-	if (*flags & CIFSSEC_MUST_SIGN) {
+	if (*flags & SMBFS_SEC_MUST_SIGN) {
 		/* requiring signing implies signing is allowed */
-		*flags |= CIFSSEC_MAY_SIGN;
+		*flags |= SMBFS_SEC_MAY_SIGN;
 		smbfs_dbg("packet signing now required\n");
-	} else if (!(*flags & CIFSSEC_MAY_SIGN)) {
+	} else if (!(*flags & SMBFS_SEC_MAY_SIGN)) {
 		smbfs_dbg("packet signing disabled\n");
 	}
 

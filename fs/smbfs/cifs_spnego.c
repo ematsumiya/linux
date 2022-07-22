@@ -17,7 +17,7 @@
 #include "cifs_spnego.h"
 #include "debug.h"
 #include "proc.h"
-#include "cifsproto.h"
+#include "defs.h"
 
 
 static const struct cred *spnego_cred;
@@ -86,8 +86,8 @@ struct key_type cifs_spnego_key_type = {
 
 /* get a key struct with a SPNEGO security blob, suitable for session setup */
 struct key *
-cifs_get_spnego_key(struct cifs_ses *sesInfo,
-		    struct TCP_Server_Info *server)
+cifs_get_spnego_key(struct smbfs_ses *sesInfo,
+		    struct smbfs_server_info *server)
 {
 	struct sockaddr_in *sa = (struct sockaddr_in *) &server->dstaddr;
 	struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *) &server->dstaddr;

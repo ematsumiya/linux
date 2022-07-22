@@ -5,7 +5,7 @@
 ccflags-y += -I$(src) # needed for trace events
 
 obj-$(CONFIG_SMBFS) += smbfs.o
-smbfs-y := trace.o core.o proc.o cifssmb.o connect.o dir.o file.o \
+smbfs-y := trace.o core.o proc.o ses.o tcon.o cifssmb.o connect.o dir.o file.o \
 	  inode.o link.o misc.o netmisc.o smbencrypt.o transport.o \
 	  cifs_unicode.o nterr.o cifsencrypt.o \
 	  readdir.o ioctl.o sess.o export.o unc.o winucase.o \

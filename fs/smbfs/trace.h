@@ -898,7 +898,7 @@ DEFINE_SMB3_LEASE_ERR_EVENT(lease_err);
 
 DECLARE_EVENT_CLASS(smb3_connect_class,
 	TP_PROTO(char *hostname,
-		__u64 conn_id,
+		unsigned long conn_id,
 		const struct __kernel_sockaddr_storage *dst_addr),
 	TP_ARGS(hostname, conn_id, dst_addr),
 	TP_STRUCT__entry(
@@ -923,14 +923,14 @@ DECLARE_EVENT_CLASS(smb3_connect_class,
 #define DEFINE_SMB3_CONNECT_EVENT(name)        \
 DEFINE_EVENT(smb3_connect_class, smb3_##name,  \
 	TP_PROTO(char *hostname,		\
-		__u64 conn_id,			\
+		unsigned long conn_id,			\
 		const struct __kernel_sockaddr_storage *addr),	\
 	TP_ARGS(hostname, conn_id, addr))
 
 DEFINE_SMB3_CONNECT_EVENT(connect_done);
 
 DECLARE_EVENT_CLASS(smb3_connect_err_class,
-	TP_PROTO(char *hostname, __u64 conn_id,
+	TP_PROTO(char *hostname, unsigned long conn_id,
 		const struct __kernel_sockaddr_storage *dst_addr, int rc),
 	TP_ARGS(hostname, conn_id, dst_addr, rc),
 	TP_STRUCT__entry(
@@ -958,7 +958,7 @@ DECLARE_EVENT_CLASS(smb3_connect_err_class,
 #define DEFINE_SMB3_CONNECT_ERR_EVENT(name)        \
 DEFINE_EVENT(smb3_connect_err_class, smb3_##name,  \
 	TP_PROTO(char *hostname,		\
-		__u64 conn_id,			\
+		unsigned long conn_id,			\
 		const struct __kernel_sockaddr_storage *addr,	\
 		int rc),			\
 	TP_ARGS(hostname, conn_id, addr, rc))
@@ -967,7 +967,7 @@ DEFINE_SMB3_CONNECT_ERR_EVENT(connect_err);
 
 DECLARE_EVENT_CLASS(smb3_reconnect_class,
 	TP_PROTO(__u64	currmid,
-		__u64 conn_id,
+		unsigned long conn_id,
 		char *hostname),
 	TP_ARGS(currmid, conn_id, hostname),
 	TP_STRUCT__entry(
@@ -989,7 +989,7 @@ DECLARE_EVENT_CLASS(smb3_reconnect_class,
 #define DEFINE_SMB3_RECONNECT_EVENT(name)        \
 DEFINE_EVENT(smb3_reconnect_class, smb3_##name,  \
 	TP_PROTO(__u64	currmid,		\
-		__u64 conn_id,			\
+		unsigned long conn_id,			\
 		char *hostname),				\
 	TP_ARGS(currmid, conn_id, hostname))
 
@@ -998,7 +998,7 @@ DEFINE_SMB3_RECONNECT_EVENT(partial_send_reconnect);
 
 DECLARE_EVENT_CLASS(smb3_credit_class,
 	TP_PROTO(__u64	currmid,
-		__u64 conn_id,
+		unsigned long conn_id,
 		char *hostname,
 		int credits,
 		int credits_to_add,
@@ -1033,7 +1033,7 @@ DECLARE_EVENT_CLASS(smb3_credit_class,
 #define DEFINE_SMB3_CREDIT_EVENT(name)        \
 DEFINE_EVENT(smb3_credit_class, smb3_##name,  \
 	TP_PROTO(__u64	currmid,		\
-		__u64 conn_id,			\
+		unsigned long conn_id,			\
 		char *hostname,			\
 		int  credits,			\
 		int  credits_to_add,	\

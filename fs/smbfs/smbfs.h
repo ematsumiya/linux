@@ -10,6 +10,11 @@
 
 #include <linux/hash.h>
 
+#include "trace.h"
+#include "debug.h"
+#include "defs.h"
+#include "mid.h"
+
 #define ROOT_I 2
 
 /*
@@ -17,13 +22,12 @@
  * so that it will fit. We use hash_64 to convert the value to 31 bits, and
  * then add 1, to ensure that we don't end up with a 0 as the value.
  */
-static inline ino_t
-cifs_uniqueid_to_ino_t(u64 fileid)
+static inline ino_t smbfs_id_to_ino_t(unsigned long id)
 {
 	if ((sizeof(ino_t)) < (sizeof(u64)))
-		return (ino_t)hash_64(fileid, (sizeof(ino_t) * 8) - 1) + 1;
+		return (ino_t)hash_64(id, (sizeof(ino_t) * 8) - 1) + 1;
 
-	return (ino_t)fileid;
+	return (ino_t)id;
 
 }
 
@@ -75,8 +79,8 @@ extern int cifs_getattr(struct user_namespace *, const struct path *,
 			struct kstat *, u32, unsigned int);
 extern int cifs_setattr(struct user_namespace *, struct dentry *,
 			struct iattr *);
-extern int cifs_fiemap(struct inode *, struct fiemap_extent_info *, u64 start,
-		       u64 len);
+extern int cifs_fiemap(struct inode *, struct fiemap_extent_info *, unsigned long start,
+		       unsigned long len);
 
 extern const struct inode_operations cifs_file_inode_ops;
 extern const struct inode_operations cifs_symlink_inode_ops;
@@ -151,7 +155,48 @@ extern struct dentry *cifs_smb3_do_mount(struct file_system_type *fs_type,
 extern const struct export_operations cifs_export_ops;
 #endif /* CONFIG_SMBFS_NFSD_EXPORT */
 
-/* when changing internal version - update following two lines at same time */
-#define SMBFS_PRODUCT_BUILD 37
-#define SMBFS_VERSION   "2.37"
+inline unsigned int _get_xid(void)
+{
+	unsigned int xid;
+
+	spin_lock(&g_mid_lock);
+	g_total_active_xid++;
+
+	/* keep high water mark for number of simultaneous ops in filesystem */
+	if (g_total_active_xid > g_max_active_xid)
+		g_max_active_xid = g_total_active_xid;
+	if (g_total_active_xid > 65000)
+		smbfs_dbg("warning: more than 65000 requests active\n");
+	xid = g_current_xid++;
+	spin_unlock(&g_mid_lock);
+	return xid;
+}
+
+inline void _free_xid(unsigned int xid)
+{
+	spin_lock(&g_mid_lock);
+	g_total_active_xid--;
+	spin_unlock(&g_mid_lock);
+}
+
+#define get_xid()							\
+({									\
+	unsigned int __xid = _get_xid();				\
+	smbfs_dbg("VFS: in %s as Xid: %u with uid: %d\n",		\
+		 __func__, __xid,					\
+		 from_kuid(&init_user_ns, current_fsuid()));		\
+	trace_smb3_enter(__xid, __func__);				\
+	__xid;								\
+})
+
+#define free_xid(curr_xid)						\
+do {									\
+	_free_xid(curr_xid);						\
+	smbfs_dbg("VFS: leaving %s (xid = %u) rc = %d\n",		\
+		 __func__, curr_xid, (int)rc);				\
+	if (rc)								\
+		trace_smb3_exit_err(curr_xid, __func__, (int)rc);	\
+	else								\
+		trace_smb3_exit_done(curr_xid, __func__);		\
+} while (0)
 #endif /* _SMBFS_H */

@@ -11,7 +11,7 @@
 
 #include "cifs_swn.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "fscache.h"
 #include "debug.h"
 #include "netlink.h"
@@ -29,10 +29,10 @@ struct cifs_swn_reg {
 	bool share_name_notify;
 	bool ip_notify;
 
-	struct cifs_tcon *tcon;
+	struct smbfs_tcon *tcon;
 };
 
-static int cifs_swn_auth_info_krb(struct cifs_tcon *tcon, struct sk_buff *skb)
+static int cifs_swn_auth_info_krb(struct smbfs_tcon *tcon, struct sk_buff *skb)
 {
 	int ret;
 
@@ -43,7 +43,7 @@ static int cifs_swn_auth_info_krb(struct cifs_tcon *tcon, struct sk_buff *skb)
 	return 0;
 }
 
-static int cifs_swn_auth_info_ntlm(struct cifs_tcon *tcon, struct sk_buff *skb)
+static int cifs_swn_auth_info_ntlm(struct smbfs_tcon *tcon, struct sk_buff *skb)
 {
 	int ret;
 
@@ -59,8 +59,8 @@ static int cifs_swn_auth_info_ntlm(struct cifs_tcon *tcon, struct sk_buff *skb)
 			return ret;
 	}
 
-	if (tcon->ses->domainName != NULL) {
-		ret = nla_put_string(skb, CIFS_GENL_ATTR_SWN_DOMAIN_NAME, tcon->ses->domainName);
+	if (tcon->ses->domain_name != NULL) {
+		ret = nla_put_string(skb, CIFS_GENL_ATTR_SWN_DOMAIN_NAME, tcon->ses->domain_name);
 		if (ret < 0)
 			return ret;
 	}
@@ -77,7 +77,7 @@ static int cifs_swn_send_register_message(struct cifs_swn_reg *swnreg)
 {
 	struct sk_buff *skb;
 	struct genlmsghdr *hdr;
-	enum securityEnum authtype;
+	smbfs_security_t authtype;
 	struct sockaddr_storage *addr;
 	int ret;
 
@@ -140,15 +140,15 @@ static int cifs_swn_send_register_message(struct cifs_swn_reg *swnreg)
 
 	authtype = cifs_select_sectype(swnreg->tcon->ses->server, swnreg->tcon->ses->sectype);
 	switch (authtype) {
-	case Kerberos:
+	case SMBFS_SECURITY_KERBEROS:
 		ret = cifs_swn_auth_info_krb(swnreg->tcon, skb);
 		if (ret < 0) {
 			smbfs_log("%s: Failed to get kerberos auth info: %d\n", ret);
 			goto nlmsg_fail;
 		}
 		break;
-	case NTLMv2:
-	case RawNTLMSSP:
+	case SMBFS_SECURITY_NTLMv2:
+	case SMBFS_SECURITY_RAW_NTLMSSP:
 		ret = cifs_swn_auth_info_ntlm(swnreg->tcon, skb);
 		if (ret < 0) {
 			smbfs_log("%s: Failed to get NTLM auth info: %d\n", ret);
@@ -249,30 +249,30 @@ nlmsg_fail:
  * Calls to this function must be protected by cifs_swnreg_idr_mutex.
  * TODO Try to avoid memory allocations
  */
-static struct cifs_swn_reg *cifs_find_swn_reg(struct cifs_tcon *tcon)
+static struct cifs_swn_reg *cifs_find_swn_reg(struct smbfs_tcon *tcon)
 {
 	struct cifs_swn_reg *swnreg;
 	int id;
 	const char *share_name;
 	const char *net_name;
 
-	net_name = extract_hostname(tcon->treeName);
+	net_name = extract_hostname(tcon->tree_name);
 	if (IS_ERR(net_name)) {
 		int ret;
 
 		ret = PTR_ERR(net_name);
 		smbfs_log("%s: failed to extract host name from target '%s': %d\n",
-				__func__, tcon->treeName, ret);
+				__func__, tcon->tree_name, ret);
 		return ERR_PTR(-EINVAL);
 	}
 
-	share_name = extract_sharename(tcon->treeName);
+	share_name = extract_sharename(tcon->tree_name);
 	if (IS_ERR(share_name)) {
 		int ret;
 
 		ret = PTR_ERR(share_name);
 		smbfs_log("%s: failed to extract share name from target '%s': %d\n",
-				__func__, tcon->treeName, ret);
+				__func__, tcon->tree_name, ret);
 		kfree(net_name);
 		return ERR_PTR(-EINVAL);
 	}
@@ -302,7 +302,7 @@ static struct cifs_swn_reg *cifs_find_swn_reg(struct cifs_tcon *tcon)
  * Get a registration for the tcon's server and share name, allocating a new one if it does not
  * exists
  */
-static struct cifs_swn_reg *cifs_get_swn_reg(struct cifs_tcon *tcon)
+static struct cifs_swn_reg *cifs_get_swn_reg(struct smbfs_tcon *tcon)
 {
 	struct cifs_swn_reg *reg = NULL;
 	int ret;
@@ -335,14 +335,14 @@ static struct cifs_swn_reg *cifs_get_swn_reg(struct cifs_tcon *tcon)
 		goto fail;
 	}
 
-	reg->net_name = extract_hostname(tcon->treeName);
+	reg->net_name = extract_hostname(tcon->tree_name);
 	if (IS_ERR(reg->net_name)) {
 		ret = PTR_ERR(reg->net_name);
 		smbfs_log("%s: failed to extract host name from target: %d\n", ret);
 		goto fail_idr;
 	}
 
-	reg->share_name = extract_sharename(tcon->treeName);
+	reg->share_name = extract_sharename(tcon->tree_name);
 	if (IS_ERR(reg->share_name)) {
 		ret = PTR_ERR(reg->share_name);
 		smbfs_log("%s: failed to extract share name from target: %d\n", ret);
@@ -433,7 +433,7 @@ static int cifs_swn_store_swn_addr(const struct sockaddr_storage *new,
 				   const struct sockaddr_storage *old,
 				   struct sockaddr_storage *dst)
 {
-	__be16 port = cpu_to_be16(CIFS_PORT);
+	__be16 port = cpu_to_be16(SMB_PORT);
 
 	if (old->ss_family == AF_INET) {
 		struct sockaddr_in *ipv4 = (struct sockaddr_in *)old;
@@ -460,12 +460,12 @@ static int cifs_swn_store_swn_addr(const struct sockaddr_storage *new,
 	return 0;
 }
 
-static int cifs_swn_reconnect(struct cifs_tcon *tcon, struct sockaddr_storage *addr)
+static int cifs_swn_reconnect(struct smbfs_tcon *tcon, struct sockaddr_storage *addr)
 {
 	int ret = 0;
 
 	/* Store the reconnect address */
-	cifs_server_lock(tcon->ses->server);
+	server_lock(tcon->ses->server);
 	if (cifs_sockaddr_equal(&tcon->ses->server->dstaddr, addr))
 		goto unlock;
 
@@ -501,7 +501,7 @@ static int cifs_swn_reconnect(struct cifs_tcon *tcon, struct sockaddr_storage *a
 	cifs_signal_cifsd_for_reconnect(tcon->ses->server, false);
 
 unlock:
-	cifs_server_unlock(tcon->ses->server);
+	server_unlock(tcon->ses->server);
 
 	return ret;
 }
@@ -586,7 +586,7 @@ int cifs_swn_notify(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
-int cifs_swn_register(struct cifs_tcon *tcon)
+int cifs_swn_register(struct smbfs_tcon *tcon)
 {
 	struct cifs_swn_reg *swnreg;
 	int ret;
@@ -604,7 +604,7 @@ int cifs_swn_register(struct cifs_tcon *tcon)
 	return 0;
 }
 
-int cifs_swn_unregister(struct cifs_tcon *tcon)
+int cifs_swn_unregister(struct smbfs_tcon *tcon)
 {
 	struct cifs_swn_reg *swnreg;
 

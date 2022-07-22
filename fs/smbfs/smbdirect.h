@@ -260,16 +260,16 @@ struct smbd_response {
 
 /* Create a SMBDirect session */
 struct smbd_connection *smbd_get_connection(
-	struct TCP_Server_Info *server, struct sockaddr *dstaddr);
+	struct smbfs_server_info *server, struct sockaddr *dstaddr);
 
 /* Reconnect SMBDirect session */
-int smbd_reconnect(struct TCP_Server_Info *server);
+int smbd_reconnect(struct smbfs_server_info *server);
 /* Destroy SMBDirect session */
-void smbd_destroy(struct TCP_Server_Info *server);
+void smbd_destroy(struct smbfs_server_info *server);
 
 /* Interface for carrying upper layer I/O through send/recv */
 int smbd_recv(struct smbd_connection *info, struct msghdr *msg);
-int smbd_send(struct TCP_Server_Info *server,
+int smbd_send(struct smbfs_server_info *server,
 	int num_rqst, struct smb_rqst *rqst);
 
 enum mr_state {
@@ -306,11 +306,11 @@ int smbd_deregister_mr(struct smbd_mr *mr);
 #define cifs_rdma_enabled(server)	0
 struct smbd_connection {};
 static inline void *smbd_get_connection(
-	struct TCP_Server_Info *server, struct sockaddr *dstaddr) {return NULL;}
-static inline int smbd_reconnect(struct TCP_Server_Info *server) {return -1; }
-static inline void smbd_destroy(struct TCP_Server_Info *server) {}
+	struct smbfs_server_info *server, struct sockaddr *dstaddr) {return NULL;}
+static inline int smbd_reconnect(struct smbfs_server_info *server) {return -1; }
+static inline void smbd_destroy(struct smbfs_server_info *server) {}
 static inline int smbd_recv(struct smbd_connection *info, struct msghdr *msg) {return -1; }
-static inline int smbd_send(struct TCP_Server_Info *server, int num_rqst, struct smb_rqst *rqst) {return -1; }
+static inline int smbd_send(struct smbfs_server_info *server, int num_rqst, struct smb_rqst *rqst) {return -1; }
 #endif
 
 #endif

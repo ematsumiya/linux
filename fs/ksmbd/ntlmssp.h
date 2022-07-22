@@ -13,16 +13,16 @@
 #define TGT_Name        "KSMBD"
 
 /*
- * Size of the crypto key returned on the negotiate SMB in bytes
+ * Size of the crypto key returned on the negotiate SMB (in bytes)
  */
-#define CIFS_CRYPTO_KEY_SIZE	(8)
-#define CIFS_KEY_SIZE	(40)
+#define SMBFS_CRYPTO_KEY_SIZE	(8)
+#define SMBFS_KEY_SIZE		(40)
 
 /*
- * Size of encrypted user password in bytes
+ * Size of encrypted user password (in bytes)
  */
-#define CIFS_ENCPWD_SIZE	(16)
-#define CIFS_CPHTXT_SIZE	(16)
+#define SMBFS_ENCRYPTED_PW_SIZE	(16)
+#define SMBFS_CIPHER_TXT_SIZE	(16)
 
 /* Message Types */
 #define NtLmNegotiate     cpu_to_le32(1)
@@ -144,7 +144,7 @@ struct authenticate_message {
 } __packed;
 
 struct ntlmv2_resp {
-	char ntlmv2_hash[CIFS_ENCPWD_SIZE];
+	char ntlmv2_hash[SMBFS_ENCRYPTED_PW_SIZE];
 	__le32 blob_signature;
 	__u32  reserved;
 	__le64  time;
@@ -162,8 +162,8 @@ struct ntlmssp_auth {
 	/* sent by server in type 2 ntlmssp exchange */
 	__u32		conn_flags;
 	/* sent to server */
-	unsigned char	ciphertext[CIFS_CPHTXT_SIZE];
+	unsigned char	ciphertext[SMBFS_CIPHER_TXT_SIZE];
 	/* used by ntlmssp */
-	char		cryptkey[CIFS_CRYPTO_KEY_SIZE];
+	char		cryptkey[SMBFS_CRYPTO_KEY_SIZE];
 };
 #endif /* __KSMBD_NTLMSSP_H */

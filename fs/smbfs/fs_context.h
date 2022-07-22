@@ -9,9 +9,11 @@
 #ifndef _FS_CONTEXT_H
 #define _FS_CONTEXT_H
 
-#include "defs.h"
 #include <linux/parser.h>
 #include <linux/fs_parser.h>
+
+#include "server_info.h"
+#include "defs.h"
 
 /* Log errors in fs_context (new mount api) but also in dmesg (old style) */
 #define cifs_errorf(fc, fmt, ...)			\
@@ -171,10 +173,10 @@ struct smb3_fs_context {
 	char *server_hostname;
 	char *UNC;
 	char *nodename;
-	char workstation_name[CIFS_MAX_WORKSTATION_LEN];
+	char client_name[SMBFS_MAX_CLIENT_NAME_LEN];
 	char *iocharset;  /* local code page for mapping to and from Unicode */
-	char source_rfc1001_name[RFC1001_NAME_LEN_WITH_NULL]; /* clnt nb name */
-	char target_rfc1001_name[RFC1001_NAME_LEN_WITH_NULL]; /* srvr nb name */
+	char source_rfc1001_name[RFC1001_NAME_LEN_NUL]; /* clnt nb name */
+	char target_rfc1001_name[RFC1001_NAME_LEN_NUL]; /* server nb name */
 	kuid_t cred_uid;
 	kuid_t linux_uid;
 	kgid_t linux_gid;
@@ -182,7 +184,7 @@ struct smb3_fs_context {
 	kgid_t backupgid;
 	umode_t file_mode;
 	umode_t dir_mode;
-	enum securityEnum sectype; /* sectype requested via mnt opts */
+	smbfs_security_t sectype; /* sectype requested via mnt opts */
 	bool sign; /* was signing requested via mnt opts? */
 	bool ignore_signature:1;
 	bool retry:1;
@@ -214,7 +216,7 @@ struct smb3_fs_context {
 	bool nullauth:1;   /* attempt to authenticate with null user */
 	bool nocase:1;     /* request case insensitive filenames */
 	bool nobrl:1;      /* disable sending byte range locks to srv */
-	bool nohandlecache:1; /* disable caching dir handles if srvr probs */
+	bool nohandlecache:1; /* disable caching dir handles if server probs */
 	bool mand_lock:1;  /* send mandatory not posix byte range lock reqs */
 	bool seal:1;       /* request transport encryption on share */
 	bool nodfs:1;      /* Do not request DFS, even if available */
@@ -247,15 +249,15 @@ struct smb3_fs_context {
 	/* attribute cache timemout for files and directories in jiffies */
 	unsigned long acregmax;
 	unsigned long acdirmax;
-	struct smb_version_operations *ops;
+	struct smbfs_operations *ops;
 	struct smb_version_values *vals;
 	char *prepath;
 	struct sockaddr_storage dstaddr; /* destination address */
 	struct sockaddr_storage srcaddr; /* allow binding to a local IP */
 	struct nls_table *local_nls; /* This is a copy of the pointer in cifs_sb */
 	unsigned int echo_interval; /* echo interval in secs */
-	__u64 snapshot_time; /* needed for timewarp tokens */
-	__u32 handle_timeout; /* persistent and durable handle timeout in ms */
+	unsigned long snapshot_time; /* needed for timewarp tokens */
+	unsigned int handle_timeout; /* persistent and durable handle timeout in ms */
 	unsigned int max_credits; /* smb3 max_credits 10 < credits < 60000 */
 	unsigned int max_channels;
 	__u16 compression; /* compression algorithm 0xFFFF default 0=disabled */

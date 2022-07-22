@@ -17,7 +17,7 @@
 
 struct nt_err_code_struct {
 	char *nt_errstr;
-	__u32 nt_errcode;
+	unsigned int nt_errcode;
 };
 
 extern const struct nt_err_code_struct nt_errs[];

@@ -9,10 +9,10 @@
 #include "defs.h"
 #include "debug.h"
 #include "cifs_fs_sb.h"
-#include "cifsproto.h"
+#include "defs.h"
 
 static void cifs_fscache_fill_volume_coherency(
-	struct cifs_tcon *tcon,
+	struct smbfs_tcon *tcon,
 	struct cifs_fscache_volume_coherency_data *cd)
 {
 	memset(cd, 0, sizeof(*cd));
@@ -21,10 +21,10 @@ static void cifs_fscache_fill_volume_coherency(
 	cd->vol_serial_number	= cpu_to_le32(tcon->vol_serial_number);
 }
 
-int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon)
+int cifs_fscache_get_super_cookie(struct smbfs_tcon *tcon)
 {
 	struct cifs_fscache_volume_coherency_data cd;
-	struct TCP_Server_Info *server = tcon->ses->server;
+	struct smbfs_server_info *server = tcon->ses->server;
 	struct fscache_volume *vcookie;
 	const struct sockaddr *sa = (struct sockaddr *)&server->dstaddr;
 	size_t slen, i;
@@ -44,7 +44,7 @@ int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon)
 
 	memset(&key, 0, sizeof(key));
 
-	sharename = extract_sharename(tcon->treeName);
+	sharename = extract_sharename(tcon->tree_name);
 	if (IS_ERR(sharename)) {
 		smbfs_dbg("couldn't extract sharename\n");
 		return -EINVAL;
@@ -82,7 +82,7 @@ out:
 	return ret;
 }
 
-void cifs_fscache_release_super_cookie(struct cifs_tcon *tcon)
+void cifs_fscache_release_super_cookie(struct smbfs_tcon *tcon)
 {
 	struct cifs_fscache_volume_coherency_data cd;
 
@@ -96,17 +96,17 @@ void cifs_fscache_release_super_cookie(struct cifs_tcon *tcon)
 void cifs_fscache_get_inode_cookie(struct inode *inode)
 {
 	struct cifs_fscache_inode_coherency_data cd;
-	struct cifsInodeInfo *cifsi = CIFS_I(inode);
+	struct smbfs_inode_info *smb_i = SMBFS_I(inode);
 	struct cifs_sb_info *cifs_sb = CIFS_SB(inode->i_sb);
-	struct cifs_tcon *tcon = cifs_sb_master_tcon(cifs_sb);
+	struct smbfs_tcon *tcon = smbfs_sb_master_tcon(cifs_sb);
 
-	cifs_fscache_fill_coherency(&cifsi->netfs.inode, &cd);
+	cifs_fscache_fill_coherency(&smb_inetfs.inode, &cd);
 
-	cifsi->netfs.cache =
+	smb_inetfs.cache =
 		fscache_acquire_cookie(tcon->fscache, 0,
-				       &cifsi->uniqueid, sizeof(cifsi->uniqueid),
+				       &smb_i->id, sizeof(smb_i->id),
 				       &cd, sizeof(cd),
-				       i_size_read(&cifsi->netfs.inode));
+				       i_size_read(&smb_inetfs.inode));
 }
 
 void cifs_fscache_unuse_inode_cookie(struct inode *inode, bool update)
@@ -124,13 +124,13 @@ void cifs_fscache_unuse_inode_cookie(struct inode *inode, bool update)
 
 void cifs_fscache_release_inode_cookie(struct inode *inode)
 {
-	struct cifsInodeInfo *cifsi = CIFS_I(inode);
+	struct smbfs_inode_info *smb_i = SMBFS_I(inode);
 	struct fscache_cookie *cookie = cifs_inode_cookie(inode);
 
 	if (cookie) {
 		smbfs_dbg("(0x%p)\n", cookie);
 		fscache_relinquish_cookie(cookie, false);
-		cifsi->netfs.cache = NULL;
+		smb_inetfs.cache = NULL;
 	}
 }
 

@@ -37,8 +37,8 @@ struct cifs_fscache_inode_coherency_data {
 /*
  * fscache.c
  */
-extern int cifs_fscache_get_super_cookie(struct cifs_tcon *);
-extern void cifs_fscache_release_super_cookie(struct cifs_tcon *);
+extern int cifs_fscache_get_super_cookie(struct smbfs_tcon *);
+extern void cifs_fscache_release_super_cookie(struct smbfs_tcon *);
 
 extern void cifs_fscache_get_inode_cookie(struct inode *inode);
 extern void cifs_fscache_release_inode_cookie(struct inode *);
@@ -48,19 +48,19 @@ static inline
 void cifs_fscache_fill_coherency(struct inode *inode,
 				 struct cifs_fscache_inode_coherency_data *cd)
 {
-	struct cifsInodeInfo *cifsi = CIFS_I(inode);
+	struct smbfs_inode_info *smb_i = SMBFS_I(inode);
 
 	memset(cd, 0, sizeof(*cd));
-	cd->last_write_time_sec   = cpu_to_le64(cifsi->netfs.inode.i_mtime.tv_sec);
-	cd->last_write_time_nsec  = cpu_to_le32(cifsi->netfs.inode.i_mtime.tv_nsec);
-	cd->last_change_time_sec  = cpu_to_le64(cifsi->netfs.inode.i_ctime.tv_sec);
-	cd->last_change_time_nsec = cpu_to_le32(cifsi->netfs.inode.i_ctime.tv_nsec);
+	cd->last_write_time_sec = cpu_to_le64(smb_i->netfs.inode.i_mtime.tv_sec);
+	cd->last_write_time_nsec = cpu_to_le32(smb_i->netfs.inode.i_mtime.tv_nsec);
+	cd->last_change_time_sec = cpu_to_le64(smb_i->netfs.inode.i_ctime.tv_sec);
+	cd->last_change_time_nsec = cpu_to_le32(smb_i->netfs.inode.i_ctime.tv_nsec);
 }
 
 
 static inline struct fscache_cookie *cifs_inode_cookie(struct inode *inode)
 {
-	return netfs_i_cookie(&CIFS_I(inode)->netfs);
+	return netfs_i_cookie(&SMBFS_I(inode)->netfs);
 }
 
 static inline void cifs_invalidate_cache(struct inode *inode, unsigned int flags)
@@ -125,8 +125,8 @@ void cifs_fscache_fill_coherency(struct inode *inode,
 {
 }
 
-static inline int cifs_fscache_get_super_cookie(struct cifs_tcon *tcon) { return 0; }
-static inline void cifs_fscache_release_super_cookie(struct cifs_tcon *tcon) {}
+static inline int cifs_fscache_get_super_cookie(struct smbfs_tcon *tcon) { return 0; }
+static inline void cifs_fscache_release_super_cookie(struct smbfs_tcon *tcon) {}
 
 static inline void cifs_fscache_get_inode_cookie(struct inode *inode) {}
 static inline void cifs_fscache_release_inode_cookie(struct inode *inode) {}

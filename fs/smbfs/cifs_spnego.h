@@ -28,8 +28,8 @@ struct cifs_spnego_msg {
 
 #ifdef __KERNEL__
 extern struct key_type cifs_spnego_key_type;
-extern struct key *cifs_get_spnego_key(struct cifs_ses *sesInfo,
-				       struct TCP_Server_Info *server);
+extern struct key *cifs_get_spnego_key(struct smbfs_ses *sesInfo,
+				       struct smbfs_server_info *server);
 #endif /* KERNEL */
 
 #endif /* _CIFS_SPNEGO_H */

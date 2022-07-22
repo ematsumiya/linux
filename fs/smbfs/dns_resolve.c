@@ -14,7 +14,7 @@
 #include <linux/dns_resolver.h>
 #include "dns_resolve.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "debug.h"
 
 /**

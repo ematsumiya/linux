@@ -33,7 +33,7 @@ struct rfc1002_session_packet {
 			__u8 scope2; /* null */
 		} __attribute__((packed)) session_req;
 		struct {
-			__u32 retarget_ip_addr;
+			unsigned int retarget_ip_addr;
 			__u16 port;
 		} __attribute__((packed)) retarget_resp;
 		__u8 neg_ses_resp_error_code;

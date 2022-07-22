@@ -23,7 +23,7 @@
 #include "cifspdu.h"
 #include "defs.h"
 #include "debug.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "../smbfs_common/md4.h"
 
 #ifndef false

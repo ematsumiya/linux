@@ -13,7 +13,7 @@
 #include <linux/pagemap.h>
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "debug.h"
 #include "smbfs.h"
 #include "cifs_ioctl.h"
@@ -26,7 +26,7 @@ static long cifs_ioctl_query_info(unsigned int xid, struct file *filep,
 {
 	struct inode *inode = file_inode(filep);
 	struct cifs_sb_info *cifs_sb = CIFS_SB(inode->i_sb);
-	struct cifs_tcon *tcon = cifs_sb_master_tcon(cifs_sb);
+	struct smbfs_tcon *tcon = smbfs_sb_master_tcon(cifs_sb);
 	struct dentry *dentry = filep->f_path.dentry;
 	const unsigned char *path;
 	void *page = alloc_dentry_path();
@@ -115,7 +115,7 @@ out_drop_write:
 	return rc;
 }
 
-static long smb_mnt_get_fsinfo(unsigned int xid, struct cifs_tcon *tcon,
+static long smb_mnt_get_fsinfo(unsigned int xid, struct smbfs_tcon *tcon,
 				void __user *arg)
 {
 	int rc = 0;
@@ -126,22 +126,22 @@ static long smb_mnt_get_fsinfo(unsigned int xid, struct cifs_tcon *tcon,
 		return -ENOMEM;
 
 	fsinf->version = 1;
-	fsinf->protocol_id = tcon->ses->server->vals->protocol_id;
+	fsinf->protocol_id = tcon->ses->server->settings->protocol_id;
 	fsinf->device_characteristics =
-			le32_to_cpu(tcon->fsDevInfo.DeviceCharacteristics);
-	fsinf->device_type = le32_to_cpu(tcon->fsDevInfo.DeviceType);
-	fsinf->fs_attributes = le32_to_cpu(tcon->fsAttrInfo.Attributes);
+			le32_to_cpu(tcon->fs_dev_info.DeviceCharacteristics);
+	fsinf->device_type = le32_to_cpu(tcon->fs_dev_info.DeviceType);
+	fsinf->fs_attributes = le32_to_cpu(tcon->fs_attr_info.Attributes);
 	fsinf->max_path_component =
-		le32_to_cpu(tcon->fsAttrInfo.MaxPathNameComponentLength);
+		le32_to_cpu(tcon->fs_attr_info.MaxPathNameComponentLength);
 	fsinf->vol_serial_number = tcon->vol_serial_number;
 	fsinf->vol_create_time = le64_to_cpu(tcon->vol_create_time);
 	fsinf->share_flags = tcon->share_flags;
 	fsinf->share_caps = le32_to_cpu(tcon->capabilities);
-	fsinf->sector_flags = tcon->ss_flags;
+	fsinf->sector_flags = tcon->sector_size_flags;
 	fsinf->optimal_sector_size = tcon->perf_sector_size;
 	fsinf->max_bytes_chunk = tcon->max_bytes_chunk;
 	fsinf->maximal_access = tcon->maximal_access;
-	fsinf->cifs_posix_caps = le64_to_cpu(tcon->fsUnixInfo.Capability);
+	fsinf->cifs_posix_caps = le64_to_cpu(tcon->fs_unix_info.Capability);
 
 	if (copy_to_user(arg, fsinf, sizeof(struct smb_mnt_fs_info)))
 		rc = -EFAULT;
@@ -199,10 +199,10 @@ static int cifs_shutdown(struct super_block *sb, unsigned long arg)
 	return 0;
 }
 
-static int cifs_dump_full_key(struct cifs_tcon *tcon, struct smb3_full_key_debug_info __user *in)
+static int cifs_dump_full_key(struct smbfs_tcon *tcon, struct smb3_full_key_debug_info __user *in)
 {
 	struct smb3_full_key_debug_info out;
-	struct cifs_ses *ses;
+	struct smbfs_ses *ses;
 	int rc = 0;
 	bool found = false;
 	u8 __user *end;
@@ -223,27 +223,27 @@ static int cifs_dump_full_key(struct cifs_tcon *tcon, struct smb3_full_key_debug
 		ses = tcon->ses;
 	} else {
 		/* otherwise if a session id is given, look for it in all our sessions */
-		struct cifs_ses *ses_it = NULL;
-		struct TCP_Server_Info *server_it = NULL;
+		struct smbfs_ses *ses_it = NULL;
+		struct smbfs_server_info *server_it = NULL;
 
-		spin_lock(&cifs_tcp_ses_lock);
-		list_for_each_entry(server_it, &cifs_tcp_ses_list, tcp_ses_list) {
-			list_for_each_entry(ses_it, &server_it->smb_ses_list, smb_ses_list) {
-				if (ses_it->Suid == out.session_id) {
+		spin_lock(&g_servers_lock);
+		list_for_each_entry(server_it, &g_servers_list, head) {
+			list_for_each_entry(ses_it, &server_it->head, head) {
+				if (ses_it->smb_uid == out.session_id) {
 					ses = ses_it;
 					/*
 					 * since we are using the session outside the crit
 					 * section, we need to make sure it won't be released
 					 * so increment its refcount
 					 */
-					ses->ses_count++;
+					ses->count++;
 					found = true;
 					goto search_end;
 				}
 			}
 		}
 search_end:
-		spin_unlock(&cifs_tcp_ses_lock);
+		spin_unlock(&g_servers_lock);
 		if (!found) {
 			rc = -ENOENT;
 			goto out;
@@ -273,7 +273,7 @@ search_end:
 		goto out;
 	}
 
-	out.session_id = ses->Suid;
+	out.session_id = ses->id;
 	out.cipher_type = le16_to_cpu(ses->server->cipher_type);
 
 	/* overwrite user input with our output */
@@ -313,9 +313,9 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 	struct smb3_key_debug_info pkey_inf;
 	int rc = -ENOTTY; /* strange error - but the precedent */
 	unsigned int xid;
-	struct cifsFileInfo *pSMBFile = filep->private_data;
-	struct cifs_tcon *tcon;
-	struct tcon_link *tlink;
+	struct smbfs_file_info *pSMBFile = filep->private_data;
+	struct smbfs_tcon *tcon;
+	struct smbfs_tcon_link *tlink;
 	struct cifs_sb_info *cifs_sb;
 	__u64	ExtAttrBits = 0;
 	__u64   caps;
@@ -328,12 +328,12 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			if (pSMBFile == NULL)
 				break;
 			tcon = tlink_tcon(pSMBFile->tlink);
-			caps = le64_to_cpu(tcon->fsUnixInfo.Capability);
+			caps = le64_to_cpu(tcon->fs_unix_info.Capability);
 #ifdef CONFIG_SMBFS_POSIX
 			if (CIFS_UNIX_EXTATTR_CAP & caps) {
 				__u64	ExtAttrMask = 0;
 				rc = CIFSGetExtAttr(xid, tcon,
-						    pSMBFile->fid.netfid,
+						    pSMBFile->fid.net_fid,
 						    &ExtAttrBits, &ExtAttrMask);
 				if (rc == 0)
 					rc = put_user(ExtAttrBits &
@@ -344,7 +344,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			}
 #endif /* CONFIG_SMBFS_POSIX */
 			rc = 0;
-			if (CIFS_I(inode)->cifsAttrs & ATTR_COMPRESSED) {
+			if (SMBFS_I(inode)->smb1_attrs & ATTR_COMPRESSED) {
 				/* add in the compressed bit */
 				ExtAttrBits = FS_COMPR_FL;
 				rc = put_user(ExtAttrBits & FS_FL_USER_VISIBLE,
@@ -364,7 +364,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			/*
 			 * if (CIFS_UNIX_EXTATTR_CAP & caps)
 			 *	rc = CIFSSetExtAttr(xid, tcon,
-			 *		       pSMBFile->fid.netfid,
+			 *		       pSMBFile->fid.net_fid,
 			 *		       extAttrBits,
 			 *		       &ExtAttrMask);
 			 * if (rc != EOPNOTSUPP)
@@ -437,7 +437,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 			}
 			pkey_inf.cipher_type =
 				le16_to_cpu(tcon->ses->server->cipher_type);
-			pkey_inf.Suid = tcon->ses->Suid;
+			pkey_inf.Suid = tcon->ses->id;
 			memcpy(pkey_inf.auth_key, tcon->ses->auth_key.response,
 					16 /* SMB2_NTLMV2_SESSKEY_SIZE */);
 			memcpy(pkey_inf.smb3decryptionkey,
@@ -470,7 +470,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 				break;
 			}
 			cifs_sb = CIFS_SB(inode->i_sb);
-			tlink = cifs_sb_tlink(cifs_sb);
+			tlink = smbfs_sb_tlink(cifs_sb);
 			if (IS_ERR(tlink)) {
 				rc = PTR_ERR(tlink);
 				break;
@@ -482,7 +482,7 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
 				smbfs_dbg("ioctl notify rc %d\n", rc);
 			} else
 				rc = -EOPNOTSUPP;
-			cifs_put_tlink(tlink);
+			smbfs_put_tlink(tlink);
 			break;
 		case CIFS_IOC_SHUTDOWN:
 			rc = cifs_shutdown(inode->i_sb, arg);

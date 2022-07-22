@@ -11,13 +11,13 @@
 #include "smbfs.h"
 #include "cifspdu.h"
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "debug.h"
 #include "cifs_fs_sb.h"
 #include "cifs_unicode.h"
 #include "cifs_ioctl.h"
 
-#define MAX_EA_VALUE_SIZE CIFSMaxBufSize
+#define MAX_EA_VALUE_SIZE max_buf_size
 #define CIFS_XATTR_CIFS_ACL "system.cifs_acl" /* DACL only */
 #define CIFS_XATTR_CIFS_NTSD "system.cifs_ntsd" /* owner plus DACL */
 #define CIFS_XATTR_CIFS_NTSD_FULL "system.cifs_ntsd_full" /* owner/DACL/SACL */
@@ -38,7 +38,7 @@
 enum { XATTR_USER, XATTR_CIFS_ACL, XATTR_ACL_ACCESS, XATTR_ACL_DEFAULT,
 	XATTR_CIFS_NTSD, XATTR_CIFS_NTSD_FULL };
 
-static int cifs_attrib_set(unsigned int xid, struct cifs_tcon *pTcon,
+static int cifs_attrib_set(unsigned int xid, struct smbfs_tcon *pTcon,
 			   struct inode *inode, const char *full_path,
 			   const void *value, size_t size)
 {
@@ -57,12 +57,12 @@ static int cifs_attrib_set(unsigned int xid, struct cifs_tcon *pTcon,
 		rc = pTcon->ses->server->ops->set_file_info(inode, full_path,
 				&info_buf, xid);
 	if (rc == 0)
-		CIFS_I(inode)->cifsAttrs = attrib;
+		SMBFS_I(inode)->smb1_attrs = attrib;
 
 	return rc;
 }
 
-static int cifs_creation_time_set(unsigned int xid, struct cifs_tcon *pTcon,
+static int cifs_creation_time_set(unsigned int xid, struct smbfs_tcon *pTcon,
 				  struct inode *inode, const char *full_path,
 				  const void *value, size_t size)
 {
@@ -81,7 +81,7 @@ static int cifs_creation_time_set(unsigned int xid, struct cifs_tcon *pTcon,
 		rc = pTcon->ses->server->ops->set_file_info(inode, full_path,
 				&info_buf, xid);
 	if (rc == 0)
-		CIFS_I(inode)->createtime = creation_time;
+		SMBFS_I(inode)->createtime = creation_time;
 
 	return rc;
 }
@@ -96,12 +96,12 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 	unsigned int xid;
 	struct super_block *sb = dentry->d_sb;
 	struct cifs_sb_info *cifs_sb = CIFS_SB(sb);
-	struct tcon_link *tlink;
-	struct cifs_tcon *pTcon;
+	struct smbfs_tcon_link *tlink;
+	struct smbfs_tcon *pTcon;
 	const char *full_path;
 	void *page;
 
-	tlink = cifs_sb_tlink(cifs_sb);
+	tlink = smbfs_sb_tlink(cifs_sb);
 	if (IS_ERR(tlink))
 		return PTR_ERR(tlink);
 	pTcon = tlink_tcon(tlink);
@@ -134,14 +134,14 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 			rc = cifs_attrib_set(xid, pTcon, inode, full_path,
 					value, size);
 			if (rc == 0) /* force revalidate of the inode */
-				CIFS_I(inode)->time = 0;
+				SMBFS_I(inode)->time = 0;
 			break;
 		} else if ((strcmp(name, CIFS_XATTR_CREATETIME) == 0) ||
 			   (strcmp(name, SMB3_XATTR_CREATETIME) == 0)) {
 			rc = cifs_creation_time_set(xid, pTcon, inode,
 					full_path, value, size);
 			if (rc == 0) /* force revalidate of the inode */
-				CIFS_I(inode)->time = 0;
+				SMBFS_I(inode)->time = 0;
 			break;
 		}
 
@@ -193,7 +193,7 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 				rc = -EOPNOTSUPP;
 			}
 			if (rc == 0) /* force revalidate of the inode */
-				CIFS_I(inode)->time = 0;
+				SMBFS_I(inode)->time = 0;
 			kfree(pacl);
 		}
 		break;
@@ -227,7 +227,7 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 out:
 	free_dentry_path(page);
 	free_xid(xid);
-	cifs_put_tlink(tlink);
+	smbfs_put_tlink(tlink);
 	return rc;
 }
 
@@ -250,7 +250,7 @@ static int cifs_attrib_get(struct dentry *dentry,
 
 	/* return dos attributes as pseudo xattr */
 	pattribute = (__u32 *)value;
-	*pattribute = CIFS_I(inode)->cifsAttrs;
+	*pattribute = SMBFS_I(inode)->smb1_attrs;
 
 	return sizeof(__u32);
 }
@@ -272,7 +272,7 @@ static int cifs_creation_time_get(struct dentry *dentry, struct inode *inode,
 
 	/* return dos attributes as pseudo xattr */
 	pcreatetime = (__u64 *)value;
-	*pcreatetime = CIFS_I(inode)->createtime;
+	*pcreatetime = SMBFS_I(inode)->createtime;
 	return sizeof(__u64);
 }
 
@@ -285,12 +285,12 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 	unsigned int xid;
 	struct super_block *sb = dentry->d_sb;
 	struct cifs_sb_info *cifs_sb = CIFS_SB(sb);
-	struct tcon_link *tlink;
-	struct cifs_tcon *pTcon;
+	struct smbfs_tcon_link *tlink;
+	struct smbfs_tcon *pTcon;
 	const char *full_path;
 	void *page;
 
-	tlink = cifs_sb_tlink(cifs_sb);
+	tlink = smbfs_sb_tlink(cifs_sb);
 	if (IS_ERR(tlink))
 		return PTR_ERR(tlink);
 	pTcon = tlink_tcon(tlink);
@@ -395,7 +395,7 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 out:
 	free_dentry_path(page);
 	free_xid(xid);
-	cifs_put_tlink(tlink);
+	smbfs_put_tlink(tlink);
 	return rc;
 }
 
@@ -404,8 +404,8 @@ ssize_t cifs_listxattr(struct dentry *direntry, char *data, size_t buf_size)
 	ssize_t rc = -EOPNOTSUPP;
 	unsigned int xid;
 	struct cifs_sb_info *cifs_sb = CIFS_SB(direntry->d_sb);
-	struct tcon_link *tlink;
-	struct cifs_tcon *pTcon;
+	struct smbfs_tcon_link *tlink;
+	struct smbfs_tcon *pTcon;
 	const char *full_path;
 	void *page;
 
@@ -415,7 +415,7 @@ ssize_t cifs_listxattr(struct dentry *direntry, char *data, size_t buf_size)
 	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_NO_XATTR)
 		return -EOPNOTSUPP;
 
-	tlink = cifs_sb_tlink(cifs_sb);
+	tlink = smbfs_sb_tlink(cifs_sb);
 	if (IS_ERR(tlink))
 		return PTR_ERR(tlink);
 	pTcon = tlink_tcon(tlink);
@@ -441,7 +441,7 @@ ssize_t cifs_listxattr(struct dentry *direntry, char *data, size_t buf_size)
 list_ea_exit:
 	free_dentry_path(page);
 	free_xid(xid);
-	cifs_put_tlink(tlink);
+	smbfs_put_tlink(tlink);
 	return rc;
 }
 

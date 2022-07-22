@@ -86,7 +86,7 @@ struct smb2_error_context_rsp {
 
 struct move_dst_ipaddr {
 	__le32 Type;
-	__u32  Reserved;
+	unsigned int  Reserved;
 	__u8   address[16]; /* IPv4 followed by 12 bytes rsvd or IPv6 address */
 } __packed;
 
@@ -132,8 +132,8 @@ struct create_durable {
 	union {
 		__u8  Reserved[16];
 		struct {
-			__u64 PersistentFileId;
-			__u64 VolatileFileId;
+			unsigned long PersistentFileId;
+			unsigned long VolatileFileId;
 		} Fid;
 	} Data;
 } __packed;
@@ -144,7 +144,7 @@ struct create_durable {
 struct durable_context_v2 {
 	__le32 Timeout;
 	__le32 Flags;
-	__u64 Reserved;
+	unsigned long Reserved;
 	__u8 CreateGuid[16];
 } __packed;
 
@@ -157,8 +157,8 @@ struct create_durable_v2 {
 /* See MS-SMB2 2.2.13.2.12 */
 struct durable_reconnect_context_v2 {
 	struct {
-		__u64 PersistentFileId;
-		__u64 VolatileFileId;
+		unsigned long PersistentFileId;
+		unsigned long VolatileFileId;
 	} Fid;
 	__u8 CreateGuid[16];
 	__le32 Flags; /* see above DHANDLE_FLAG_PERSISTENT */
@@ -170,7 +170,7 @@ struct create_on_disk_id {
 	__u8   Name[8];
 	__le64 DiskFileId;
 	__le64 VolumeId;
-	__u32  Reserved[4];
+	unsigned int  Reserved[4];
 } __packed;
 
 /* See MS-SMB2 2.2.14.2.12 */
@@ -223,7 +223,7 @@ struct copychunk_ioctl {
 	__le64 SourceOffset;
 	__le64 TargetOffset;
 	__le32 Length; /* how many bytes to copy */
-	__u32 Reserved2;
+	unsigned int Reserved2;
 } __packed;
 
 struct copychunk_ioctl_rsp {
@@ -252,7 +252,7 @@ struct smb3_extents {
 
 struct get_retrieval_pointers_refcount_rsp {
 	__le32 ExtentCount;
-	__u32  Reserved;
+	unsigned int  Reserved;
 	__le64 StartingVcn;
 	struct smb3_extents extents[];
 } __packed;
@@ -346,14 +346,14 @@ struct smb2_file_network_open_info {
 /* See MS-FSCC 2.4.21 */
 struct smb2_file_id_information {
 	__le64	VolumeSerialNumber;
-	__u64  PersistentFileId; /* opaque endianness */
-	__u64  VolatileFileId; /* opaque endianness */
+	unsigned long  PersistentFileId; /* opaque endianness */
+	unsigned long  VolatileFileId; /* opaque endianness */
 } __packed; /* level 59 */
 
 /* See MS-FSCC 2.4.18 */
 struct smb2_file_id_extd_directory_info {
 	__le32 NextEntryOffset;
-	__u32 FileIndex;
+	unsigned int FileIndex;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;
@@ -372,9 +372,9 @@ extern char smb2_padding[7];
 
 /* equivalent of the contents of SMB3.1.1 POSIX open context response */
 struct create_posix_rsp {
-	u32 nlink;
-	u32 reparse_tag;
-	u32 mode;
+	unsigned int nlink;
+	unsigned int reparse_tag;
+	unsigned int mode;
 	struct cifs_sid owner; /* var-sized on the wire */
 	struct cifs_sid group; /* var-sized on the wire */
 } __packed;
@@ -389,7 +389,7 @@ struct create_posix_rsp {
  */
 struct smb2_posix_info {
 	__le32 NextEntryOffset;
-	__u32 Ignored;
+	unsigned int Ignored;
 	__le64 CreationTime;
 	__le64 LastAccessTime;
 	__le64 LastWriteTime;

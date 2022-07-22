@@ -21,7 +21,7 @@ struct smb_mnt_fs_info {
 	__u32	device_type;
 	__u32	device_characteristics;
 	__u32	maximal_access;
-	__u64   cifs_posix_caps;
+	unsigned long   cifs_posix_caps;
 } __packed;
 
 struct smb_snapshot_array {
@@ -36,10 +36,10 @@ struct smb_snapshot_array {
 #define PASSTHRU_FSCTL		0x00000001
 #define PASSTHRU_SET_INFO	0x00000002
 struct smb_query_info {
-	__u32   info_type;
-	__u32   file_info_class;
-	__u32   additional_information;
-	__u32   flags;
+	unsigned int   info_type;
+	unsigned int   file_info_class;
+	unsigned int   additional_information;
+	unsigned int   flags;
 	__u32	input_buffer_length;
 	__u32	output_buffer_length;
 	/* char buffer[]; */
@@ -64,7 +64,7 @@ struct smb3_key_debug_info {
  */
 struct smb3_full_key_debug_info {
 	/* INPUT: size of userspace buffer */
-	__u32   in_size;
+	unsigned int   in_size;
 
 	/*
 	 * INPUT: 0 for current user, otherwise session to dump

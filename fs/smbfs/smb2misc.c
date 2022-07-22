@@ -7,7 +7,7 @@
 */
 #include <linux/ctype.h>
 #include "defs.h"
-#include "cifsproto.h"
+#include "defs.h"
 #include "smb2proto.h"
 #include "debug.h"
 #include "cifs_unicode.h"
@@ -52,7 +52,7 @@ check_smb2_hdr(struct smb2_hdr *shdr, __u64 mid)
  *  Note that commands are defined in smb2pdu.h in le16 but the array below is
  *  indexed by command in host byte order
  */
-static const __le16 smb2_rsp_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
+static const __le16 smb2_rsp_struct_sizes[SMB2_MAX_CMDS] = {
 	/* SMB2_NEGOTIATE */ cpu_to_le16(65),
 	/* SMB2_SESSION_SETUP */ cpu_to_le16(9),
 	/* SMB2_LOGOFF */ cpu_to_le16(4),
@@ -128,7 +128,7 @@ static __u32 get_neg_ctxt_len(struct smb2_hdr *hdr, __u32 len,
 }
 
 int
-smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
+smb2_check_message(char *buf, unsigned int len, struct smbfs_server_info *server)
 {
 	struct smb2_hdr *shdr = (struct smb2_hdr *)buf;
 	struct smb2_pdu *pdu = (struct smb2_pdu *)shdr;
@@ -145,18 +145,18 @@ smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
 	if (shdr->ProtocolId == SMB2_TRANSFORM_PROTO_NUM) {
 		struct smb2_transform_hdr *thdr =
 			(struct smb2_transform_hdr *)buf;
-		struct cifs_ses *ses = NULL;
-		struct cifs_ses *iter;
+		struct smbfs_ses *ses = NULL;
+		struct smbfs_ses *iter;
 
 		/* decrypt frame now that it is completely read in */
-		spin_lock(&cifs_tcp_ses_lock);
-		list_for_each_entry(iter, &server->smb_ses_list, smb_ses_list) {
-			if (iter->Suid == le64_to_cpu(thdr->SessionId)) {
+		spin_lock(&g_servers_lock);
+		list_for_each_entry(iter, &server->sessions, head) {
+			if (iter->smb_uid == le64_to_cpu(thdr->SessionId)) {
 				ses = iter;
 				break;
 			}
 		}
-		spin_unlock(&cifs_tcp_ses_lock);
+		spin_unlock(&g_servers_lock);
 		if (!ses) {
 			smbfs_log("no decryption - session id not found\n");
 			return 1;
@@ -178,7 +178,7 @@ smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
 		}
 		return 1;
 	}
-	if (len > CIFSMaxBufSize + MAX_SMB2_HDR_SIZE) {
+	if (len > max_buf_size + MAX_SMB2_HDR_SIZE) {
 		smbfs_log("SMB length greater than maximum, mid=%llu\n",
 			 mid);
 		return 1;
@@ -194,7 +194,7 @@ smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
 	}
 
 	command = le16_to_cpu(shdr->Command);
-	if (command >= NUMBER_OF_SMB2_COMMANDS) {
+	if (command >= SMB2_MAX_CMDS) {
 		smbfs_log("Invalid SMB2 command %d\n", command);
 		return 1;
 	}
@@ -270,7 +270,7 @@ smb2_check_message(char *buf, unsigned int len, struct TCP_Server_Info *server)
  * located in different fields for various SMB2 responses. SMB2 responses
  * with no variable length info, show an offset of zero for the offset field.
  */
-static const bool has_smb2_data_area[NUMBER_OF_SMB2_COMMANDS] = {
+static const bool has_smb2_data_area[SMB2_MAX_CMDS] = {
 	/* SMB2_NEGOTIATE */ true,
 	/* SMB2_SESSION_SETUP */ true,
 	/* SMB2_LOGOFF */ false,
@@ -400,7 +400,7 @@ smb2_get_data_area_len(int *off, int *len, struct smb2_hdr *shdr)
  * portion, the number of word parameters and the data portion of the message.
  */
 unsigned int
-smb2_calc_size(void *buf, struct TCP_Server_Info *srvr)
+smb2_calc_size(void *buf, struct smbfs_server_info *server)
 {
 	struct smb2_pdu *pdu = (struct smb2_pdu *)buf;
 	struct smb2_hdr *shdr = &pdu->hdr;
@@ -462,8 +462,8 @@ cifs_convert_path_to_utf16(const char *from, struct cifs_sb_info *cifs_sb)
 		start_of_path = from + 1;
 
 	/* SMB311 POSIX extensions paths do not include leading slash */
-	else if (cifs_sb_master_tlink(cifs_sb) &&
-		 cifs_sb_master_tcon(cifs_sb)->posix_extensions &&
+	else if (smbfs_sb_master_tlink(cifs_sb) &&
+		 smbfs_sb_master_tcon(cifs_sb)->posix_extensions &&
 		 (from[0] == '/')) {
 		start_of_path = from + 1;
 	} else
@@ -475,28 +475,28 @@ cifs_convert_path_to_utf16(const char *from, struct cifs_sb_info *cifs_sb)
 }
 
 __le32
-smb2_get_lease_state(struct cifsInodeInfo *cinode)
+smb2_get_lease_state(struct smbfs_inode_info *smb_i)
 {
 	__le32 lease = 0;
 
-	if (CIFS_CACHE_WRITE(cinode))
+	if (SMBFS_CACHE_WRITE(smb_i))
 		lease |= SMB2_LEASE_WRITE_CACHING_LE;
-	if (CIFS_CACHE_HANDLE(cinode))
+	if (SMBFS_CACHE_HANDLE(smb_i))
 		lease |= SMB2_LEASE_HANDLE_CACHING_LE;
-	if (CIFS_CACHE_READ(cinode))
+	if (SMBFS_CACHE_READ(smb_i))
 		lease |= SMB2_LEASE_READ_CACHING_LE;
 	return lease;
 }
 
 struct smb2_lease_break_work {
 	struct work_struct lease_break;
-	struct tcon_link *tlink;
+	struct smbfs_tcon_link *tlink;
 	__u8 lease_key[16];
 	__le32 lease_state;
 };
 
 static void
-cifs_ses_oplock_break(struct work_struct *work)
+smbfs_ses_oplock_break(struct work_struct *work)
 {
 	struct smb2_lease_break_work *lw = container_of(work,
 				struct smb2_lease_break_work, lease_break);
@@ -506,23 +506,23 @@ cifs_ses_oplock_break(struct work_struct *work)
 			      lw->lease_state);
 
 	smbfs_dbg("Lease release rc %d\n", rc);
-	cifs_put_tlink(lw->tlink);
+	smbfs_put_tlink(lw->tlink);
 	kfree(lw);
 }
 
 static void
-smb2_queue_pending_open_break(struct tcon_link *tlink, __u8 *lease_key,
+smb2_queue_pending_open_break(struct smbfs_tcon_link *tlink, __u8 *lease_key,
 			      __le32 new_lease_state)
 {
 	struct smb2_lease_break_work *lw;
 
 	lw = kmalloc(sizeof(struct smb2_lease_break_work), GFP_KERNEL);
 	if (!lw) {
-		cifs_put_tlink(tlink);
+		smbfs_put_tlink(tlink);
 		return;
 	}
 
-	INIT_WORK(&lw->lease_break, cifs_ses_oplock_break);
+	INIT_WORK(&lw->lease_break, smbfs_ses_oplock_break);
 	lw->tlink = tlink;
 	lw->lease_state = new_lease_state;
 	memcpy(lw->lease_key, lease_key, SMB2_LEASE_KEY_SIZE);
@@ -530,20 +530,20 @@ smb2_queue_pending_open_break(struct tcon_link *tlink, __u8 *lease_key,
 }
 
 static bool
-smb2_tcon_has_lease(struct cifs_tcon *tcon, struct smb2_lease_break *rsp)
+smb2_tcon_has_lease(struct smbfs_tcon *tcon, struct smb2_lease_break *rsp)
 {
 	__u8 lease_state;
-	struct cifsFileInfo *cfile;
-	struct cifsInodeInfo *cinode;
+	struct smbfs_file_info *smb_f;
+	struct smbfs_inode_info *smb_i;
 	int ack_req = le32_to_cpu(rsp->Flags &
 				  SMB2_NOTIFY_BREAK_LEASE_FLAG_ACK_REQUIRED);
 
 	lease_state = le32_to_cpu(rsp->NewLeaseState);
 
-	list_for_each_entry(cfile, &tcon->openFileList, tlist) {
-		cinode = CIFS_I(d_inode(cfile->dentry));
+	list_for_each_entry(smb_f, &tcon->open_files, tlist) {
+		smb_i = SMBFS_I(d_inode(smb_f->dentry));
 
-		if (memcmp(cinode->lease_key, rsp->LeaseKey,
+		if (memcmp(smb_i->lease_key, rsp->LeaseKey,
 							SMB2_LEASE_KEY_SIZE))
 			continue;
 
@@ -552,31 +552,31 @@ smb2_tcon_has_lease(struct cifs_tcon *tcon, struct smb2_lease_break *rsp)
 			 lease_state);
 
 		if (ack_req)
-			cfile->oplock_break_cancelled = false;
+			smb_f->oplock_break_cancelled = false;
 		else
-			cfile->oplock_break_cancelled = true;
+			smb_f->oplock_break_cancelled = true;
 
-		set_bit(CIFS_INODE_PENDING_OPLOCK_BREAK, &cinode->flags);
+		set_bit(CIFS_INODE_PENDING_OPLOCK_BREAK, &smb_i->flags);
 
-		cfile->oplock_epoch = le16_to_cpu(rsp->Epoch);
-		cfile->oplock_level = lease_state;
+		smb_f->oplock_epoch = le16_to_cpu(rsp->Epoch);
+		smb_f->oplock_level = lease_state;
 
-		cifs_queue_oplock_break(cfile);
+		cifs_queue_oplock_break(smb_f);
 		return true;
 	}
 
 	return false;
 }
 
-static struct cifs_pending_open *
-smb2_tcon_find_pending_open_lease(struct cifs_tcon *tcon,
+static struct smbfs_pending_open *
+smb2_tcon_find_pending_open_lease(struct smbfs_tcon *tcon,
 				  struct smb2_lease_break *rsp)
 {
 	__u8 lease_state = le32_to_cpu(rsp->NewLeaseState);
 	int ack_req = le32_to_cpu(rsp->Flags &
 				  SMB2_NOTIFY_BREAK_LEASE_FLAG_ACK_REQUIRED);
-	struct cifs_pending_open *open;
-	struct cifs_pending_open *found = NULL;
+	struct smbfs_pending_open *open;
+	struct smbfs_pending_open *found = NULL;
 
 	list_for_each_entry(open, &tcon->pending_opens, olist) {
 		if (memcmp(open->lease_key, rsp->LeaseKey,
@@ -601,43 +601,43 @@ static bool
 smb2_is_valid_lease_break(char *buffer)
 {
 	struct smb2_lease_break *rsp = (struct smb2_lease_break *)buffer;
-	struct TCP_Server_Info *server;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
-	struct cifs_pending_open *open;
+	struct smbfs_server_info *server;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
+	struct smbfs_pending_open *open;
 
 	smbfs_dbg("Checking for lease break\n");
 
 	/* look up tcon based on tid & uid */
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
-		list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
-			list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
-				spin_lock(&tcon->open_file_lock);
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(server, &g_servers_list, head) {
+		list_for_each_entry(ses, &server->sessions, head) {
+			list_for_each_entry(tcon, &ses->tcons, head) {
+				spin_lock(&tcon->open_files_lock);
 				cifs_stats_inc(
-				    &tcon->stats.cifs_stats.num_oplock_brks);
+				    &tcon->stats.smb1.oplock_brks);
 				if (smb2_tcon_has_lease(tcon, rsp)) {
-					spin_unlock(&tcon->open_file_lock);
-					spin_unlock(&cifs_tcp_ses_lock);
+					spin_unlock(&tcon->open_files_lock);
+					spin_unlock(&g_servers_lock);
 					return true;
 				}
 				open = smb2_tcon_find_pending_open_lease(tcon,
 									 rsp);
 				if (open) {
 					__u8 lease_key[SMB2_LEASE_KEY_SIZE];
-					struct tcon_link *tlink;
+					struct smbfs_tcon_link *tlink;
 
 					tlink = cifs_get_tlink(open->tlink);
 					memcpy(lease_key, open->lease_key,
 					       SMB2_LEASE_KEY_SIZE);
-					spin_unlock(&tcon->open_file_lock);
-					spin_unlock(&cifs_tcp_ses_lock);
+					spin_unlock(&tcon->open_files_lock);
+					spin_unlock(&g_servers_lock);
 					smb2_queue_pending_open_break(tlink,
 								      lease_key,
 								      rsp->NewLeaseState);
 					return true;
 				}
-				spin_unlock(&tcon->open_file_lock);
+				spin_unlock(&tcon->open_files_lock);
 
 				if (tcon->crfid.is_valid &&
 				    !memcmp(rsp->LeaseKey,
@@ -648,13 +648,13 @@ smb2_is_valid_lease_break(char *buffer)
 						  smb2_cached_lease_break);
 					queue_work(cifsiod_wq,
 						   &tcon->crfid.lease_break);
-					spin_unlock(&cifs_tcp_ses_lock);
+					spin_unlock(&g_servers_lock);
 					return true;
 				}
 			}
 		}
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 	smbfs_dbg("Can not process lease break - no lease matched\n");
 	trace_smb3_lease_not_found(le32_to_cpu(rsp->CurrentLeaseState),
 				   le32_to_cpu(rsp->hdr.Id.SyncId.TreeId),
@@ -666,13 +666,13 @@ smb2_is_valid_lease_break(char *buffer)
 }
 
 bool
-smb2_is_valid_oplock_break(char *buffer, struct TCP_Server_Info *server)
+smb2_is_valid_oplock_break(char *buffer, struct smbfs_server_info *server)
 {
 	struct smb2_oplock_break *rsp = (struct smb2_oplock_break *)buffer;
-	struct cifs_ses *ses;
-	struct cifs_tcon *tcon;
-	struct cifsInodeInfo *cinode;
-	struct cifsFileInfo *cfile;
+	struct smbfs_ses *ses;
+	struct smbfs_tcon *tcon;
+	struct smbfs_inode_info *smb_i;
+	struct smbfs_file_info *smb_f;
 
 	smbfs_dbg("Checking for oplock break\n");
 
@@ -690,47 +690,47 @@ smb2_is_valid_oplock_break(char *buffer, struct TCP_Server_Info *server)
 	smbfs_dbg("oplock level 0x%x\n", rsp->OplockLevel);
 
 	/* look up tcon based on tid & uid */
-	spin_lock(&cifs_tcp_ses_lock);
-	list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
-		list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
+	spin_lock(&g_servers_lock);
+	list_for_each_entry(ses, &server->sessions, head) {
+		list_for_each_entry(tcon, &ses->tcons, head) {
 
-			spin_lock(&tcon->open_file_lock);
-			list_for_each_entry(cfile, &tcon->openFileList, tlist) {
+			spin_lock(&tcon->open_files_lock);
+			list_for_each_entry(smb_f, &tcon->open_files, tlist) {
 				if (rsp->PersistentFid !=
-				    cfile->fid.persistent_fid ||
+				    smb_f->fid.persistent_fid ||
 				    rsp->VolatileFid !=
-				    cfile->fid.volatile_fid)
+				    smb_f->fid.volatile_fid)
 					continue;
 
 				smbfs_dbg("file id match, oplock break\n");
 				cifs_stats_inc(
-				    &tcon->stats.cifs_stats.num_oplock_brks);
-				cinode = CIFS_I(d_inode(cfile->dentry));
-				spin_lock(&cfile->file_info_lock);
-				if (!CIFS_CACHE_WRITE(cinode) &&
+				    &tcon->stats.smb1.oplock_brks);
+				smb_i = SMBFS_I(d_inode(smb_f->dentry));
+				spin_lock(&smb_f->file_info_lock);
+				if (!SMBFS_CACHE_WRITE(smb_i) &&
 				    rsp->OplockLevel == SMB2_OPLOCK_LEVEL_NONE)
-					cfile->oplock_break_cancelled = true;
+					smb_f->oplock_break_cancelled = true;
 				else
-					cfile->oplock_break_cancelled = false;
+					smb_f->oplock_break_cancelled = false;
 
 				set_bit(CIFS_INODE_PENDING_OPLOCK_BREAK,
-					&cinode->flags);
+					&smb_i->flags);
 
-				cfile->oplock_epoch = 0;
-				cfile->oplock_level = rsp->OplockLevel;
+				smb_f->oplock_epoch = 0;
+				smb_f->oplock_level = rsp->OplockLevel;
 
-				spin_unlock(&cfile->file_info_lock);
+				spin_unlock(&smb_f->file_info_lock);
 
-				cifs_queue_oplock_break(cfile);
+				cifs_queue_oplock_break(smb_f);
 
-				spin_unlock(&tcon->open_file_lock);
-				spin_unlock(&cifs_tcp_ses_lock);
+				spin_unlock(&tcon->open_files_lock);
+				spin_unlock(&g_servers_lock);
 				return true;
 			}
-			spin_unlock(&tcon->open_file_lock);
+			spin_unlock(&tcon->open_files_lock);
 		}
 	}
-	spin_unlock(&cifs_tcp_ses_lock);
+	spin_unlock(&g_servers_lock);
 	smbfs_dbg("No file id matched, oplock break ignored\n");
 	trace_smb3_oplock_not_found(0 /* no xid */, rsp->PersistentFid,
 				  le32_to_cpu(rsp->hdr.Id.SyncId.TreeId),
@@ -744,7 +744,7 @@ smb2_cancelled_close_fid(struct work_struct *work)
 {
 	struct close_cancelled_open *cancelled = container_of(work,
 					struct close_cancelled_open, work);
-	struct cifs_tcon *tcon = cancelled->tcon;
+	struct smbfs_tcon *tcon = cancelled->tcon;
 	int rc;
 
 	if (cancelled->mid)
@@ -758,7 +758,7 @@ smb2_cancelled_close_fid(struct work_struct *work)
 	if (rc)
 		smbfs_tcon_dbg(tcon, "Close cancelled mid failed rc:%d\n", rc);
 
-	cifs_put_tcon(tcon);
+	smbfs_put_tcon(tcon);
 	kfree(cancelled);
 }
 
@@ -771,7 +771,7 @@ smb2_cancelled_close_fid(struct work_struct *work)
  * if a close was interrupted before we sent the SMB2_CLOSE to the server.
  */
 static int
-__smb2_handle_cancelled_cmd(struct cifs_tcon *tcon, __u16 cmd, __u64 mid,
+__smb2_handle_cancelled_cmd(struct smbfs_tcon *tcon, __u16 cmd, __u64 mid,
 			    __u64 persistent_fid, __u64 volatile_fid)
 {
 	struct close_cancelled_open *cancelled;
@@ -792,18 +792,18 @@ __smb2_handle_cancelled_cmd(struct cifs_tcon *tcon, __u16 cmd, __u64 mid,
 }
 
 int
-smb2_handle_cancelled_close(struct cifs_tcon *tcon, __u64 persistent_fid,
+smb2_handle_cancelled_close(struct smbfs_tcon *tcon, __u64 persistent_fid,
 			    __u64 volatile_fid)
 {
 	int rc;
 
-	smbfs_dbg("tc_count=%d\n", tcon->tc_count);
-	spin_lock(&cifs_tcp_ses_lock);
-	if (tcon->tc_count <= 0) {
-		struct TCP_Server_Info *server = NULL;
+	smbfs_dbg("count=%d\n", tcon->count);
+	spin_lock(&g_servers_lock);
+	if (tcon->count <= 0) {
+		struct smbfs_server_info *server = NULL;
 
-		WARN_ONCE(tcon->tc_count < 0, "tcon refcount is negative");
-		spin_unlock(&cifs_tcp_ses_lock);
+		WARN_ONCE(tcon->count < 0, "tcon refcount is negative");
+		spin_unlock(&g_servers_lock);
 
 		if (tcon->ses)
 			server = tcon->ses->server;
@@ -813,23 +813,23 @@ smb2_handle_cancelled_close(struct cifs_tcon *tcon, __u64 persistent_fid,
 
 		return 0;
 	}
-	tcon->tc_count++;
-	spin_unlock(&cifs_tcp_ses_lock);
+	tcon->count++;
+	spin_unlock(&g_servers_lock);
 
 	rc = __smb2_handle_cancelled_cmd(tcon, SMB2_CLOSE_HE, 0,
 					 persistent_fid, volatile_fid);
 	if (rc)
-		cifs_put_tcon(tcon);
+		smbfs_put_tcon(tcon);
 
 	return rc;
 }
 
 int
-smb2_handle_cancelled_mid(struct mid_q_entry *mid, struct TCP_Server_Info *server)
+smb2_handle_cancelled_mid(struct smbfs_mid_entry *mid, struct smbfs_server_info *server)
 {
 	struct smb2_hdr *hdr = mid->resp_buf;
 	struct smb2_create_rsp *rsp = mid->resp_buf;
-	struct cifs_tcon *tcon;
+	struct smbfs_tcon *tcon;
 	int rc;
 
 	if ((mid->optype & CIFS_CP_CREATE_CLOSE_OP) || hdr->Command != SMB2_CREATE ||
@@ -847,7 +847,7 @@ smb2_handle_cancelled_mid(struct mid_q_entry *mid, struct TCP_Server_Info *serve
 					 rsp->PersistentFileId,
 					 rsp->VolatileFileId);
 	if (rc)
-		cifs_put_tcon(tcon);
+		smbfs_put_tcon(tcon);
 
 	return rc;
 }
@@ -864,11 +864,11 @@ smb2_handle_cancelled_mid(struct mid_q_entry *mid, struct TCP_Server_Info *serve
  * @nvec:	number of array entries for the iov
  */
 int
-smb311_update_preauth_hash(struct cifs_ses *ses, struct TCP_Server_Info *server,
+smb311_update_preauth_hash(struct smbfs_ses *ses, struct smbfs_server_info *server,
 			   struct kvec *iov, int nvec)
 {
 	int i, rc;
-	struct sdesc *d;
+	struct smbfs_sec_desc *d;
 	struct smb2_hdr *hdr;
 
 	hdr = (struct smb2_hdr *)iov[0].iov_base;
@@ -899,7 +899,7 @@ ok:
 	if (rc)
 		return rc;
 
-	d = server->secmech.sdescsha512;
+	d = server->sec.ctx.sec_desc_sha512;
 	rc = crypto_shash_init(&d->shash);
 	if (rc) {
 		smbfs_log("%s: Could not init sha512 shash\n", __func__);

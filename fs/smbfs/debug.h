@@ -8,9 +8,11 @@
  *
  * SMBFS debugging.
  */
-
 #ifndef _SMBFS_DEBUG_H
 #define _SMBFS_DEBUG_H
+
+#include "mid.h"
+#include "server_info.h"
 
 #undef pr_fmt
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -71,9 +73,9 @@ do {									\
 /* Messages that should include tree name */
 #define __smbfs_tcon_print(ratefunc, _tconp, level, fmt, ...)		\
 do {									\
-	if (_tconp && _tconp->treeName)					\
+	if (_tconp && _tconp->tree_name)					\
 		__smbfs_print(ratefunc, level, "%s: " fmt,		\
-			      _tconp->treeName, ##__VA_ARGS__);		\
+			      _tconp->tree_name, ##__VA_ARGS__);		\
 } while (0)
 
 /*
@@ -165,7 +167,7 @@ static inline void smbfs_dump_mem(char *prefix, void *buf, size_t len)
 #endif /* CONFIG_SMBFS_DEBUG */
 }
 
-static inline void smbfs_dump_detail_smb1(void *buf, struct TCP_Server_Info *server)
+static inline void smbfs_dump_detail_smb1(void *buf, struct smbfs_server_info *server)
 {
 	struct smb_hdr *smb = (struct smb_hdr *)buf;
 
@@ -175,7 +177,7 @@ static inline void smbfs_dump_detail_smb1(void *buf, struct TCP_Server_Info *ser
 	smbfs_log("smb buf 0x%p, len=%u\n", smb, server->ops->calc_smb_size(smb, server));
 }
 
-static inline void smbfs_dump_detail(void *buf, struct TCP_Server_Info *server)
+static inline void smbfs_dump_detail(void *buf, struct smbfs_server_info *server)
 {
 	struct smb2_hdr *shdr = (struct smb2_hdr *)buf;
 
@@ -201,19 +203,19 @@ static inline void smbfs_dump_smb(void *buf, size_t len)
 #endif /* CONFIG_PROC_FS */
 }
 
-static inline void smbfs_dump_mid(struct mid_q_entry *mid_entry)
+static inline void smbfs_dump_mid(struct smbfs_mid_entry *mid_entry)
 {
 	smbfs_log("mid: %llu, state: %d, cmd: %d, pid: %d, cbdata: 0x%p\n",
-		  mid_entry->mid, mid_entry->mid_state,
-		  le16_to_cpu(mid_entry->command),
+		  mid_entry->mid, mid_entry->state,
+		  le16_to_cpu(mid_entry->cmd),
 		  mid_entry->pid, mid_entry->callback_data);
 #ifdef CONFIG_SMBFS_STATS_EXTRA
-	smbfs_log("large_buf: %d, buf: 0x%p, time rcv: %ld, now: %ld\n",
-		  mid_entry->large_buf, mid_entry->resp_buf,
+	smbfs_log("large_buf: %d, buf: 0x%p, time rcv: %llu, now: %lu\n",
+		  mid_entry->has_large_buf, mid_entry->resp_buf,
 		  mid_entry->when_received, jiffies);
 #endif /* CONFIG_SMBFS_STATS_EXTRA */
-	smbfs_log("multiRsp: %d multiEnd: %d\n",
-		  mid_entry->multiRsp, mid_entry->multiEnd);
+	smbfs_log("has_multi_rsp: %d has_multi_end: %d\n",
+		  mid_entry->has_multi_rsp, mid_entry->has_multi_end);
 
 	if (mid_entry->resp_buf) {
 		smbfs_dump_detail(mid_entry->resp_buf, mid_entry->server);
@@ -222,18 +224,18 @@ static inline void smbfs_dump_mid(struct mid_q_entry *mid_entry)
 	}
 }
 
-static inline void smbfs_dump_mids(struct TCP_Server_Info *server)
+static inline void smbfs_dump_mids(struct smbfs_server_info *server)
 {
 #ifdef CONFIG_SMBFS_DEBUG_EXTRA
-	struct mid_q_entry *mid_entry;
+	struct smbfs_mid_entry *mid_entry;
 
 	if (!server)
 		return;
 
-	spin_lock(&GlobalMid_Lock);
-	list_for_each_entry(mid_entry, &server->pending_mid_q, qhead)
+	spin_lock(&g_mid_lock);
+	list_for_each_entry(mid_entry, &server->pending_mids, head)
 		smbfs_dump_mid(mid_entry);
-	spin_unlock(&GlobalMid_Lock);
+	spin_unlock(&g_mid_lock);
 #endif /* CONFIG_SMBFS_DEBUG_EXTRA */
 }
 #endif /* _SMBFS_DEBUG_H */
