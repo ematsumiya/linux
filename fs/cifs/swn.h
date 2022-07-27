@@ -7,7 +7,7 @@
 
 #ifndef _CIFS_SWN_H
 #define _CIFS_SWN_H
-#include "cifsglob.h"
+#include "globals.h"
 
 struct cifs_tcon;
 struct sk_buff;

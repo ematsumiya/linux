@@ -7,8 +7,8 @@
 #include <linux/module.h>
 #include <linux/highmem.h>
 #include "smbdirect.h"
-#include "cifs_debug.h"
-#include "cifsproto.h"
+#include "debug.h"
+#include "prototypes.h"
 #include "smb2proto.h"
 
 static struct smbd_response *get_empty_queue_buffer(

@@ -11,14 +11,14 @@
 #include <linux/mempool.h>
 #include <linux/vmalloc.h>
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
+#include "globals.h"
+#include "prototypes.h"
+#include "debug.h"
 #include "smberr.h"
 #include "nterr.h"
-#include "cifs_unicode.h"
+#include "unicode.h"
 #include "smb2pdu.h"
-#include "cifsfs.h"
+#include "core.h"
 #ifdef CONFIG_CIFS_DFS_UPCALL
 #include "dns_resolve.h"
 #endif

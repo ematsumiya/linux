@@ -12,13 +12,13 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/stat.h>
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_unicode.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
-#include "cifsfs.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../unicode.h"
+#include "../debug.h"
+#include "../sb.h"
+#include "../core.h"
 #include "smb2proto.h"
 #include "fs_context.h"
 

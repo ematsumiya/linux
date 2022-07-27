@@ -18,7 +18,7 @@
 #include <linux/utsname.h>
 #include <linux/sched/mm.h>
 #include <linux/netfs.h>
-#include "cifs_fs_sb.h"
+#include "sb.h"
 #include "smb1/acl.h"
 #include <crypto/internal/hash.h>
 #include <linux/scatterlist.h>

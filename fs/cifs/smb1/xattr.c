@@ -10,14 +10,14 @@
 #include <linux/posix_acl_xattr.h>
 #include <linux/slab.h>
 #include <linux/xattr.h>
-#include "cifsfs.h"
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
-#include "cifs_unicode.h"
-#include "cifs_ioctl.h"
+#include "../core.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../debug.h"
+#include "../sb.h"
+#include "../unicode.h"
+#include "ioctl.h"
 
 #define MAX_EA_VALUE_SIZE CIFSMaxBufSize
 #define CIFS_XATTR_CIFS_ACL "system.cifs_acl" /* DACL only */

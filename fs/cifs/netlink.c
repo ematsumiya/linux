@@ -9,9 +9,9 @@
 #include <uapi/linux/cifs/cifs_netlink.h>
 
 #include "netlink.h"
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifs_swn.h"
+#include "globals.h"
+#include "debug.h"
+#include "swn.h"
 
 static const struct nla_policy cifs_genl_policy[CIFS_GENL_ATTR_MAX + 1] = {
 	[CIFS_GENL_ATTR_SWN_REGISTRATION_ID]	= { .type = NLA_U32 },

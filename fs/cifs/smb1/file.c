@@ -22,17 +22,17 @@
 #include <linux/swap.h>
 #include <linux/mm.h>
 #include <asm/div64.h>
-#include "cifsfs.h"
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_unicode.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
+#include "../core.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../unicode.h"
+#include "../debug.h"
+#include "../sb.h"
 #include "fscache.h"
 #include "smbdirect.h"
 #include "fs_context.h"
-#include "cifs_ioctl.h"
+#include "ioctl.h"
 
 static inline int cifs_convert_flags(unsigned int flags)
 {

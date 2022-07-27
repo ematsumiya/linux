@@ -9,7 +9,7 @@
 #ifndef _FS_CONTEXT_H
 #define _FS_CONTEXT_H
 
-#include "cifsglob.h"
+#include "globals.h"
 #include <linux/parser.h>
 #include <linux/fs_parser.h>
 

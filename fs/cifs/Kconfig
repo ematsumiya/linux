@@ -196,7 +196,7 @@ config CIFS_FSCACHE
 
 config CIFS_ROOT
 	bool "SMB root file system (Experimental)"
-	depends on CIFS=y && IP_PNP
+	depends on CIFS=y && CIFS_ALLOW_INSECURE_LEGACY && IP_PNP
 	help
 	  Enables root file system support over SMB protocol.
 

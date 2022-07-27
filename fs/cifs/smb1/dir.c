@@ -13,15 +13,15 @@
 #include <linux/namei.h>
 #include <linux/mount.h>
 #include <linux/file.h>
-#include "cifsfs.h"
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
-#include "cifs_unicode.h"
+#include "../core.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../debug.h"
+#include "../sb.h"
+#include "../unicode.h"
 #include "fs_context.h"
-#include "cifs_ioctl.h"
+#include "ioctl.h"
 #include "fscache.h"
 
 static void

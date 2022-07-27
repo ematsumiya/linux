@@ -16,12 +16,12 @@
 #include <linux/vfs.h>
 #include <linux/fs.h>
 #include <linux/inet.h>
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifsfs.h"
+#include "globals.h"
+#include "prototypes.h"
+#include "core.h"
 #include "dns_resolve.h"
-#include "cifs_debug.h"
-#include "cifs_unicode.h"
+#include "debug.h"
+#include "unicode.h"
 #include "dfs_cache.h"
 #include "fs_context.h"
 

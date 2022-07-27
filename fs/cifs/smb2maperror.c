@@ -8,8 +8,8 @@
  *
  */
 #include <linux/errno.h>
-#include "cifsglob.h"
-#include "cifs_debug.h"
+#include "globals.h"
+#include "debug.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
 #include "smb2status.h"

@@ -21,10 +21,10 @@
 #include <asm/processor.h>
 #include <linux/mempool.h>
 #include <linux/sched/signal.h>
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../debug.h"
 #include "smb2proto.h"
 #include "smbdirect.h"
 

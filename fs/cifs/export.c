@@ -28,9 +28,9 @@
 
 #include <linux/fs.h>
 #include <linux/exportfs.h>
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifsfs.h"
+#include "globals.h"
+#include "debug.h"
+#include "core.h"
 
 #ifdef CONFIG_CIFS_NFSD_EXPORT
 static struct dentry *cifs_get_parent(struct dentry *dentry)

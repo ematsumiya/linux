@@ -6,12 +6,12 @@
  */
 #include <linux/fs.h>
 #include <linux/slab.h>
-#include "cifs_fs_sb.h"
-#include "cifs_unicode.h"
-#include "cifs_uniupr.h"
+#include "sb.h"
+#include "unicode.h"
+#include "uniupr.h"
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifs_debug.h"
+#include "globals.h"
+#include "debug.h"
 
 int cifs_remap(struct cifs_sb_info *cifs_sb)
 {

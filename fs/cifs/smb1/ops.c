@@ -8,11 +8,11 @@
 #include <linux/pagemap.h>
 #include <linux/vfs.h>
 #include <uapi/linux/magic.h>
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifspdu.h"
-#include "cifs_unicode.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../debug.h"
+#include "pdu.h"
+#include "../unicode.h"
 #include "fs_context.h"
 
 /*

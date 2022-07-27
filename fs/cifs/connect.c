@@ -33,11 +33,11 @@
 #include <linux/parser.h>
 #include <linux/bvec.h>
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_unicode.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
+#include "globals.h"
+#include "prototypes.h"
+#include "unicode.h"
+#include "debug.h"
+#include "sb.h"
 #include "ntlmssp.h"
 #include "nterr.h"
 #include "rfc1002pdu.h"
@@ -49,7 +49,7 @@
 #include "dfs_cache.h"
 #endif
 #include "fs_context.h"
-#include "cifs_swn.h"
+#include "swn.h"
 
 extern mempool_t *cifs_req_poolp;
 extern bool disable_legacy_dialects;

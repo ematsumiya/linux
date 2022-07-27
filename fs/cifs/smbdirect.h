@@ -10,7 +10,7 @@
 #ifdef CONFIG_CIFS_SMB_DIRECT
 #define cifs_rdma_enabled(server)	((server)->rdma)
 
-#include "cifsglob.h"
+#include "globals.h"
 #include <rdma/ib_verbs.h>
 #include <rdma/rdma_cm.h>
 #include <linux/mempool.h>

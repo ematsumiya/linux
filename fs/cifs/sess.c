@@ -9,17 +9,17 @@
  */
 
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_unicode.h"
-#include "cifs_debug.h"
+#include "globals.h"
+#include "prototypes.h"
+#include "unicode.h"
+#include "debug.h"
 #include "ntlmssp.h"
 #include "nterr.h"
 #include <linux/utsname.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#include "cifsfs.h"
-#include "cifs_spnego.h"
+#include "core.h"
+#include "spnego.h"
 #include "smb2proto.h"
 #include "fs_context.h"
 

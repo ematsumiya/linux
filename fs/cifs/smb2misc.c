@@ -8,11 +8,11 @@
  *
  */
 #include <linux/ctype.h>
-#include "cifsglob.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "prototypes.h"
 #include "smb2proto.h"
-#include "cifs_debug.h"
-#include "cifs_unicode.h"
+#include "debug.h"
+#include "unicode.h"
 #include "smb2status.h"
 #include "smb2glob.h"
 #include "nterr.h"

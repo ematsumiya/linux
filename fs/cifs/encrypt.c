@@ -12,10 +12,10 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifs_unicode.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "debug.h"
+#include "unicode.h"
+#include "prototypes.h"
 #include "ntlmssp.h"
 #include <linux/ctype.h>
 #include <linux/random.h>

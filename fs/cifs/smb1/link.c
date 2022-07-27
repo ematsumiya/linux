@@ -9,15 +9,15 @@
 #include <linux/stat.h>
 #include <linux/slab.h>
 #include <linux/namei.h>
-#include "cifsfs.h"
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
-#include "cifs_unicode.h"
+#include "../core.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "../prototypes.h"
+#include "../debug.h"
+#include "../sb.h"
+#include "../unicode.h"
 #include "smb2proto.h"
-#include "cifs_ioctl.h"
+#include "ioctl.h"
 
 /*
  * M-F Symlink Functions - Begin

@@ -9,11 +9,11 @@
 #include <net/genetlink.h>
 #include <uapi/linux/cifs/cifs_netlink.h>
 
-#include "cifs_swn.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
+#include "swn.h"
+#include "globals.h"
+#include "prototypes.h"
 #include "fscache.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "netlink.h"
 
 static DEFINE_IDR(cifs_swnreg_idr);

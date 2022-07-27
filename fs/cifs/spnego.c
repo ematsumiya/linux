@@ -14,10 +14,10 @@
 #include <linux/key-type.h>
 #include <linux/keyctl.h>
 #include <linux/inet.h>
-#include "cifsglob.h"
-#include "cifs_spnego.h"
-#include "cifs_debug.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "spnego.h"
+#include "debug.h"
+#include "prototypes.h"
 static const struct cred *spnego_cred;
 
 /* create a new cifs key */

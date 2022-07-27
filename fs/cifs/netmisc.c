@@ -16,12 +16,12 @@
 #include <asm/div64.h>
 #include <asm/byteorder.h>
 #include <linux/inet.h>
-#include "cifsfs.h"
+#include "core.h"
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "prototypes.h"
 #include "smberr.h"
-#include "cifs_debug.h"
+#include "debug.h"
 #include "nterr.h"
 
 struct smb_to_posix_error {

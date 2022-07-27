@@ -3,16 +3,16 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/oid_registry.h>
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifsproto.h"
-#include "cifs_spnego_negtokeninit.asn1.h"
+#include "globals.h"
+#include "debug.h"
+#include "prototypes.h"
+#include "spnego_negtokeninit.asn1.h"
 
 int
 decode_negTokenInit(unsigned char *security_blob, int length,
 		    struct TCP_Server_Info *server)
 {
-	if (asn1_ber_decoder(&cifs_spnego_negtokeninit_decoder, server,
+	if (asn1_ber_decoder(&spnego_negtokeninit_decoder, server,
 			     security_blob, length) == 0)
 		return 1;
 	else

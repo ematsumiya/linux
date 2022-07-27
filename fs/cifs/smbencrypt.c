@@ -18,12 +18,12 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/random.h>
-#include "cifs_fs_sb.h"
-#include "cifs_unicode.h"
+#include "sb.h"
+#include "unicode.h"
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "debug.h"
+#include "prototypes.h"
 #include "../smbfs_common/md4.h"
 
 #ifndef false

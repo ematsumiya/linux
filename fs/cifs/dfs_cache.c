@@ -12,12 +12,12 @@
 #include <linux/nls.h>
 #include <linux/workqueue.h>
 #include <linux/uuid.h>
-#include "cifsglob.h"
+#include "globals.h"
 #include "smb2pdu.h"
 #include "smb2proto.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifs_unicode.h"
+#include "prototypes.h"
+#include "debug.h"
+#include "unicode.h"
 #include "smb2glob.h"
 #include "dns_resolve.h"
 

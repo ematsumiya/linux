@@ -14,11 +14,11 @@
 #include <linux/keyctl.h>
 #include <linux/key-type.h>
 #include <keys/user-type.h>
-#include "cifspdu.h"
-#include "cifsglob.h"
-#include "cifsacl.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
+#include "pdu.h"
+#include "../globals.h"
+#include "acl.h"
+#include "../prototypes.h"
+#include "../debug.h"
 #include "fs_context.h"
 
 /* security id for everyone/world system group */

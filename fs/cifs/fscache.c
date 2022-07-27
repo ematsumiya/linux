@@ -7,10 +7,10 @@
  *
  */
 #include "fscache.h"
-#include "cifsglob.h"
-#include "cifs_debug.h"
-#include "cifs_fs_sb.h"
-#include "cifsproto.h"
+#include "globals.h"
+#include "debug.h"
+#include "sb.h"
+#include "prototypes.h"
 
 static void cifs_fscache_fill_volume_coherency(
 	struct cifs_tcon *tcon,

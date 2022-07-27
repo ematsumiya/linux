@@ -12,10 +12,10 @@
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 #include "smb1/pdu.h"
-#include "cifsglob.h"
-#include "cifsproto.h"
-#include "cifs_debug.h"
-#include "cifsfs.h"
+#include "globals.h"
+#include "prototypes.h"
+#include "debug.h"
+#include "core.h"
 #include "fs_context.h"
 #ifdef CONFIG_CIFS_DFS_UPCALL
 #include "dfs_cache.h"
@@ -23,7 +23,7 @@
 #ifdef CONFIG_CIFS_SMB_DIRECT
 #include "smbdirect.h"
 #endif
-#include "cifs_swn.h"
+#include "swn.h"
 
 void
 cifs_dump_mem(char *label, void *data, int length)
@@ -782,7 +782,7 @@ static ssize_t cifsFYI_proc_write(struct file *file, const char __user *buffer,
 	if (strtobool(c, &bv) == 0)
 		cifsFYI = bv;
 	else if ((c[0] > '1') && (c[0] <= '9'))
-		cifsFYI = (int) (c[0] - '0'); /* see cifs_debug.h for meanings */
+		cifsFYI = (int) (c[0] - '0'); /* see debug.h for meanings */
 	else
 		return -EINVAL;
 
