@@ -11,7 +11,7 @@
 
 #include <linux/fs.h>
 #include <linux/slab.h>
-#include "cifspdu.h"
+#include "smb1/pdu.h"
 #include "cifsglob.h"
 #include "cifs_debug.h"
 #include "cifs_unicode.h"

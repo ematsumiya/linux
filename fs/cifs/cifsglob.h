@@ -19,7 +19,7 @@
 #include <linux/sched/mm.h>
 #include <linux/netfs.h>
 #include "cifs_fs_sb.h"
-#include "cifsacl.h"
+#include "smb1/acl.h"
 #include <crypto/internal/hash.h>
 #include <linux/scatterlist.h>
 #include <uapi/linux/cifs/cifs_mount.h>
@@ -98,7 +98,7 @@
  */
 #define SMB2_MAX_CREDITS_AVAILABLE 32000
 
-#include "cifspdu.h"
+#include "smb1/pdu.h"
 
 #ifndef XATTR_DOS_ATTRIB
 #define XATTR_DOS_ATTRIB "user.DOSATTRIB"

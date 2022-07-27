@@ -23,7 +23,7 @@
 #include "cifs_unicode.h"
 #include "smb2status.h"
 #include "smb2glob.h"
-#include "cifs_ioctl.h"
+#include "smb1/ioctl.h"
 #include "smbdirect.h"
 #include "fscache.h"
 #include "fs_context.h"

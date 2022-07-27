@@ -24,7 +24,7 @@
 #include <linux/pagemap.h>
 #include <linux/xattr.h>
 #include "cifsglob.h"
-#include "cifsacl.h"
+#include "smb1/acl.h"
 #include "cifsproto.h"
 #include "smb2proto.h"
 #include "cifs_unicode.h"
@@ -32,7 +32,7 @@
 #include "ntlmssp.h"
 #include "smb2status.h"
 #include "smb2glob.h"
-#include "cifspdu.h"
+#include "smb1/pdu.h"
 #include "cifs_spnego.h"
 #include "smbdirect.h"
 #include "trace.h"

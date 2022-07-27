@@ -12,7 +12,7 @@
 #define _SMB2PDU_H
 
 #include <net/sock.h>
-#include "cifsacl.h"
+#include "smb1/acl.h"
 
 /* 52 transform hdr + 64 hdr + 88 create rsp */
 #define SMB2_TRANSFORM_HEADER_SIZE 52
@@ -307,7 +307,7 @@ struct iface_info_ipv6 {
 #define NO_FILE_ID 0xFFFFFFFFFFFFFFFFULL /* general ioctls to srv not to file */
 
 struct compress_ioctl {
-	__le16 CompressionState; /* See cifspdu.h for possible flag values */
+	__le16 CompressionState; /* See smb1/pdu.h for possible flag values */
 } __packed;
 
 /*
