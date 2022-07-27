@@ -30,7 +30,7 @@
 #include "unicode.h"
 #include "debug.h"
 #include "ntlmssp.h"
-#include "smb2status.h"
+#include "status.h"
 #include "smb2glob.h"
 #include "smb1/pdu.h"
 #include "spnego.h"
@@ -44,7 +44,7 @@
  *  The following table defines the expected "StructureSize" of SMB2 requests
  *  in order by SMB2 command.  This is similar to "wct" in SMB/CIFS requests.
  *
- *  Note that commands are defined in smb2pdu.h in le16 but the array below is
+ *  Note that commands are defined in pdu.h in le16 but the array below is
  *  indexed by command in host byte order.
  */
 static const int smb2_req_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {

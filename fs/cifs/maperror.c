@@ -10,9 +10,9 @@
 #include <linux/errno.h>
 #include "globals.h"
 #include "debug.h"
-#include "smb2pdu.h"
+#include "pdu.h"
 #include "smb2proto.h"
-#include "smb2status.h"
+#include "status.h"
 #include "smb2glob.h"
 #include "trace.h"
 

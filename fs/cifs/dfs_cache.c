@@ -13,7 +13,7 @@
 #include <linux/workqueue.h>
 #include <linux/uuid.h>
 #include "globals.h"
-#include "smb2pdu.h"
+#include "pdu.h"
 #include "smb2proto.h"
 #include "prototypes.h"
 #include "debug.h"

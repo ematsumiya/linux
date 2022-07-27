@@ -24,7 +24,7 @@
 #include <linux/scatterlist.h>
 #include <uapi/linux/cifs/cifs_mount.h>
 #include "../smbfs_common/smb2pdu.h"
-#include "smb2pdu.h"
+#include "pdu.h"
 
 #define SMB_PATH_MAX 260
 #define CIFS_PORT 445

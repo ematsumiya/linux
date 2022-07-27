@@ -21,7 +21,7 @@
 #include "unicode.h"
 #include "fscache.h"
 #include "smb2glob.h"
-#include "smb2pdu.h"
+#include "pdu.h"
 #include "smb2proto.h"
 
 static void

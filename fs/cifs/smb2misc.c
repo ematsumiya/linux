@@ -13,7 +13,7 @@
 #include "smb2proto.h"
 #include "debug.h"
 #include "unicode.h"
-#include "smb2status.h"
+#include "status.h"
 #include "smb2glob.h"
 #include "nterr.h"
 
@@ -53,7 +53,7 @@ check_smb2_hdr(struct smb2_hdr *shdr, __u64 mid)
  *  The following table defines the expected "StructureSize" of SMB2 responses
  *  in order by SMB2 command.  This is similar to "wct" in SMB/CIFS responses.
  *
- *  Note that commands are defined in smb2pdu.h in le16 but the array below is
+ *  Note that commands are defined in pdu.h in le16 but the array below is
  *  indexed by command in host byte order
  */
 static const __le16 smb2_rsp_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {

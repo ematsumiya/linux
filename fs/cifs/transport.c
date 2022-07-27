@@ -23,7 +23,7 @@
 #include "prototypes.h"
 #include "smb2proto.h"
 #include "debug.h"
-#include "smb2status.h"
+#include "status.h"
 #include "smb2glob.h"
 
 static int

@@ -17,7 +17,7 @@
 #include "smberr.h"
 #include "nterr.h"
 #include "unicode.h"
-#include "smb2pdu.h"
+#include "pdu.h"
 #include "core.h"
 #ifdef CONFIG_CIFS_DFS_UPCALL
 #include "dns_resolve.h"
