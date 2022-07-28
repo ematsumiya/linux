@@ -9,9 +9,6 @@
 #ifndef _CIFSACL_H
 #define _CIFSACL_H
 
-#define NUM_AUTHS (6)	/* number of authority fields */
-#define SID_MAX_SUB_AUTHORITIES (15) /* max number of sub authority fields */
-
 #define READ_BIT        0x4
 #define WRITE_BIT       0x2
 #define EXEC_BIT        0x1
@@ -63,16 +60,6 @@ struct cifs_ntsd {
 	__le32 sacloffset;
 	__le32 dacloffset;
 } __attribute__((packed));
-
-struct cifs_sid {
-	__u8 revision; /* revision level */
-	__u8 num_subauth;
-	__u8 authority[NUM_AUTHS];
-	__le32 sub_auth[SID_MAX_SUB_AUTHORITIES]; /* sub_auth[num_subauth] */
-} __attribute__((packed));
-
-/* size of a struct cifs_sid, sans sub_auth array */
-#define CIFS_SID_BASE_SIZE (1 + 1 + NUM_AUTHS)
 
 struct cifs_acl {
 	__le16 revision; /* revision level */

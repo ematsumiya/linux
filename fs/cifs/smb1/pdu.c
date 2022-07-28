@@ -26,7 +26,7 @@
 #include "pdu.h"
 #include "../globals.h"
 #include "acl.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../unicode.h"
 #include "../debug.h"
 #include "smb2proto.h"

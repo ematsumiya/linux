@@ -18,7 +18,7 @@
 #include "prototypes.h"
 #include "debug.h"
 #include "unicode.h"
-#include "smb2glob.h"
+#include "globals.h"
 #include "dns_resolve.h"
 
 #include "dfs_cache.h"

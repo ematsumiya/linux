@@ -18,12 +18,12 @@
 #include <linux/utsname.h>
 #include <linux/sched/mm.h>
 #include <linux/netfs.h>
-#include "sb.h"
-#include "smb1/acl.h"
 #include <crypto/internal/hash.h>
 #include <linux/scatterlist.h>
 #include <uapi/linux/cifs/cifs_mount.h>
 #include "../smbfs_common/smb2pdu.h"
+#include "sb.h"
+#include "idmap.h"
 #include "pdu.h"
 
 #define SMB_PATH_MAX 260
@@ -105,6 +105,30 @@
 #endif
 
 #define CIFS_MAX_WORKSTATION_LEN  (__NEW_UTS_LEN + 1)  /* reasonable max for client */
+
+/* imported from old globals.h */
+/*
+ * Identifiers for functions that use the open, operation, close pattern
+ * in smb2inode.c:smb2_compound_op()
+ */
+#define SMB2_OP_SET_DELETE 1
+#define SMB2_OP_SET_INFO 2
+#define SMB2_OP_QUERY_INFO 3
+#define SMB2_OP_QUERY_DIR 4
+#define SMB2_OP_MKDIR 5
+#define SMB2_OP_RENAME 6
+#define SMB2_OP_DELETE 7
+#define SMB2_OP_HARDLINK 8
+#define SMB2_OP_SET_EOF 9
+#define SMB2_OP_RMDIR 10
+#define SMB2_OP_POSIX_QUERY_INFO 11
+
+/* Used when constructing chained read requests. */
+#define CHAINED_REQUEST 1
+#define START_OF_CHAIN 2
+#define END_OF_CHAIN 4
+#define RELATED_REQUEST 8
+/* end of imported from old globals.h */
 
 /*
  * CIFS vfs client Status information (based on what we know.)

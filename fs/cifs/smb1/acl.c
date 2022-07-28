@@ -11,94 +11,13 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/keyctl.h>
-#include <linux/key-type.h>
-#include <keys/user-type.h>
-#include "pdu.h"
+#include "../idmap.h"
 #include "../globals.h"
-#include "acl.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../debug.h"
-#include "fs_context.h"
-
-/* security id for everyone/world system group */
-static const struct cifs_sid sid_everyone = {
-	1, 1, {0, 0, 0, 0, 0, 1}, {0} };
-/* security id for Authenticated Users system group */
-static const struct cifs_sid sid_authusers = {
-	1, 1, {0, 0, 0, 0, 0, 5}, {cpu_to_le32(11)} };
-
-/* S-1-22-1 Unmapped Unix users */
-static const struct cifs_sid sid_unix_users = {1, 1, {0, 0, 0, 0, 0, 22},
-		{cpu_to_le32(1), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
-
-/* S-1-22-2 Unmapped Unix groups */
-static const struct cifs_sid sid_unix_groups = { 1, 1, {0, 0, 0, 0, 0, 22},
-		{cpu_to_le32(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
-
-/*
- * See https://technet.microsoft.com/en-us/library/hh509017(v=ws.10).aspx
- */
-
-/* S-1-5-88 MS NFS and Apple style UID/GID/mode */
-
-/* S-1-5-88-1 Unix uid */
-static const struct cifs_sid sid_unix_NFS_users = { 1, 2, {0, 0, 0, 0, 0, 5},
-	{cpu_to_le32(88),
-	 cpu_to_le32(1), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
-
-/* S-1-5-88-2 Unix gid */
-static const struct cifs_sid sid_unix_NFS_groups = { 1, 2, {0, 0, 0, 0, 0, 5},
-	{cpu_to_le32(88),
-	 cpu_to_le32(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
-
-/* S-1-5-88-3 Unix mode */
-static const struct cifs_sid sid_unix_NFS_mode = { 1, 2, {0, 0, 0, 0, 0, 5},
-	{cpu_to_le32(88),
-	 cpu_to_le32(3), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} };
-
-static const struct cred *root_cred;
-
-static int
-cifs_idmap_key_instantiate(struct key *key, struct key_preparsed_payload *prep)
-{
-	char *payload;
-
-	/*
-	 * If the payload is less than or equal to the size of a pointer, then
-	 * an allocation here is wasteful. Just copy the data directly to the
-	 * payload.value union member instead.
-	 *
-	 * With this however, you must check the datalen before trying to
-	 * dereference payload.data!
-	 */
-	if (prep->datalen <= sizeof(key->payload)) {
-		key->payload.data[0] = NULL;
-		memcpy(&key->payload, prep->data, prep->datalen);
-	} else {
-		payload = kmemdup(prep->data, prep->datalen, GFP_KERNEL);
-		if (!payload)
-			return -ENOMEM;
-		key->payload.data[0] = payload;
-	}
-
-	key->datalen = prep->datalen;
-	return 0;
-}
-
-static inline void
-cifs_idmap_key_destroy(struct key *key)
-{
-	if (key->datalen > sizeof(key->payload))
-		kfree(key->payload.data[0]);
-}
-
-static struct key_type cifs_idmap_key_type = {
-	.name        = "cifs.idmap",
-	.instantiate = cifs_idmap_key_instantiate,
-	.destroy     = cifs_idmap_key_destroy,
-	.describe    = user_describe,
-};
+#include "../fs_context.h"
+#include "pdu.h"
+#include "acl.h"
 
 static char *
 sid_to_key_str(struct cifs_sid *sidptr, unsigned int type)
@@ -447,66 +366,6 @@ got_valid_id:
 	else
 		fattr->cf_gid = fgid;
 	return rc;
-}
-
-int
-init_cifs_idmap(void)
-{
-	struct cred *cred;
-	struct key *keyring;
-	int ret;
-
-	cifs_dbg(FYI, "Registering the %s key type\n",
-		 cifs_idmap_key_type.name);
-
-	/* create an override credential set with a special thread keyring in
-	 * which requests are cached
-	 *
-	 * this is used to prevent malicious redirections from being installed
-	 * with add_key().
-	 */
-	cred = prepare_kernel_cred(NULL);
-	if (!cred)
-		return -ENOMEM;
-
-	keyring = keyring_alloc(".cifs_idmap",
-				GLOBAL_ROOT_UID, GLOBAL_ROOT_GID, cred,
-				(KEY_POS_ALL & ~KEY_POS_SETATTR) |
-				KEY_USR_VIEW | KEY_USR_READ,
-				KEY_ALLOC_NOT_IN_QUOTA, NULL, NULL);
-	if (IS_ERR(keyring)) {
-		ret = PTR_ERR(keyring);
-		goto failed_put_cred;
-	}
-
-	ret = register_key_type(&cifs_idmap_key_type);
-	if (ret < 0)
-		goto failed_put_key;
-
-	/* instruct request_key() to use this special keyring as a cache for
-	 * the results it looks up */
-	set_bit(KEY_FLAG_ROOT_CAN_CLEAR, &keyring->flags);
-	cred->thread_keyring = keyring;
-	cred->jit_keyring = KEY_REQKEY_DEFL_THREAD_KEYRING;
-	root_cred = cred;
-
-	cifs_dbg(FYI, "cifs idmap keyring: %d\n", key_serial(keyring));
-	return 0;
-
-failed_put_key:
-	key_put(keyring);
-failed_put_cred:
-	put_cred(cred);
-	return ret;
-}
-
-void
-exit_cifs_idmap(void)
-{
-	key_revoke(root_cred->thread_keyring);
-	unregister_key_type(&cifs_idmap_key_type);
-	put_cred(root_cred);
-	cifs_dbg(FYI, "Unregistered %s key type\n", cifs_idmap_key_type.name);
 }
 
 /* copy ntsd, owner sid, and group sid from a security descriptor to another */

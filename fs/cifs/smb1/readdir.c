@@ -14,7 +14,7 @@
 #include <linux/stat.h>
 #include "pdu.h"
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../unicode.h"
 #include "../debug.h"
 #include "../sb.h"

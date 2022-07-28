@@ -16,7 +16,7 @@
 #include "../core.h"
 #include "pdu.h"
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../debug.h"
 #include "../sb.h"
 #include "../unicode.h"
@@ -64,75 +64,6 @@ cifs_build_path_to_root(struct smb3_fs_context *ctx, struct cifs_sb_info *cifs_s
 	memcpy(full_path + dfsplen + 1, ctx->prepath, pplen);
 	convert_delimiter(full_path, CIFS_DIR_SEP(cifs_sb));
 	return full_path;
-}
-
-/* Note: caller must free return buffer */
-const char *
-build_path_from_dentry(struct dentry *direntry, void *page)
-{
-	struct cifs_sb_info *cifs_sb = CIFS_SB(direntry->d_sb);
-	struct cifs_tcon *tcon = cifs_sb_master_tcon(cifs_sb);
-	bool prefix = tcon->Flags & SMB_SHARE_IS_IN_DFS;
-
-	return build_path_from_dentry_optional_prefix(direntry, page,
-						      prefix);
-}
-
-char *
-build_path_from_dentry_optional_prefix(struct dentry *direntry, void *page,
-				       bool prefix)
-{
-	int dfsplen;
-	int pplen = 0;
-	struct cifs_sb_info *cifs_sb = CIFS_SB(direntry->d_sb);
-	struct cifs_tcon *tcon = cifs_sb_master_tcon(cifs_sb);
-	char dirsep = CIFS_DIR_SEP(cifs_sb);
-	char *s;
-
-	if (unlikely(!page))
-		return ERR_PTR(-ENOMEM);
-
-	if (prefix)
-		dfsplen = strnlen(tcon->treeName, MAX_TREE_SIZE + 1);
-	else
-		dfsplen = 0;
-
-	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_USE_PREFIX_PATH)
-		pplen = cifs_sb->prepath ? strlen(cifs_sb->prepath) + 1 : 0;
-
-	s = dentry_path_raw(direntry, page, PATH_MAX);
-	if (IS_ERR(s))
-		return s;
-	if (!s[1])	// for root we want "", not "/"
-		s++;
-	if (s < (char *)page + pplen + dfsplen)
-		return ERR_PTR(-ENAMETOOLONG);
-	if (pplen) {
-		cifs_dbg(FYI, "using cifs_sb prepath <%s>\n", cifs_sb->prepath);
-		s -= pplen;
-		memcpy(s + 1, cifs_sb->prepath, pplen - 1);
-		*s = '/';
-	}
-	if (dirsep != '/') {
-		/* BB test paths to Windows with '/' in the midst of prepath */
-		char *p;
-
-		for (p = s; *p; p++)
-			if (*p == '/')
-				*p = dirsep;
-	}
-	if (dfsplen) {
-		s -= dfsplen;
-		memcpy(s, tcon->treeName, dfsplen);
-		if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_POSIX_PATHS) {
-			int i;
-			for (i = 0; i < dfsplen; i++) {
-				if (s[i] == '\\')
-					s[i] = '/';
-			}
-		}
-	}
-	return s;
 }
 
 /*

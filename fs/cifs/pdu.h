@@ -21,6 +21,66 @@
 /* The total header size for SMB2 read and write */
 #define SMB2_READWRITE_PDU_HEADER_SIZE (48 + sizeof(struct smb2_hdr))
 
+/*
+ *  The following table defines the expected "StructureSize" of SMB2 requests
+ *  in order by SMB2 command.  This is similar to "wct" in SMB/CIFS requests.
+ *
+ *  The array below is indexed by command in host byte order.
+ */
+static const int smb2_req_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
+	/* SMB2_NEGOTIATE */ 36,
+	/* SMB2_SESSION_SETUP */ 25,
+	/* SMB2_LOGOFF */ 4,
+	/* SMB2_TREE_CONNECT */	9,
+	/* SMB2_TREE_DISCONNECT */ 4,
+	/* SMB2_CREATE */ 57,
+	/* SMB2_CLOSE */ 24,
+	/* SMB2_FLUSH */ 24,
+	/* SMB2_READ */	49,
+	/* SMB2_WRITE */ 49,
+	/* SMB2_LOCK */	48,
+	/* SMB2_IOCTL */ 57,
+	/* SMB2_CANCEL */ 4,
+	/* SMB2_ECHO */ 4,
+	/* SMB2_QUERY_DIRECTORY */ 33,
+	/* SMB2_CHANGE_NOTIFY */ 32,
+	/* SMB2_QUERY_INFO */ 41,
+	/* SMB2_SET_INFO */ 33,
+	/* SMB2_OPLOCK_BREAK */ 24 /* BB this is 36 for LEASE_BREAK variant */
+};
+
+/*
+ *  The following table defines the expected "StructureSize" of SMB2 responses
+ *  in order by SMB2 command.  This is similar to "wct" in SMB/CIFS responses.
+ *
+ *  The array below is indexed by command in host byte order.
+ */
+static const __le16 smb2_rsp_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
+	/* SMB2_NEGOTIATE */ cpu_to_le16(65),
+	/* SMB2_SESSION_SETUP */ cpu_to_le16(9),
+	/* SMB2_LOGOFF */ cpu_to_le16(4),
+	/* SMB2_TREE_CONNECT */ cpu_to_le16(16),
+	/* SMB2_TREE_DISCONNECT */ cpu_to_le16(4),
+	/* SMB2_CREATE */ cpu_to_le16(89),
+	/* SMB2_CLOSE */ cpu_to_le16(60),
+	/* SMB2_FLUSH */ cpu_to_le16(4),
+	/* SMB2_READ */ cpu_to_le16(17),
+	/* SMB2_WRITE */ cpu_to_le16(17),
+	/* SMB2_LOCK */ cpu_to_le16(4),
+	/* SMB2_IOCTL */ cpu_to_le16(49),
+	/* BB CHECK this ... not listed in documentation */
+	/* SMB2_CANCEL */ cpu_to_le16(0),
+	/* SMB2_ECHO */ cpu_to_le16(4),
+	/* SMB2_QUERY_DIRECTORY */ cpu_to_le16(9),
+	/* SMB2_CHANGE_NOTIFY */ cpu_to_le16(9),
+	/* SMB2_QUERY_INFO */ cpu_to_le16(9),
+	/* SMB2_SET_INFO */ cpu_to_le16(2),
+	/* BB FIXME can also be 44 for lease break */
+	/* SMB2_OPLOCK_BREAK */ cpu_to_le16(24)
+};
+
+#define SMB311_NEGPROT_BASE_SIZE (sizeof(struct smb2_hdr) + sizeof(struct smb2_negotiate_rsp))
+
 /* See MS-SMB2 2.2.43 */
 struct smb2_rdma_transform {
 	__le16 RdmaDescriptorOffset;

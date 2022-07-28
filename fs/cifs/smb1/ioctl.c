@@ -15,7 +15,7 @@
 #include <linux/pagemap.h>
 #include "pdu.h"
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../debug.h"
 #include "../core.h"
 #include "ioctl.h"

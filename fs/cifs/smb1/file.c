@@ -25,7 +25,7 @@
 #include "../core.h"
 #include "pdu.h"
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../unicode.h"
 #include "../debug.h"
 #include "../sb.h"
@@ -267,13 +267,6 @@ cifs_has_mand_locks(struct cifsInodeInfo *cinode)
 	}
 	up_read(&cinode->lock_sem);
 	return has_locks;
-}
-
-void
-cifs_down_write(struct rw_semaphore *sem)
-{
-	while (!down_write_trylock(sem))
-		msleep(10);
 }
 
 static void cifsFileInfo_put_work(struct work_struct *work);

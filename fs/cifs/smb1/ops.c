@@ -9,7 +9,7 @@
 #include <linux/vfs.h>
 #include <uapi/linux/magic.h>
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../debug.h"
 #include "pdu.h"
 #include "../unicode.h"
@@ -1150,6 +1150,709 @@ out:
 	return rc;
 }
 
+static loff_t cifs_remap_file_range(struct file *src_file, loff_t off,
+		struct file *dst_file, loff_t destoff, loff_t len,
+		unsigned int remap_flags)
+{
+	struct inode *src_inode = file_inode(src_file);
+	struct inode *target_inode = file_inode(dst_file);
+	struct cifsFileInfo *smb_file_src = src_file->private_data;
+	struct cifsFileInfo *smb_file_target;
+	struct cifs_tcon *target_tcon;
+	unsigned int xid;
+	int rc;
+
+	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
+		return -EINVAL;
+
+	cifs_dbg(FYI, "clone range\n");
+
+	xid = get_xid();
+
+	if (!src_file->private_data || !dst_file->private_data) {
+		rc = -EBADF;
+		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+		goto out;
+	}
+
+	smb_file_target = dst_file->private_data;
+	target_tcon = tlink_tcon(smb_file_target->tlink);
+
+	/*
+	 * Note: cifs case is easier than btrfs since server responsible for
+	 * checks for proper open modes and file type and if it wants
+	 * server could even support copy of range where source = target
+	 */
+	lock_two_nondirectories(target_inode, src_inode);
+
+	if (len == 0)
+		len = src_inode->i_size - off;
+
+	cifs_dbg(FYI, "about to flush pages\n");
+	/* should we flush first and last page first */
+	truncate_inode_pages_range(&target_inode->i_data, destoff,
+				   PAGE_ALIGN(destoff + len)-1);
+
+	if (target_tcon->ses->server->ops->duplicate_extents)
+		rc = target_tcon->ses->server->ops->duplicate_extents(xid,
+			smb_file_src, smb_file_target, off, len, destoff);
+	else
+		rc = -EOPNOTSUPP;
+
+	/* force revalidate of size and timestamps of target file now
+	   that target is updated on the server */
+	CIFS_I(target_inode)->time = 0;
+	/* although unlocking in the reverse order from locking is not
+	   strictly necessary here it is a little cleaner to be consistent */
+	unlock_two_nondirectories(src_inode, target_inode);
+out:
+	free_xid(xid);
+	return rc < 0 ? rc : len;
+}
+
+ssize_t cifs_file_copychunk_range(unsigned int xid,
+				struct file *src_file, loff_t off,
+				struct file *dst_file, loff_t destoff,
+				size_t len, unsigned int flags)
+{
+	struct inode *src_inode = file_inode(src_file);
+	struct inode *target_inode = file_inode(dst_file);
+	struct cifsFileInfo *smb_file_src;
+	struct cifsFileInfo *smb_file_target;
+	struct cifs_tcon *src_tcon;
+	struct cifs_tcon *target_tcon;
+	ssize_t rc;
+
+	cifs_dbg(FYI, "copychunk range\n");
+
+	if (!src_file->private_data || !dst_file->private_data) {
+		rc = -EBADF;
+		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+		goto out;
+	}
+
+	rc = -EXDEV;
+	smb_file_target = dst_file->private_data;
+	smb_file_src = src_file->private_data;
+	src_tcon = tlink_tcon(smb_file_src->tlink);
+	target_tcon = tlink_tcon(smb_file_target->tlink);
+
+	if (src_tcon->ses != target_tcon->ses) {
+		cifs_dbg(VFS, "source and target of copy not on same server\n");
+		goto out;
+	}
+
+	rc = -EOPNOTSUPP;
+	if (!target_tcon->ses->server->ops->copychunk_range)
+		goto out;
+
+	/*
+	 * Note: cifs case is easier than btrfs since server responsible for
+	 * checks for proper open modes and file type and if it wants
+	 * server could even support copy of range where source = target
+	 */
+	lock_two_nondirectories(target_inode, src_inode);
+
+	cifs_dbg(FYI, "about to flush pages\n");
+	/* should we flush first and last page first */
+	truncate_inode_pages(&target_inode->i_data, 0);
+
+	rc = file_modified(dst_file);
+	if (!rc)
+		rc = target_tcon->ses->server->ops->copychunk_range(xid,
+			smb_file_src, smb_file_target, off, len, destoff);
+
+	file_accessed(src_file);
+
+	/* force revalidate of size and timestamps of target file now
+	 * that target is updated on the server
+	 */
+	CIFS_I(target_inode)->time = 0;
+	/* although unlocking in the reverse order from locking is not
+	 * strictly necessary here it is a little cleaner to be consistent
+	 */
+	unlock_two_nondirectories(src_inode, target_inode);
+
+out:
+	return rc;
+}
+
+/*
+ * Directory operations under CIFS/SMB2/SMB3 are synchronous, so fsync()
+ * is a dummy operation.
+ */
+static int cifs_dir_fsync(struct file *file, loff_t start, loff_t end, int datasync)
+{
+	cifs_dbg(FYI, "Sync directory - name: %pD datasync: 0x%x\n",
+		 file, datasync);
+
+	return 0;
+}
+
+static ssize_t cifs_copy_file_range(struct file *src_file, loff_t off,
+				struct file *dst_file, loff_t destoff,
+				size_t len, unsigned int flags)
+{
+	unsigned int xid = get_xid();
+	ssize_t rc;
+	struct cifsFileInfo *cfile = dst_file->private_data;
+
+	if (cfile->swapfile)
+		return -EOPNOTSUPP;
+
+	rc = cifs_file_copychunk_range(xid, src_file, off, dst_file, destoff,
+					len, flags);
+	free_xid(xid);
+
+	if (rc == -EOPNOTSUPP || rc == -EXDEV)
+		rc = generic_copy_file_range(src_file, off, dst_file,
+					     destoff, len, flags);
+	return rc;
+}
+
+static ssize_t
+cifs_loose_read_iter(struct kiocb *iocb, struct iov_iter *iter)
+{
+	ssize_t rc;
+	struct inode *inode = file_inode(iocb->ki_filp);
+
+	if (iocb->ki_flags & IOCB_DIRECT)
+		return cifs_user_readv(iocb, iter);
+
+	rc = cifs_revalidate_mapping(inode);
+	if (rc)
+		return rc;
+
+	return generic_file_read_iter(iocb, iter);
+}
+
+static ssize_t cifs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
+{
+	struct inode *inode = file_inode(iocb->ki_filp);
+	struct cifsInodeInfo *cinode = CIFS_I(inode);
+	ssize_t written;
+	int rc;
+
+	if (iocb->ki_filp->f_flags & O_DIRECT) {
+		written = cifs_user_writev(iocb, from);
+		if (written > 0 && CIFS_CACHE_READ(cinode)) {
+			cifs_zap_mapping(inode);
+			cifs_dbg(FYI,
+				 "Set no oplock for inode=%p after a write operation\n",
+				 inode);
+			cinode->oplock = 0;
+		}
+		return written;
+	}
+
+	written = cifs_get_writer(cinode);
+	if (written)
+		return written;
+
+	written = generic_file_write_iter(iocb, from);
+
+	if (CIFS_CACHE_WRITE(CIFS_I(inode)))
+		goto out;
+
+	rc = filemap_fdatawrite(inode->i_mapping);
+	if (rc)
+		cifs_dbg(FYI, "cifs_file_write_iter: %d rc on %p inode\n",
+			 rc, inode);
+
+out:
+	cifs_put_writer(cinode);
+	return written;
+}
+
+static loff_t cifs_llseek(struct file *file, loff_t offset, int whence)
+{
+	struct cifsFileInfo *cfile = file->private_data;
+	struct cifs_tcon *tcon;
+
+	/*
+	 * whence == SEEK_END || SEEK_DATA || SEEK_HOLE => we must revalidate
+	 * the cached file length
+	 */
+	if (whence != SEEK_SET && whence != SEEK_CUR) {
+		int rc;
+		struct inode *inode = file_inode(file);
+
+		/*
+		 * We need to be sure that all dirty pages are written and the
+		 * server has the newest file length.
+		 */
+		if (!CIFS_CACHE_READ(CIFS_I(inode)) && inode->i_mapping &&
+		    inode->i_mapping->nrpages != 0) {
+			rc = filemap_fdatawait(inode->i_mapping);
+			if (rc) {
+				mapping_set_error(inode->i_mapping, rc);
+				return rc;
+			}
+		}
+		/*
+		 * Some applications poll for the file length in this strange
+		 * way so we must seek to end on non-oplocked files by
+		 * setting the revalidate time to zero.
+		 */
+		CIFS_I(inode)->time = 0;
+
+		rc = cifs_revalidate_file_attr(file);
+		if (rc < 0)
+			return (loff_t)rc;
+	}
+	if (cfile && cfile->tlink) {
+		tcon = tlink_tcon(cfile->tlink);
+		if (tcon->ses->server->ops->llseek)
+			return tcon->ses->server->ops->llseek(file, tcon,
+							      offset, whence);
+	}
+	return generic_file_llseek(file, offset, whence);
+}
+
+static int
+cifs_setlease(struct file *file, long arg, struct file_lock **lease, void **priv)
+{
+	/*
+	 * Note that this is called by vfs setlease with i_lock held to
+	 * protect *lease from going away.
+	 */
+	struct inode *inode = file_inode(file);
+	struct cifsFileInfo *cfile = file->private_data;
+
+	if (!(S_ISREG(inode->i_mode)))
+		return -EINVAL;
+
+	/* Check if file is oplocked if this is request for new lease */
+	if (arg == F_UNLCK ||
+	    ((arg == F_RDLCK) && CIFS_CACHE_READ(CIFS_I(inode))) ||
+	    ((arg == F_WRLCK) && CIFS_CACHE_WRITE(CIFS_I(inode))))
+		return generic_setlease(file, arg, lease, priv);
+	else if (tlink_tcon(cfile->tlink)->local_lease &&
+		 !CIFS_CACHE_READ(CIFS_I(inode)))
+		/*
+		 * If the server claims to support oplock on this file, then we
+		 * still need to check oplock even if the local_lease mount
+		 * option is set, but there are servers which do not support
+		 * oplock for which this mount option may be useful if the user
+		 * knows that the file won't be changed on the server by anyone
+		 * else.
+		 */
+		return generic_setlease(file, arg, lease, priv);
+	else
+		return -EAGAIN;
+}
+
+static long cifs_fallocate(struct file *file, int mode, loff_t off, loff_t len)
+{
+	struct cifs_sb_info *cifs_sb = CIFS_FILE_SB(file);
+	struct cifs_tcon *tcon = cifs_sb_master_tcon(cifs_sb);
+	struct TCP_Server_Info *server = tcon->ses->server;
+
+	if (server->ops->fallocate)
+		return server->ops->fallocate(file, tcon, mode, off, len);
+
+	return -EOPNOTSUPP;
+}
+
+static int cifs_permission(struct user_namespace *mnt_userns,
+			   struct inode *inode, int mask)
+{
+	struct cifs_sb_info *cifs_sb;
+
+	cifs_sb = CIFS_SB(inode->i_sb);
+
+	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_NO_PERM) {
+		if ((mask & MAY_EXEC) && !execute_ok(inode))
+			return -EACCES;
+		else
+			return 0;
+	} else /* file mode might have been restricted at mount time
+		on the client (above and beyond ACL on servers) for
+		servers which do not support setting and viewing mode bits,
+		so allowing client to check permissions is useful */
+		return generic_permission(&init_user_ns, inode, mask);
+}
+
+static int
+check_smb_hdr(struct smb_hdr *smb)
+{
+	/* does it have the right SMB "signature" ? */
+	if (*(__le32 *) smb->Protocol != cpu_to_le32(0x424d53ff)) {
+		cifs_dbg(VFS, "Bad protocol string signature header 0x%x\n",
+			 *(unsigned int *)smb->Protocol);
+		return 1;
+	}
+
+	/* if it's a response then accept */
+	if (smb->Flags & SMBFLG_RESPONSE)
+		return 0;
+
+	/* only one valid case where server sends us request */
+	if (smb->Command == SMB_COM_LOCKING_ANDX)
+		return 0;
+
+	cifs_dbg(VFS, "Server sent request, not response. mid=%u\n",
+		 get_mid(smb));
+	return 1;
+}
+
+int
+checkSMB(char *buf, unsigned int total_read, struct TCP_Server_Info *server)
+{
+	struct smb_hdr *smb = (struct smb_hdr *)buf;
+	__u32 rfclen = be32_to_cpu(smb->smb_buf_length);
+	__u32 clc_len;  /* calculated length */
+	cifs_dbg(FYI, "checkSMB Length: 0x%x, smb_buf_length: 0x%x\n",
+		 total_read, rfclen);
+
+	/* is this frame too small to even get to a BCC? */
+	if (total_read < 2 + sizeof(struct smb_hdr)) {
+		if ((total_read >= sizeof(struct smb_hdr) - 1)
+			    && (smb->Status.CifsError != 0)) {
+			/* it's an error return */
+			smb->WordCount = 0;
+			/* some error cases do not return wct and bcc */
+			return 0;
+		} else if ((total_read == sizeof(struct smb_hdr) + 1) &&
+				(smb->WordCount == 0)) {
+			char *tmp = (char *)smb;
+			/* Need to work around a bug in two servers here */
+			/* First, check if the part of bcc they sent was zero */
+			if (tmp[sizeof(struct smb_hdr)] == 0) {
+				/* some servers return only half of bcc
+				 * on simple responses (wct, bcc both zero)
+				 * in particular have seen this on
+				 * ulogoffX and FindClose. This leaves
+				 * one byte of bcc potentially unitialized
+				 */
+				/* zero rest of bcc */
+				tmp[sizeof(struct smb_hdr)+1] = 0;
+				return 0;
+			}
+			cifs_dbg(VFS, "rcvd invalid byte count (bcc)\n");
+		} else {
+			cifs_dbg(VFS, "Length less than smb header size\n");
+		}
+		return -EIO;
+	}
+
+	/* otherwise, there is enough to get to the BCC */
+	if (check_smb_hdr(smb))
+		return -EIO;
+	clc_len = smbCalcSize(smb, server);
+
+	if (4 + rfclen != total_read) {
+		cifs_dbg(VFS, "Length read does not match RFC1001 length %d\n",
+			 rfclen);
+		return -EIO;
+	}
+
+	if (4 + rfclen != clc_len) {
+		__u16 mid = get_mid(smb);
+		/* check if bcc wrapped around for large read responses */
+		if ((rfclen > 64 * 1024) && (rfclen > clc_len)) {
+			/* check if lengths match mod 64K */
+			if (((4 + rfclen) & 0xFFFF) == (clc_len & 0xFFFF))
+				return 0; /* bcc wrapped */
+		}
+		cifs_dbg(FYI, "Calculated size %u vs length %u mismatch for mid=%u\n",
+			 clc_len, 4 + rfclen, mid);
+
+		if (4 + rfclen < clc_len) {
+			cifs_dbg(VFS, "RFC1001 size %u smaller than SMB for mid=%u\n",
+				 rfclen, mid);
+			return -EIO;
+		} else if (rfclen > clc_len + 512) {
+			/*
+			 * Some servers (Windows XP in particular) send more
+			 * data than the lengths in the SMB packet would
+			 * indicate on certain calls (byte range locks and
+			 * trans2 find first calls in particular). While the
+			 * client can handle such a frame by ignoring the
+			 * trailing data, we choose limit the amount of extra
+			 * data to 512 bytes.
+			 */
+			cifs_dbg(VFS, "RFC1001 size %u more than 512 bytes larger than SMB for mid=%u\n",
+				 rfclen, mid);
+			return -EIO;
+		}
+	}
+	return 0;
+}
+
+bool
+is_valid_oplock_break(char *buffer, struct TCP_Server_Info *srv)
+{
+	struct smb_hdr *buf = (struct smb_hdr *)buffer;
+	struct smb_com_lock_req *pSMB = (struct smb_com_lock_req *)buf;
+	struct cifs_ses *ses;
+	struct cifs_tcon *tcon;
+	struct cifsInodeInfo *pCifsInode;
+	struct cifsFileInfo *netfile;
+
+	cifs_dbg(FYI, "Checking for oplock break or dnotify response\n");
+	if ((pSMB->hdr.Command == SMB_COM_NT_TRANSACT) &&
+	   (pSMB->hdr.Flags & SMBFLG_RESPONSE)) {
+		struct smb_com_transaction_change_notify_rsp *pSMBr =
+			(struct smb_com_transaction_change_notify_rsp *)buf;
+		struct file_notify_information *pnotify;
+		__u32 data_offset = 0;
+		size_t len = srv->total_read - sizeof(pSMBr->hdr.smb_buf_length);
+
+		if (get_bcc(buf) > sizeof(struct file_notify_information)) {
+			data_offset = le32_to_cpu(pSMBr->DataOffset);
+
+			if (data_offset >
+			    len - sizeof(struct file_notify_information)) {
+				cifs_dbg(FYI, "Invalid data_offset %u\n",
+					 data_offset);
+				return true;
+			}
+			pnotify = (struct file_notify_information *)
+				((char *)&pSMBr->hdr.Protocol + data_offset);
+			cifs_dbg(FYI, "dnotify on %s Action: 0x%x\n",
+				 pnotify->FileName, pnotify->Action);
+			/*   cifs_dump_mem("Rcvd notify Data: ",buf,
+				sizeof(struct smb_hdr)+60); */
+			return true;
+		}
+		if (pSMBr->hdr.Status.CifsError) {
+			cifs_dbg(FYI, "notify err 0x%x\n",
+				 pSMBr->hdr.Status.CifsError);
+			return true;
+		}
+		return false;
+	}
+	if (pSMB->hdr.Command != SMB_COM_LOCKING_ANDX)
+		return false;
+	if (pSMB->hdr.Flags & SMBFLG_RESPONSE) {
+		/* no sense logging error on invalid handle on oplock
+		   break - harmless race between close request and oplock
+		   break response is expected from time to time writing out
+		   large dirty files cached on the client */
+		if ((NT_STATUS_INVALID_HANDLE) ==
+		   le32_to_cpu(pSMB->hdr.Status.CifsError)) {
+			cifs_dbg(FYI, "Invalid handle on oplock break\n");
+			return true;
+		} else if (ERRbadfid ==
+		   le16_to_cpu(pSMB->hdr.Status.DosError.Error)) {
+			return true;
+		} else {
+			return false; /* on valid oplock brk we get "request" */
+		}
+	}
+	if (pSMB->hdr.WordCount != 8)
+		return false;
+
+	cifs_dbg(FYI, "oplock type 0x%x level 0x%x\n",
+		 pSMB->LockType, pSMB->OplockLevel);
+	if (!(pSMB->LockType & LOCKING_ANDX_OPLOCK_RELEASE))
+		return false;
+
+	/* look up tcon based on tid & uid */
+	spin_lock(&cifs_tcp_ses_lock);
+	list_for_each_entry(ses, &srv->smb_ses_list, smb_ses_list) {
+		list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
+			if (tcon->tid != buf->Tid)
+				continue;
+
+			cifs_stats_inc(&tcon->stats.cifs_stats.num_oplock_brks);
+			spin_lock(&tcon->open_file_lock);
+			list_for_each_entry(netfile, &tcon->openFileList, tlist) {
+				if (pSMB->Fid != netfile->fid.netfid)
+					continue;
+
+				cifs_dbg(FYI, "file id match, oplock break\n");
+				pCifsInode = CIFS_I(d_inode(netfile->dentry));
+
+				set_bit(CIFS_INODE_PENDING_OPLOCK_BREAK,
+					&pCifsInode->flags);
+
+				netfile->oplock_epoch = 0;
+				netfile->oplock_level = pSMB->OplockLevel;
+				netfile->oplock_break_cancelled = false;
+				cifs_queue_oplock_break(netfile);
+
+				spin_unlock(&tcon->open_file_lock);
+				spin_unlock(&cifs_tcp_ses_lock);
+				return true;
+			}
+			spin_unlock(&tcon->open_file_lock);
+			spin_unlock(&cifs_tcp_ses_lock);
+			cifs_dbg(FYI, "No matching file for oplock break\n");
+			return true;
+		}
+	}
+	spin_unlock(&cifs_tcp_ses_lock);
+	cifs_dbg(FYI, "Can not process oplock break for non-existent connection\n");
+	return true;
+}
+
+struct file_system_type cifs_fs_type = {
+	.owner = THIS_MODULE,
+	.name = "cifs",
+	.init_fs_context = smb3_init_fs_context,
+	.parameters = smb3_fs_parameters,
+	.kill_sb = cifs_kill_sb,
+	.fs_flags = FS_RENAME_DOES_D_MOVE,
+};
+MODULE_ALIAS_FS("cifs");
+
+const struct inode_operations cifs_dir_inode_ops = {
+	.create = cifs_create,
+	.atomic_open = cifs_atomic_open,
+	.lookup = cifs_lookup,
+	.getattr = cifs_getattr,
+	.unlink = cifs_unlink,
+	.link = cifs_hardlink,
+	.mkdir = cifs_mkdir,
+	.rmdir = cifs_rmdir,
+	.rename = cifs_rename2,
+	.permission = cifs_permission,
+	.setattr = cifs_setattr,
+	.symlink = cifs_symlink,
+	.mknod   = cifs_mknod,
+	.listxattr = cifs_listxattr,
+};
+
+const struct inode_operations cifs_file_inode_ops = {
+	.setattr = cifs_setattr,
+	.getattr = cifs_getattr,
+	.permission = cifs_permission,
+	.listxattr = cifs_listxattr,
+	.fiemap = cifs_fiemap,
+};
+
+const struct inode_operations cifs_symlink_inode_ops = {
+	.get_link = cifs_get_link,
+	.permission = cifs_permission,
+	.listxattr = cifs_listxattr,
+};
+
+const struct file_operations cifs_file_ops = {
+	.read_iter = cifs_loose_read_iter,
+	.write_iter = cifs_file_write_iter,
+	.open = cifs_open,
+	.release = cifs_close,
+	.lock = cifs_lock,
+	.flock = cifs_flock,
+	.fsync = cifs_fsync,
+	.flush = cifs_flush,
+	.mmap  = cifs_file_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.llseek = cifs_llseek,
+	.unlocked_ioctl	= cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_file_strict_ops = {
+	.read_iter = cifs_strict_readv,
+	.write_iter = cifs_strict_writev,
+	.open = cifs_open,
+	.release = cifs_close,
+	.lock = cifs_lock,
+	.flock = cifs_flock,
+	.fsync = cifs_strict_fsync,
+	.flush = cifs_flush,
+	.mmap = cifs_file_strict_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.llseek = cifs_llseek,
+	.unlocked_ioctl	= cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_file_direct_ops = {
+	.read_iter = cifs_direct_readv,
+	.write_iter = cifs_direct_writev,
+	.open = cifs_open,
+	.release = cifs_close,
+	.lock = cifs_lock,
+	.flock = cifs_flock,
+	.fsync = cifs_fsync,
+	.flush = cifs_flush,
+	.mmap = cifs_file_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.unlocked_ioctl  = cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.llseek = cifs_llseek,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_file_nobrl_ops = {
+	.read_iter = cifs_loose_read_iter,
+	.write_iter = cifs_file_write_iter,
+	.open = cifs_open,
+	.release = cifs_close,
+	.fsync = cifs_fsync,
+	.flush = cifs_flush,
+	.mmap  = cifs_file_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.llseek = cifs_llseek,
+	.unlocked_ioctl	= cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_file_strict_nobrl_ops = {
+	.read_iter = cifs_strict_readv,
+	.write_iter = cifs_strict_writev,
+	.open = cifs_open,
+	.release = cifs_close,
+	.fsync = cifs_strict_fsync,
+	.flush = cifs_flush,
+	.mmap = cifs_file_strict_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.llseek = cifs_llseek,
+	.unlocked_ioctl	= cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_file_direct_nobrl_ops = {
+	.read_iter = cifs_direct_readv,
+	.write_iter = cifs_direct_writev,
+	.open = cifs_open,
+	.release = cifs_close,
+	.fsync = cifs_fsync,
+	.flush = cifs_flush,
+	.mmap = cifs_file_mmap,
+	.splice_read = generic_file_splice_read,
+	.splice_write = iter_file_splice_write,
+	.unlocked_ioctl  = cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.llseek = cifs_llseek,
+	.setlease = cifs_setlease,
+	.fallocate = cifs_fallocate,
+};
+
+const struct file_operations cifs_dir_ops = {
+	.iterate_shared = cifs_readdir,
+	.release = cifs_closedir,
+	.read    = generic_read_dir,
+	.unlocked_ioctl  = cifs_ioctl,
+	.copy_file_range = cifs_copy_file_range,
+	.remap_file_range = cifs_remap_file_range,
+	.llseek = generic_file_llseek,
+	.fsync = cifs_dir_fsync,
+};
 
 
 struct smb_version_operations smb1_operations = {

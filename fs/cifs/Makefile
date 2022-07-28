@@ -8,7 +8,7 @@ obj-$(CONFIG_CIFS) += cifs.o
 cifs-y := trace.o core.o debug.o connect.o misc.o netmisc.o \
 	  smbencrypt.o unicode.o nterr.o encrypt.o sess.o export.o \
 	  unc.o winucase.o ops.o maperror.o transport.o smb2misc.o pdu.o \
-	  inode.o file.o fs_context.o dns_resolve.o asn1.o \
+	  inode.o file.o fs_context.o dns_resolve.o asn1.o idmap.o \
 	  spnego_negtokeninit.asn1.o
 
 $(obj)/asn1.o: $(obj)/spnego_negtokeninit.asn1.h

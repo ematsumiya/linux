@@ -20,7 +20,7 @@
 #include "sb.h"
 #include "unicode.h"
 #include "fscache.h"
-#include "smb2glob.h"
+#include "globals.h"
 #include "pdu.h"
 #include "smb2proto.h"
 

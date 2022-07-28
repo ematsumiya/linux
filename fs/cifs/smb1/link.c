@@ -12,7 +12,7 @@
 #include "../core.h"
 #include "pdu.h"
 #include "../globals.h"
-#include "../prototypes.h"
+#include "prototypes.h"
 #include "../debug.h"
 #include "../sb.h"
 #include "../unicode.h"

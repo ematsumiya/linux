@@ -31,7 +31,7 @@
 #include "debug.h"
 #include "ntlmssp.h"
 #include "status.h"
-#include "smb2glob.h"
+#include "globals.h"
 #include "smb1/pdu.h"
 #include "spnego.h"
 #include "smbdirect.h"
@@ -39,35 +39,6 @@
 #ifdef CONFIG_CIFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
-
-/*
- *  The following table defines the expected "StructureSize" of SMB2 requests
- *  in order by SMB2 command.  This is similar to "wct" in SMB/CIFS requests.
- *
- *  Note that commands are defined in pdu.h in le16 but the array below is
- *  indexed by command in host byte order.
- */
-static const int smb2_req_struct_sizes[NUMBER_OF_SMB2_COMMANDS] = {
-	/* SMB2_NEGOTIATE */ 36,
-	/* SMB2_SESSION_SETUP */ 25,
-	/* SMB2_LOGOFF */ 4,
-	/* SMB2_TREE_CONNECT */	9,
-	/* SMB2_TREE_DISCONNECT */ 4,
-	/* SMB2_CREATE */ 57,
-	/* SMB2_CLOSE */ 24,
-	/* SMB2_FLUSH */ 24,
-	/* SMB2_READ */	49,
-	/* SMB2_WRITE */ 49,
-	/* SMB2_LOCK */	48,
-	/* SMB2_IOCTL */ 57,
-	/* SMB2_CANCEL */ 4,
-	/* SMB2_ECHO */ 4,
-	/* SMB2_QUERY_DIRECTORY */ 33,
-	/* SMB2_CHANGE_NOTIFY */ 32,
-	/* SMB2_QUERY_INFO */ 41,
-	/* SMB2_SET_INFO */ 33,
-	/* SMB2_OPLOCK_BREAK */ 24 /* BB this is 36 for LEASE_BREAK variant */
-};
 
 int smb3_encryption_required(const struct cifs_tcon *tcon)
 {

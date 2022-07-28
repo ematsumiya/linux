@@ -13,7 +13,7 @@
 #include "pdu.h"
 #include "smb2proto.h"
 #include "status.h"
-#include "smb2glob.h"
+#include "globals.h"
 #include "trace.h"
 
 struct status_to_posix_error {
