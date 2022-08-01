@@ -334,7 +334,7 @@ const struct proc_ops dfscache_proc_ops = {
 	.proc_write	= dfscache_proc_write,
 };
 
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 static inline void dump_tgts(const struct cache_entry *ce)
 {
 	struct cache_dfs_tgt *t;

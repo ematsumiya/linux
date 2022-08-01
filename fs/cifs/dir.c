@@ -13,7 +13,7 @@
 #include <linux/namei.h>
 #include <linux/mount.h>
 #include <linux/file.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"

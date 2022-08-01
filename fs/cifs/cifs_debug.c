@@ -15,12 +15,12 @@
 #include "cifsglob.h"
 #include "cifsproto.h"
 #include "cifs_debug.h"
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "fs_context.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 #include "smbdirect.h"
 #endif
 #include "cifs_swn.h"
@@ -35,7 +35,7 @@ cifs_dump_mem(char *label, void *data, int length)
 
 void cifs_dump_detail(void *buf, struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	struct smb_hdr *smb = buf;
 
 	cifs_dbg(VFS, "Cmd: %d Err: 0x%x Flags: 0x%x Flgs2: 0x%x Mid: %d Pid: %d\n",
@@ -43,12 +43,12 @@ void cifs_dump_detail(void *buf, struct TCP_Server_Info *server)
 		 smb->Flags, smb->Flags2, smb->Mid, smb->Pid);
 	cifs_dbg(VFS, "smb buf %p len %u\n", smb,
 		 server->ops->calc_smb_size(smb, server));
-#endif /* CONFIG_CIFS_DEBUG2 */
+#endif /* CONFIG_SMBFS_DEBUG2 */
 }
 
 void cifs_dump_mids(struct TCP_Server_Info *server)
 {
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	struct mid_q_entry *mid_entry;
 
 	if (server == NULL)
@@ -63,7 +63,7 @@ void cifs_dump_mids(struct TCP_Server_Info *server)
 			 mid_entry->pid,
 			 mid_entry->callback_data,
 			 mid_entry->mid);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 		cifs_dbg(VFS, "IsLarge: %d buf: %p time rcv: %ld now: %ld\n",
 			 mid_entry->large_buf,
 			 mid_entry->resp_buf,
@@ -79,7 +79,7 @@ void cifs_dump_mids(struct TCP_Server_Info *server)
 		}
 	}
 	spin_unlock(&server->mid_lock);
-#endif /* CONFIG_CIFS_DEBUG2 */
+#endif /* CONFIG_SMBFS_DEBUG2 */
 }
 
 #ifdef CONFIG_PROC_FS
@@ -176,7 +176,7 @@ static int cifs_debug_files_proc_show(struct seq_file *m, void *v)
 	seq_puts(m, "# Version:1\n");
 	seq_puts(m, "# Format:\n");
 	seq_puts(m, "# <tree id> <persistent fid> <flags> <count> <pid> <uid>");
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	seq_printf(m, " <filename> <mid>\n");
 #else
 	seq_printf(m, " <filename>\n");
@@ -196,7 +196,7 @@ static int cifs_debug_files_proc_show(struct seq_file *m, void *v)
 						cfile->pid,
 						from_kuid(&init_user_ns, cfile->uid),
 						cfile->dentry);
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 					seq_printf(m, " %llu\n", cfile->fid.mid);
 #else
 					seq_printf(m, "\n");
@@ -225,39 +225,39 @@ static int cifs_debug_data_proc_show(struct seq_file *m, void *v)
 		    "---------------------------------------------------\n");
 	seq_printf(m, "CIFS Version %s\n", CIFS_VERSION);
 	seq_printf(m, "Features:");
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	seq_printf(m, " DFS");
 #endif
-#ifdef CONFIG_CIFS_FSCACHE
+#ifdef CONFIG_SMBFS_FSCACHE
 	seq_printf(m, ",FSCACHE");
 #endif
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	seq_printf(m, ",SMB_DIRECT");
 #endif
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	seq_printf(m, ",STATS2");
 #else
 	seq_printf(m, ",STATS");
 #endif
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	seq_printf(m, ",DEBUG2");
-#elif defined(CONFIG_CIFS_DEBUG)
+#elif defined(CONFIG_SMBFS_DEBUG)
 	seq_printf(m, ",DEBUG");
 #endif
-#ifdef CONFIG_CIFS_ALLOW_INSECURE_LEGACY
+#ifdef CONFIG_SMBFS_ALLOW_INSECURE_LEGACY
 	seq_printf(m, ",ALLOW_INSECURE_LEGACY");
 #endif
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 	seq_printf(m, ",CIFS_POSIX");
 #endif
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 	seq_printf(m, ",UPCALL(SPNEGO)");
 #endif
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	seq_printf(m, ",XATTR");
 #endif
 	seq_printf(m, ",ACL");
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 	seq_puts(m, ",WITNESS");
 #endif
 	seq_putc(m, '\n');
@@ -279,7 +279,7 @@ static int cifs_debug_data_proc_show(struct seq_file *m, void *v)
 
 		if (server->hostname)
 			seq_printf(m, "Hostname: %s ", server->hostname);
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 		if (!server->rdma)
 			goto skip_rdma;
 
@@ -498,12 +498,12 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 
 	rc = kstrtobool_from_user(buffer, count, &bv);
 	if (rc == 0) {
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 		int i;
 
 		atomic_set(&total_buf_alloc_count, 0);
 		atomic_set(&total_small_buf_alloc_count, 0);
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 		atomic_set(&tcpSesReconnectCount, 0);
 		atomic_set(&tconInfoReconnectCount, 0);
 
@@ -514,7 +514,7 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 		spin_lock(&cifs_tcp_ses_lock);
 		list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
 			server->max_in_flight = 0;
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 			for (i = 0; i < NUMBER_OF_SMB2_COMMANDS; i++) {
 				atomic_set(&server->num_cmds[i], 0);
 				atomic_set(&server->smb2slowcmd[i], 0);
@@ -522,7 +522,7 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 				server->slowest_cmd[i] = 0;
 				server->fastest_cmd[0] = 0;
 			}
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 			list_for_each_entry(ses, &server->smb_ses_list, smb_ses_list) {
 				list_for_each_entry(tcon, &ses->tcon_list, tcon_list) {
 					atomic_set(&tcon->num_smbs_sent, 0);
@@ -546,7 +546,7 @@ static ssize_t cifs_stats_proc_write(struct file *file,
 static int cifs_stats_proc_show(struct seq_file *m, void *v)
 {
 	int i;
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	int j;
 #endif /* STATS2 */
 	struct TCP_Server_Info *server;
@@ -562,11 +562,11 @@ static int cifs_stats_proc_show(struct seq_file *m, void *v)
 			cifs_min_rcv + tcpSesAllocCount.counter);
 	seq_printf(m, "SMB Small Req/Resp Buffer: %d Pool size: %d\n",
 			small_buf_alloc_count.counter, cifs_min_small);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	seq_printf(m, "Total Large %d Small %d Allocations\n",
 				atomic_read(&total_buf_alloc_count),
 				atomic_read(&total_small_buf_alloc_count));
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 
 	seq_printf(m, "Operations (MIDs): %d\n", atomic_read(&mid_count));
 	seq_printf(m,
@@ -581,7 +581,7 @@ static int cifs_stats_proc_show(struct seq_file *m, void *v)
 	spin_lock(&cifs_tcp_ses_lock);
 	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
 		seq_printf(m, "\nMax requests in flight: %d", server->max_in_flight);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 		seq_puts(m, "\nTotal time spent processing by command. Time ");
 		seq_printf(m, "units are jiffies (%d per second)\n", HZ);
 		seq_puts(m, "  SMB3 CMD\tNumber\tTotal Time\tFastest\tSlowest\n");
@@ -630,7 +630,7 @@ static const struct proc_ops cifs_stats_proc_ops = {
 	.proc_write	= cifs_stats_proc_write,
 };
 
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 #define PROC_FILE_DEFINE(name) \
 static ssize_t name##_write(struct file *file, const char __user *buffer, \
 	size_t count, loff_t *ppos) \
@@ -702,11 +702,11 @@ cifs_proc_init(void)
 
 	proc_create("mount_params", 0444, proc_fs_cifs, &cifs_mount_params_proc_ops);
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	proc_create("dfscache", 0644, proc_fs_cifs, &dfscache_proc_ops);
 #endif
 
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	proc_create("rdma_readwrite_threshold", 0644, proc_fs_cifs,
 		&cifs_rdma_readwrite_threshold_proc_fops);
 	proc_create("smbd_max_frmr_depth", 0644, proc_fs_cifs,
@@ -742,10 +742,10 @@ cifs_proc_clean(void)
 	remove_proc_entry("LookupCacheEnabled", proc_fs_cifs);
 	remove_proc_entry("mount_params", proc_fs_cifs);
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	remove_proc_entry("dfscache", proc_fs_cifs);
 #endif
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 	remove_proc_entry("rdma_readwrite_threshold", proc_fs_cifs);
 	remove_proc_entry("smbd_max_frmr_depth", proc_fs_cifs);
 	remove_proc_entry("smbd_keep_alive_interval", proc_fs_cifs);
@@ -972,7 +972,7 @@ static ssize_t cifs_security_flags_proc_write(struct file *file,
 
 	cifs_security_flags_handle_must_flags(&flags);
 
-	/* flags look ok - update the global security flags for cifs module */
+	/* flags look ok - update global security flags */
 	global_secflags = flags;
 	if (global_secflags & CIFSSEC_MUST_SIGN) {
 		/* requiring signing implies signing is allowed */

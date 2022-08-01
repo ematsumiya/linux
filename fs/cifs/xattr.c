@@ -10,7 +10,7 @@
 #include <linux/posix_acl_xattr.h>
 #include <linux/slab.h>
 #include <linux/xattr.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
@@ -202,7 +202,7 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 	}
 
 	case XATTR_ACL_ACCESS:
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 		if (!value)
 			goto out;
 		if (sb->s_flags & SB_POSIXACL)
@@ -210,11 +210,11 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 				value, (const int)size,
 				ACL_TYPE_ACCESS, cifs_sb->local_nls,
 				cifs_remap(cifs_sb));
-#endif  /* CONFIG_CIFS_POSIX */
+#endif  /* CONFIG_SMBFS_POSIX */
 		break;
 
 	case XATTR_ACL_DEFAULT:
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 		if (!value)
 			goto out;
 		if (sb->s_flags & SB_POSIXACL)
@@ -222,7 +222,7 @@ static int cifs_xattr_set(const struct xattr_handler *handler,
 				value, (const int)size,
 				ACL_TYPE_DEFAULT, cifs_sb->local_nls,
 				cifs_remap(cifs_sb));
-#endif  /* CONFIG_CIFS_POSIX */
+#endif  /* CONFIG_SMBFS_POSIX */
 		break;
 	}
 
@@ -366,23 +366,23 @@ static int cifs_xattr_get(const struct xattr_handler *handler,
 	}
 
 	case XATTR_ACL_ACCESS:
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 		if (sb->s_flags & SB_POSIXACL)
 			rc = CIFSSMBGetPosixACL(xid, pTcon, full_path,
 				value, size, ACL_TYPE_ACCESS,
 				cifs_sb->local_nls,
 				cifs_remap(cifs_sb));
-#endif  /* CONFIG_CIFS_POSIX */
+#endif  /* CONFIG_SMBFS_POSIX */
 		break;
 
 	case XATTR_ACL_DEFAULT:
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 		if (sb->s_flags & SB_POSIXACL)
 			rc = CIFSSMBGetPosixACL(xid, pTcon, full_path,
 				value, size, ACL_TYPE_DEFAULT,
 				cifs_sb->local_nls,
 				cifs_remap(cifs_sb));
-#endif  /* CONFIG_CIFS_POSIX */
+#endif  /* CONFIG_SMBFS_POSIX */
 		break;
 	}
 

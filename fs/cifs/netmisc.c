@@ -16,7 +16,7 @@
 #include <asm/div64.h>
 #include <asm/byteorder.h>
 #include <linux/inet.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"

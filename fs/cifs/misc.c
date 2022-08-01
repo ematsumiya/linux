@@ -18,8 +18,8 @@
 #include "nterr.h"
 #include "cifs_unicode.h"
 #include "smb2pdu.h"
-#include "cifsfs.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#include "smbfs.h"
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dns_resolve.h"
 #endif
 #include "fs_context.h"
@@ -175,9 +175,9 @@ cifs_buf_get(void)
 	/* for most paths, more is cleared in header_assemble */
 	memset(ret_buf, 0, buf_size + 3);
 	atomic_inc(&buf_alloc_count);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	atomic_inc(&total_buf_alloc_count);
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 
 	return ret_buf;
 }
@@ -208,9 +208,9 @@ cifs_small_buf_get(void)
 	/* No need to clear memory here, cleared in header assemble */
 	/*	memset(ret_buf, 0, sizeof(struct smb_hdr) + 27);*/
 	atomic_inc(&small_buf_alloc_count);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	atomic_inc(&total_small_buf_alloc_count);
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 
 	return ret_buf;
 }
@@ -1246,7 +1246,7 @@ void cifs_put_tcp_super(struct super_block *sb)
 	__cifs_put_super(sb);
 }
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 int match_target_ip(struct TCP_Server_Info *server,
 		    const char *share, size_t share_len,
 		    bool *result)

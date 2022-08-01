@@ -33,7 +33,7 @@ struct cifs_fscache_inode_coherency_data {
 	__le32 last_change_time_nsec;
 };
 
-#ifdef CONFIG_CIFS_FSCACHE
+#ifdef CONFIG_SMBFS_FSCACHE
 
 /*
  * fscache.c
@@ -119,7 +119,7 @@ static inline int cifs_fscache_release_page(struct page *page, gfp_t gfp)
 	return true;
 }
 
-#else /* CONFIG_CIFS_FSCACHE */
+#else /* CONFIG_SMBFS_FSCACHE */
 static inline
 void cifs_fscache_fill_coherency(struct inode *inode,
 				 struct cifs_fscache_inode_coherency_data *cd)
@@ -159,6 +159,6 @@ static inline int nfs_fscache_release_page(struct page *page, gfp_t gfp)
 	return true; /* May release page */
 }
 
-#endif /* CONFIG_CIFS_FSCACHE */
+#endif /* CONFIG_SMBFS_FSCACHE */
 
 #endif /* _CIFS_FSCACHE_H */

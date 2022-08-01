@@ -18,7 +18,7 @@
 #include <linux/inet.h>
 #include "cifsglob.h"
 #include "cifsproto.h"
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "dns_resolve.h"
 #include "cifs_debug.h"
 #include "cifs_unicode.h"

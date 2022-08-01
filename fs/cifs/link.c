@@ -9,7 +9,7 @@
 #include <linux/stat.h>
 #include <linux/slab.h>
 #include <linux/namei.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"

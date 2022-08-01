@@ -4,7 +4,7 @@
  *   Copyright (C) International Business Machines  Corp., 2002,2008
  *   Author(s): Steve French (sfrench@us.ibm.com)
  *
- *   Common Internet FileSystem (CIFS) client
+ *   SMBFS client
  *
  */
 
@@ -28,7 +28,7 @@
 #include <linux/xattr.h>
 #include <uapi/linux/magic.h>
 #include <net/ipv6.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #define DECLARE_GLOBALS_HERE
 #include "cifsglob.h"
@@ -39,10 +39,10 @@
 #include <linux/key-type.h>
 #include "cifs_spnego.h"
 #include "fscache.h"
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 #include "dfs_cache.h"
 #endif
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 #include "netlink.h"
 #endif
 #include "fs_context.h"
@@ -90,7 +90,7 @@ atomic_t tconInfoReconnectCount;
 atomic_t mid_count;
 atomic_t buf_alloc_count;
 atomic_t small_buf_alloc_count;
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 atomic_t total_buf_alloc_count;
 atomic_t total_small_buf_alloc_count;
 #endif/* STATS2 */
@@ -115,7 +115,7 @@ module_param(cifs_max_pending, uint, 0444);
 MODULE_PARM_DESC(cifs_max_pending, "Simultaneous requests to server for "
 				   "CIFS/SMB1 dialect (N/A for SMB3) "
 				   "Default: 32767 Range: 2 to 32767.");
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 unsigned int slow_rsp_threshold = 1;
 module_param(slow_rsp_threshold, uint, 0644);
 MODULE_PARM_DESC(slow_rsp_threshold, "Amount of time (in seconds) to wait "
@@ -266,12 +266,12 @@ cifs_read_super(struct super_block *sb)
 		goto out_no_root;
 	}
 
-#ifdef CONFIG_CIFS_NFSD_EXPORT
+#ifdef CONFIG_SMBFS_NFSD_EXPORT
 	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_SERVER_INUM) {
 		cifs_dbg(FYI, "export ops supported\n");
 		sb->s_export_op = &cifs_export_ops;
 	}
-#endif /* CONFIG_CIFS_NFSD_EXPORT */
+#endif /* CONFIG_SMBFS_NFSD_EXPORT */
 
 	return 0;
 
@@ -759,7 +759,7 @@ static void cifs_umount_begin(struct super_block *sb)
 	return;
 }
 
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 static int cifs_show_stats(struct seq_file *s, struct dentry *root)
 {
 	/* BB FIXME */
@@ -797,7 +797,7 @@ static const struct super_operations cifs_super_ops = {
 	as opens */
 	.show_options = cifs_show_options,
 	.umount_begin   = cifs_umount_begin,
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	.show_stats = cifs_show_stats,
 #endif
 };
@@ -1116,6 +1116,7 @@ struct file_system_type cifs_fs_type = {
 	.fs_flags = FS_RENAME_DOES_D_MOVE,
 };
 MODULE_ALIAS_FS("cifs");
+MODULE_ALIAS("cifs");
 
 struct file_system_type smb3_fs_type = {
 	.owner = THIS_MODULE,
@@ -1612,7 +1613,7 @@ init_cifs(void)
 
 	atomic_set(&buf_alloc_count, 0);
 	atomic_set(&small_buf_alloc_count, 0);
-#ifdef CONFIG_CIFS_STATS2
+#ifdef CONFIG_SMBFS_STATS2
 	atomic_set(&total_buf_alloc_count, 0);
 	atomic_set(&total_small_buf_alloc_count, 0);
 	if (slow_rsp_threshold < 1)
@@ -1620,7 +1621,7 @@ init_cifs(void)
 	else if (slow_rsp_threshold > 32767)
 		cifs_dbg(VFS,
 		       "slow response threshold set higher than recommended (0 to 32767)\n");
-#endif /* CONFIG_CIFS_STATS2 */
+#endif /* CONFIG_SMBFS_STATS2 */
 
 	atomic_set(&mid_count, 0);
 	GlobalCurrentXid = 0;
@@ -1693,21 +1694,21 @@ init_cifs(void)
 	if (rc)
 		goto out_destroy_mids;
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	rc = dfs_cache_init();
 	if (rc)
 		goto out_destroy_request_bufs;
-#endif /* CONFIG_CIFS_DFS_UPCALL */
-#ifdef CONFIG_CIFS_UPCALL
+#endif /* CONFIG_SMBFS_DFS_UPCALL */
+#ifdef CONFIG_SMBFS_UPCALL
 	rc = init_cifs_spnego();
 	if (rc)
 		goto out_destroy_dfs_cache;
-#endif /* CONFIG_CIFS_UPCALL */
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#endif /* CONFIG_SMBFS_UPCALL */
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 	rc = cifs_genl_init();
 	if (rc)
 		goto out_register_key_type;
-#endif /* CONFIG_CIFS_SWN_UPCALL */
+#endif /* CONFIG_SMBFS_SWN_UPCALL */
 
 	rc = init_cifs_idmap();
 	if (rc)
@@ -1728,15 +1729,15 @@ init_cifs(void)
 out_init_cifs_idmap:
 	exit_cifs_idmap();
 out_cifs_swn_init:
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 	cifs_genl_exit();
 out_register_key_type:
 #endif
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 	exit_cifs_spnego();
 out_destroy_dfs_cache:
 #endif
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	dfs_cache_destroy();
 out_destroy_request_bufs:
 #endif
@@ -1768,13 +1769,13 @@ exit_cifs(void)
 	unregister_filesystem(&smb3_fs_type);
 	cifs_dfs_release_automount_timer();
 	exit_cifs_idmap();
-#ifdef CONFIG_CIFS_SWN_UPCALL
+#ifdef CONFIG_SMBFS_SWN_UPCALL
 	cifs_genl_exit();
 #endif
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 	exit_cifs_spnego();
 #endif
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 	dfs_cache_destroy();
 #endif
 	cifs_destroy_request_bufs();

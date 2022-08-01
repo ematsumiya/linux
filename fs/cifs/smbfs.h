@@ -115,7 +115,7 @@ extern int cifs_readdir(struct file *file, struct dir_context *ctx);
 extern const struct dentry_operations cifs_dentry_ops;
 extern const struct dentry_operations cifs_ci_dentry_ops;
 
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 extern struct vfsmount *cifs_dfs_d_automount(struct path *path);
 #else
 #define cifs_dfs_d_automount NULL
@@ -127,12 +127,12 @@ extern const char *cifs_get_link(struct dentry *, struct inode *,
 extern int cifs_symlink(struct user_namespace *mnt_userns, struct inode *inode,
 			struct dentry *direntry, const char *symname);
 
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 extern const struct xattr_handler *cifs_xattr_handlers[];
 extern ssize_t	cifs_listxattr(struct dentry *, char *, size_t);
 #else
-# define cifs_xattr_handlers NULL
-# define cifs_listxattr NULL
+#define cifs_xattr_handlers NULL
+#define cifs_listxattr NULL
 #endif
 
 extern ssize_t cifs_file_copychunk_range(unsigned int xid,
@@ -148,9 +148,9 @@ struct smb3_fs_context;
 extern struct dentry *cifs_smb3_do_mount(struct file_system_type *fs_type,
 					 int flags, struct smb3_fs_context *ctx);
 
-#ifdef CONFIG_CIFS_NFSD_EXPORT
+#ifdef CONFIG_SMBFS_NFSD_EXPORT
 extern const struct export_operations cifs_export_ops;
-#endif /* CONFIG_CIFS_NFSD_EXPORT */
+#endif /* CONFIG_SMBFS_NFSD_EXPORT */
 
 /* when changing internal version - update following two lines at same time */
 #define SMB3_PRODUCT_BUILD 38

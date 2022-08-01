@@ -7,7 +7,7 @@
 #ifndef _SMBDIRECT_H
 #define _SMBDIRECT_H
 
-#ifdef CONFIG_CIFS_SMB_DIRECT
+#ifdef CONFIG_SMBFS_SMB_DIRECT
 #define cifs_rdma_enabled(server)	((server)->rdma)
 
 #include "cifsglob.h"

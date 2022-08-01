@@ -2152,7 +2152,7 @@ typedef struct {
 #define CIFS_UNIX_TRANSPORT_ENCRYPTION_MANDATORY_CAP  0x00000200 /* must do  */
 #define CIFS_UNIX_PROXY_CAP             0x00000400 /* Proxy cap: 0xACE ioctl and
 						      QFS PROXY call */
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 /* presumably don't need the 0x20 POSIX_PATH_OPS_CAP since we never send
    LockingX instead of posix locking call on unix sess (and we do not expect
    LockingX to use different (ie Windows) semantics than posix locking on
@@ -2162,7 +2162,7 @@ typedef struct {
 #define CIFS_UNIX_CAP_MASK              0x000003db
 #else
 #define CIFS_UNIX_CAP_MASK              0x00000013
-#endif /* CONFIG_CIFS_POSIX */
+#endif /* CONFIG_SMBFS_POSIX */
 
 
 #define CIFS_POSIX_EXTENSIONS           0x00000010 /* support for new QFSInfo */
@@ -2607,7 +2607,7 @@ struct data_blob {
 } __attribute__((packed));
 
 
-#ifdef CONFIG_CIFS_POSIX
+#ifdef CONFIG_SMBFS_POSIX
 /*
 	For better POSIX semantics from Linux client, (even better
 	than the existing CIFS Unix Extensions) we need updated PDUs for:

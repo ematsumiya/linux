@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
 #
-# Makefile for Linux CIFS/SMB2/SMB3 VFS client
+# Makefile for Linux SMBFS VFS client
 #
-ccflags-y += -I$(src)		# needed for trace events
-obj-$(CONFIG_CIFS) += cifs.o
+ccflags-y += -I$(src) # needed for trace events
+obj-$(CONFIG_SMBFS) += smbfs.o
 
-cifs-y := trace.o cifsfs.o cifssmb.o cifs_debug.o connect.o dir.o file.o \
+smbfs-y := trace.o core.o cifssmb.o cifs_debug.o connect.o dir.o file.o \
 	  inode.o link.o misc.o netmisc.o smbencrypt.o transport.o \
 	  cifs_unicode.o nterr.o cifsencrypt.o \
 	  readdir.o ioctl.o sess.o export.o unc.o winucase.o \
@@ -17,18 +17,18 @@ $(obj)/asn1.o: $(obj)/cifs_spnego_negtokeninit.asn1.h
 
 $(obj)/cifs_spnego_negtokeninit.asn1.o: $(obj)/cifs_spnego_negtokeninit.asn1.c $(obj)/cifs_spnego_negtokeninit.asn1.h
 
-cifs-$(CONFIG_CIFS_XATTR) += xattr.o
+smbfs-$(CONFIG_SMBFS_XATTR) += xattr.o
 
-cifs-$(CONFIG_CIFS_UPCALL) += cifs_spnego.o
+smbfs-$(CONFIG_SMBFS_UPCALL) += cifs_spnego.o
 
-cifs-$(CONFIG_CIFS_DFS_UPCALL) += cifs_dfs_ref.o dfs_cache.o
+smbfs-$(CONFIG_SMBFS_DFS_UPCALL) += cifs_dfs_ref.o dfs_cache.o
 
-cifs-$(CONFIG_CIFS_SWN_UPCALL) += netlink.o cifs_swn.o
+smbfs-$(CONFIG_SMBFS_SWN_UPCALL) += netlink.o cifs_swn.o
 
-cifs-$(CONFIG_CIFS_FSCACHE) += fscache.o
+smbfs-$(CONFIG_SMBFS_FSCACHE) += fscache.o
 
-cifs-$(CONFIG_CIFS_SMB_DIRECT) += smbdirect.o
+smbfs-$(CONFIG_SMBFS_SMB_DIRECT) += smbdirect.o
 
-cifs-$(CONFIG_CIFS_ROOT) += cifsroot.o
+smbfs-$(CONFIG_SMBFS_ROOT) += cifsroot.o
 
-cifs-$(CONFIG_CIFS_ALLOW_INSECURE_LEGACY) += smb1ops.o
+smbfs-$(CONFIG_SMBFS_ALLOW_INSECURE_LEGACY) += smb1ops.o

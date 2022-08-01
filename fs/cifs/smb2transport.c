@@ -454,7 +454,7 @@ generate_smb3signingkey(struct cifs_ses *ses,
 	if (rc)
 		return rc;
 
-#ifdef CONFIG_CIFS_DEBUG_DUMP_KEYS
+#ifdef CONFIG_SMBFS_DEBUG_DUMP_KEYS
 	cifs_dbg(VFS, "%s: dumping generated AES session keys\n", __func__);
 	/*
 	 * The session id is opaque in terms of endianness, so we can't

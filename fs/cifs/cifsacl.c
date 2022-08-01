@@ -717,7 +717,7 @@ static __u16 fill_ace_for_sid(struct cifs_ace *pntace,
 }
 
 
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 static void dump_ace(struct cifs_ace *pace, char *end_of_acl)
 {
 	int num_subauth;
@@ -803,7 +803,7 @@ static void parse_dacl(struct cifs_acl *pdacl, char *end_of_acl,
 
 		for (i = 0; i < num_aces; ++i) {
 			ppace[i] = (struct cifs_ace *) (acl_base + acl_size);
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 			dump_ace(ppace[i], end_of_acl);
 #endif
 			if (mode_from_special_sid &&
@@ -1162,7 +1162,7 @@ static int parse_sid(struct cifs_sid *psid, char *end_of_acl)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	if (psid->num_subauth) {
 		int i;
 		cifs_dbg(FYI, "SID revision %d num_auth %d\n",

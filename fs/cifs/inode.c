@@ -14,7 +14,7 @@
 #include <linux/wait_bit.h>
 #include <linux/fiemap.h>
 #include <asm/div64.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsproto.h"
@@ -57,7 +57,7 @@ static void cifs_set_ops(struct inode *inode)
 			inode->i_data.a_ops = &cifs_addr_ops;
 		break;
 	case S_IFDIR:
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 		if (IS_AUTOMOUNT(inode)) {
 			inode->i_op = &cifs_dfs_referral_inode_operations;
 		} else {
@@ -552,7 +552,7 @@ cifs_sfu_type(struct cifs_fattr *fattr, const char *path,
 static int cifs_sfu_mode(struct cifs_fattr *fattr, const unsigned char *path,
 			 struct cifs_sb_info *cifs_sb, unsigned int xid)
 {
-#ifdef CONFIG_CIFS_XATTR
+#ifdef CONFIG_SMBFS_XATTR
 	ssize_t rc;
 	char ea_value[4];
 	__u32 mode;
@@ -956,7 +956,7 @@ cifs_get_inode_info(struct inode **inode,
 		rc = server->ops->query_path_info(xid, tcon, cifs_sb,
 						 full_path, tmp_data,
 						 &adjust_tz, &is_reparse_point);
-#ifdef CONFIG_CIFS_DFS_UPCALL
+#ifdef CONFIG_SMBFS_DFS_UPCALL
 		if (rc == -ENOENT && is_tcon_dfs(tcon))
 			rc = cifs_dfs_query_info_nonascii_quirk(xid, tcon,
 								cifs_sb,
@@ -1833,7 +1833,7 @@ cifs_posix_mkdir(struct inode *inode, struct dentry *dentry, umode_t mode,
 
 	d_instantiate(dentry, newinode);
 
-#ifdef CONFIG_CIFS_DEBUG2
+#ifdef CONFIG_SMBFS_DEBUG2
 	cifs_dbg(FYI, "instantiated dentry %p %pd to inode %p\n",
 		 dentry, dentry, newinode);
 

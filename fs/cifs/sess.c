@@ -18,7 +18,7 @@
 #include <linux/utsname.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#include "cifsfs.h"
+#include "smbfs.h"
 #include "cifs_spnego.h"
 #include "smb2proto.h"
 #include "fs_context.h"
@@ -1376,7 +1376,7 @@ out:
 	ses->auth_key.response = NULL;
 }
 
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 static void
 sess_auth_kerberos(struct sess_data *sess_data)
 {
@@ -1515,7 +1515,7 @@ out:
 	ses->auth_key.response = NULL;
 }
 
-#endif /* ! CONFIG_CIFS_UPCALL */
+#endif /* ! CONFIG_SMBFS_UPCALL */
 
 /*
  * The required kvec buffers have to be allocated before calling this
@@ -1792,13 +1792,13 @@ static int select_sec(struct sess_data *sess_data)
 		sess_data->func = sess_auth_ntlmv2;
 		break;
 	case Kerberos:
-#ifdef CONFIG_CIFS_UPCALL
+#ifdef CONFIG_SMBFS_UPCALL
 		sess_data->func = sess_auth_kerberos;
 		break;
 #else
 		cifs_dbg(VFS, "Kerberos negotiated but upcall support disabled!\n");
 		return -ENOSYS;
-#endif /* CONFIG_CIFS_UPCALL */
+#endif /* CONFIG_SMBFS_UPCALL */
 	case RawNTLMSSP:
 		sess_data->func = sess_auth_rawntlmssp_negotiate;
 		break;
